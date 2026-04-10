@@ -86,9 +86,9 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       return (
         <div
           key={field.id}
-          className="rounded-xl border border-amber-100 bg-amber-50/80 p-3 text-sm text-amber-950"
+          className="rounded-xl border border-slate-200 bg-slate-50/90 p-3 text-xs leading-relaxed text-slate-800"
         >
-          {field.hint ? <p>{field.hint}</p> : null}
+          {field.hint ? <p className="whitespace-pre-wrap">{field.hint}</p> : null}
         </div>
       );
     }
@@ -110,11 +110,17 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       );
     }
 
-    return (
-      <label key={field.id} className="block">
-        <span className="mb-1 block text-sm font-medium text-slate-700">
-          {field.label}
-        </span>
+      return (
+        <label key={field.id} className="block">
+          <span
+            className={`mb-1 block font-medium text-slate-700 ${
+              field.type === "yesno" && field.label.length > 160
+                ? "text-xs leading-snug sm:text-sm"
+                : "text-sm"
+            }`}
+          >
+            {field.label}
+          </span>
         {field.type === "textarea" ? (
           <textarea
             className={`${inputClass} min-h-[88px]`}
@@ -167,12 +173,12 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
         <p className="text-sm font-medium text-slate-500">
           Perfil del cliente PJ · Punto Pago Panamá
         </p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
-          Formulario KYB (debida diligencia)
+        <h1 className="mt-1 text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
+          Formulario KYB — debida diligencia (PJ)
         </h1>
         <p className="mt-2 text-sm text-slate-600">
-          Versión alineada al PDF V002-2026. Todos los campos son obligatorios en el
-          documento original; si no aplica, indique N/A donde corresponda.
+          Misma estructura y redacción que el PDF oficial V002-2026. Cada paso indica
+          la página del impreso. Si un dato no aplica, use N/A.
         </p>
         <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200">
           <div
@@ -186,8 +192,15 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       </header>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">{step.title}</h2>
-        <p className="mt-1 text-sm text-slate-600">{step.description}</p>
+        {step.pdfPage ? (
+          <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+            {step.pdfPage}
+          </p>
+        ) : null}
+        <h2 className="text-base font-semibold leading-snug text-slate-900 sm:text-lg">
+          {step.title}
+        </h2>
+        <p className="mt-2 text-sm text-slate-600">{step.description}</p>
 
         <div className="mt-6 space-y-4">{step.fields.map(renderField)}</div>
 

@@ -1,26 +1,29 @@
-# Mapeo: PDF V002-2026 → app web (`kyb-steps.ts`)
+# Mapeo: PDF V002-2026 → app web (`src/lib/kyb-steps.ts`)
 
 **Documento fuente:** *FORMULARIO PERFIL DEL CLIENTE PJ – PUNTO PAGO PANAMÁ V2-2026* (4 páginas).
 
-| Sección PDF | Paso en app (`step.id`) | Notas |
-|-------------|-------------------------|--------|
-| Cómo conoció a la empresa | `como_conocio` | Casillas → checkboxes + texto «Otro» |
-| Identificación del cliente | `identificacion_cliente` | Razón social/comercial, PJ, operativa, sociedad, actividad, bolsa, capital, fechas, países, ID tributaria, doc. identidad, contacto |
-| Datos generales | `datos_generales` | Dirección comercial, país/ciudad/provincia, auxiliar, teléfonos, email |
-| Junta / consejo (hasta 5) | `junta_directiva` | Por fila: cargo, nombre, apellidos, nacionalidad, ID, dirección |
-| Representante legal / apoderado | `representante_legal` | Incluye pregunta de investigaciones + explicación |
-| Accionistas / beneficiario final (hasta 3) | `beneficiarios_finales` | Tipo N/J, fechas, participación, dirección |
-| Perfil financiero | `perfil_financiero` | Declaración origen lícito + ingresos USD |
-| Referencias | `referencias` | Tipo + datos de contacto + pregunta investigación |
-| Medios de pago / préstamo | `producto_medios_pago` | Casillas ACH etc., motivo, frecuencia, monto anual, tipo préstamo |
-| PEP | `pep` | Pregunta principal + bloque datos si aplica |
-| Documentación a entregar | `documentacion_entregar` | Checklist + observaciones |
-| Declaración del cliente | `declaracion` | Nombre y fecha (firma digital pendiente) |
+Orden de pasos **igual al flujo del impreso** (incluye intro legal + campo iniciales). Cada paso tiene `pdfPage` para ubicar la sección en el PDF.
 
-**No incluido en el flujo del cliente (uso interno en el PDF):** bloque *Solo para uso de Grupo Punto Pago* — conclusiones de verificación, revisado por, enlace.
+| Orden | Paso (`step.id`) | Sección PDF | Notas |
+|------:|-------------------|-------------|--------|
+| 1 | `intro_formulario` | Encabezado pág. 1 | Textos legales + regla N/A + iniciales |
+| 2 | `como_conocio` | INDIQUE COMO CONOCIÓ… | Checkboxes + Otro |
+| 3 | `identificacion_cliente` | IDENTIFICACIÓN DEL CLIENTE | |
+| 4 | `datos_generales` | DATOS GENERALES | |
+| 5 | `junta_directiva` | GOBIERNO CORPORATIVO / JUNTA… | 5 filas |
+| 6 | `representante_legal` | REPRESENTANTE LEGAL O APODERADO | Pregunta investigación texto largo |
+| 7 | `beneficiarios_finales` | ACCIONISTAS O BENEFICIARIO FINAL | Párrafo definición + 3 filas |
+| 8 | `perfil_financiero` | PERFIL FINANCIERO | |
+| 9 | `referencias` | REFERENCIAS | |
+| 10 | `producto_medios_pago` | DOCUMENTOS PARA ENTREGAR (pág. 3) | Medios de pago + préstamo |
+| 11 | `pep` | PEP | Definición + pregunta + datos |
+| 12 | `documentacion_entregar` | DOCUMENTOS PARA ENTREGAR (pág. 4) | Checklist anexos + observaciones |
+| 13 | `declaracion` | FIRMA Y DECLARACIÓN DEL CLIENTE | Texto legal completo |
+
+**No en app (uso interno PDF):** bloque *SOLO PARA USO DE GRUPO PUNTO PAGO*.
 
 ## Próximos pasos
 
-- Subida de PDFs / imágenes por ítem del checklist.
-- Firma electrónica o captura de aceptación de declaración.
-- Validaciones por campo (formato fechas, RUC, etc.).
+- Generación de PDF rellenado a partir de los mismos `id` de campo.
+- Subida de archivos por ítem de checklist.
+- Firma electrónica.

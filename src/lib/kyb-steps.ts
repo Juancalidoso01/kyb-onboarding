@@ -2,6 +2,7 @@
  * Formulario «Perfil del Cliente PJ» — Punto Pago Panamá V2-2026 (PDF V002-2026).
  * Campos alineados por sección del PDF; ids estables para API / generación de PDF futura.
  */
+export const KYB_PDF_FORM_VERSION = "V002-2026";
 
 export type KybFieldType =
   | "text"
@@ -26,17 +27,54 @@ export type KybField = {
 
 export type KybStep = {
   id: string;
+  /** Título como en el PDF (mayúsculas cuando el impreso lo usa así) */
   title: string;
   description: string;
+  /** Ubicación en el formulario impreso V002-2026 (útil para generar PDF final) */
+  pdfPage?: string;
   fields: KybField[];
 };
 
 export const KYB_STEPS: KybStep[] = [
   {
-    id: "como_conocio",
-    title: "Cómo conoció a la empresa",
+    id: "intro_formulario",
+    title: "FORMULARIO PERFIL DEL CLIENTE — PERSONA JURÍDICA",
     description:
-      "Marque las opciones que apliquen (equivalente a la primera tabla del PDF).",
+      "Texto introductorio y reglas del documento oficial. Versión PDF V002-2026.",
+    pdfPage: "Pág. 1 (encabezado)",
+    fields: [
+      {
+        id: "static_intro_debida_diligencia",
+        label: "",
+        type: "static",
+        hint: "Este formulario y la documentación solicitada constituyen los requerimientos mínimos de debida diligencia para la identificación, verificación y actualización del perfil del cliente persona jurídica, así como de sus dignatarios, representante(s) legal(es), apoderado(s) y beneficiario(s) final(es), conforme a la normativa panameña aplicable en materia de PBC/FT/FPADM. La información podrá ser requerida y utilizada por GRUPO PUNTO PAGO, según corresponda al producto o servicio solicitado y a los fines de cumplimiento y gestión de riesgos.",
+      },
+      {
+        id: "static_intro_normativa",
+        label: "",
+        type: "static",
+        hint: "En cumplimiento de la Ley 23 de 27 de abril de 2015; del Decreto Ejecutivo No. 35 de 6 de septiembre de 2022; del Acuerdo de Prevención para Otros Sujetos Obligados Financieros No. 004-2018 y demás normativa aplicable emitida por la Superintendencia de Bancos de Panamá, así como de las guías/catálogos vigentes de la Unidad de Análisis Financiero (UAF). La información será tratada con confidencialidad, conforme a la Ley 81 de 2019 y su reglamentación.",
+      },
+      {
+        id: "static_campos_obligatorios",
+        label: "",
+        type: "static",
+        hint: "Todos los campos son obligatorios. Si algún dato no aplica, registre N/A en el campo correspondiente.",
+      },
+      {
+        id: "iniciales",
+        label: "Iniciales (como en el PDF impreso)",
+        type: "text",
+        placeholder: "Opcional en digital; N/A si no aplica",
+      },
+    ],
+  },
+  {
+    id: "como_conocio",
+    title: "INDIQUE COMO CONOCIÓ A LA EMPRESA",
+    description:
+      "Marque las opciones que apliquen, como en la primera tabla del formulario impreso.",
+    pdfPage: "Pág. 1",
     fields: [
       {
         id: "conocio_mercadeo",
@@ -45,12 +83,12 @@ export const KYB_STEPS: KybStep[] = [
       },
       {
         id: "conocio_referencia_interna",
-        label: "Referencia interna",
+        label: "Referencia Interna",
         type: "checkbox",
       },
       {
         id: "conocio_cliente_antiguo",
-        label: "Cliente antiguo",
+        label: "Cliente Antiguo",
         type: "checkbox",
       },
       {
@@ -60,12 +98,12 @@ export const KYB_STEPS: KybStep[] = [
       },
       {
         id: "conocio_referencia_externa",
-        label: "Referencia externa",
+        label: "Referencia Externa",
         type: "checkbox",
       },
       {
         id: "conocio_otro_texto",
-        label: "Otro (especifique)",
+        label: "Otro:",
         type: "text",
         placeholder: "N/A si no aplica",
       },
@@ -73,55 +111,56 @@ export const KYB_STEPS: KybStep[] = [
   },
   {
     id: "identificacion_cliente",
-    title: "Identificación del cliente",
+    title: "IDENTIFICACIÓN DEL CLIENTE",
     description:
-      "Datos de la persona jurídica según constitución y operación (pág. 1 del PDF).",
+      "Nombre de razón social y comercial, tipo de persona jurídica, sociedad, actividad, bolsa, capital, países, identificación tributaria y documento de identidad, persona de contacto.",
+    pdfPage: "Pág. 1",
     fields: [
       {
         id: "razon_social",
-        label: "Nombre de razón social",
+        label: "Nombre de Razón Social",
         type: "text",
       },
       {
         id: "razon_comercial",
-        label: "Nombre de razón comercial",
+        label: "Nombre de Razón Comercial",
         type: "text",
       },
       {
         id: "pj_nacional_extranjera",
-        label: "Clasificación",
+        label: "Persona jurídica (marque la que corresponda)",
         type: "select",
         options: [
           { value: "", label: "Seleccionar…" },
-          { value: "pj_nacional", label: "Persona jurídica nacional" },
-          { value: "pj_extranjera", label: "Persona jurídica extranjera" },
+          { value: "pj_nacional", label: "Persona Jurídica Nacional" },
+          { value: "pj_extranjera", label: "Persona Jurídica Extranjera" },
         ],
       },
       {
         id: "operativa_estado",
-        label: "Operativa",
+        label: "Estado operativo",
         type: "select",
         options: [
           { value: "", label: "Seleccionar…" },
           { value: "operativa", label: "Operativa" },
-          { value: "no_operativa", label: "No operativa" },
+          { value: "no_operativa", label: "No Operativa" },
         ],
       },
       {
         id: "tipo_sociedad",
-        label: "Tipo de sociedad",
+        label: "Tipo de Sociedad",
         type: "select",
         options: [
           { value: "", label: "Seleccionar…" },
-          { value: "anonima", label: "Sociedad anónima" },
-          { value: "civil", label: "Sociedad civil" },
+          { value: "anonima", label: "Sociedad Anónima" },
+          { value: "civil", label: "Sociedad Civil" },
           { value: "fundacion", label: "Fundación" },
           { value: "otros", label: "Otros" },
         ],
       },
       {
         id: "tipo_sociedad_otros_especifique",
-        label: "Si eligió «Otros», especifique",
+        label: "Especifique (si Tipo de Sociedad = Otros)",
         type: "textarea",
         placeholder: "N/A si no aplica",
       },
@@ -138,96 +177,98 @@ export const KYB_STEPS: KybStep[] = [
       },
       {
         id: "cotiza_bolsa",
-        label: "¿Esta compañía cotiza en la bolsa?",
+        label: "Esta Compañía cotiza en la bolsa",
         type: "yesno",
       },
       {
         id: "forma_capital",
-        label: "Forma de capital",
+        label: "Forma de Capital",
         type: "select",
         options: [
           { value: "", label: "Seleccionar…" },
-          { value: "nominativas", label: "Acciones nominativas" },
-          { value: "portador", label: "Acciones al portador" },
-          { value: "cuotas", label: "Cuotas de participación" },
+          { value: "nominativas", label: "Acciones Nominativas" },
+          { value: "portador", label: "Acciones al Portador" },
+          { value: "cuotas", label: "Cuotas de Participación" },
         ],
       },
       {
         id: "fecha_constitucion",
-        label: "Fecha de constitución",
+        label: "Fecha de Constitución",
         type: "text",
         placeholder: "DD/MM/AAAA",
       },
       {
         id: "pais_opera",
-        label: "País donde opera",
+        label: "País donde Opera",
         type: "text",
       },
       {
         id: "pais_constitucion",
-        label: "País de constitución",
+        label: "País de Constitución",
         type: "text",
       },
       {
         id: "pais_tributa_ingresos",
-        label: "País donde tributa sus ingresos",
+        label: "País donde Tributa sus ingresos",
         type: "text",
       },
       {
         id: "no_identificacion_tributaria",
-        label: "N.º de identificación tributaria",
+        label: "No. De identificación tributaria",
         type: "text",
       },
       {
         id: "doc_identidad_tipo",
-        label: "Documento de identidad (tipo)",
+        label: "Documento de Identidad (escoja una opción)",
         type: "select",
         options: [
           { value: "", label: "Seleccionar…" },
-          { value: "ruc_empresarial", label: "RUC empresarial" },
-          { value: "ficha_documento", label: "Ficha o documento" },
-          { value: "aviso_operaciones", label: "Aviso de operaciones" },
+          { value: "ruc_empresarial", label: "RUC Empresarial" },
+          { value: "ficha_documento", label: "Ficha o Documento" },
+          { value: "aviso_operaciones", label: "Aviso de Operaciones" },
           { value: "nit", label: "NIT" },
           { value: "otro_id", label: "Otro ID" },
         ],
       },
       {
         id: "doc_identidad_otro",
-        label: "Si «Otro ID», especifique",
+        label: "Otro ID — especifique",
         type: "text",
         placeholder: "N/A",
       },
       {
         id: "doc_identidad_numero",
-        label: "N.º de documento",
+        label: "No. de Documento",
         type: "text",
       },
       {
         id: "persona_contacto_nombre",
-        label: "Nombre de persona contacto",
+        label: "Nombre de Persona Contacto",
         type: "text",
       },
       {
         id: "persona_contacto_telefono",
-        label: "Teléfono (contacto)",
+        label: "Teléfono",
         type: "tel",
       },
       {
         id: "persona_contacto_correo",
-        label: "Correo (contacto)",
+        label: "Correo",
         type: "email",
       },
     ],
   },
   {
     id: "datos_generales",
-    title: "Datos generales",
-    description: "Dirección comercial y datos de contacto adicionales.",
+    title: "DATOS GENERALES",
+    description:
+      "Dirección comercial, auxiliar de facturación/correspondencia y datos de contacto.",
+    pdfPage: "Pág. 1",
     fields: [
       {
         id: "direccion_comercial",
         label:
-          "Dirección comercial (calle, número, urbanización/edificio, piso, local, etc.)",
+          "Dirección Comercial (Calle, Número, Urbanización/Edificio, Piso, Local, etc.)",
         type: "textarea",
       },
       {
@@ -248,7 +289,7 @@ export const KYB_STEPS: KybStep[] = [
       {
         id: "direccion_auxiliar",
         label:
-          "Dirección auxiliar de facturación o correspondencia (si es distinta)",
+          "Dirección Auxiliar de Facturación o Correspondencia (si es diferente a la anterior)",
         type: "textarea",
         placeholder: "N/A",
       },
@@ -271,9 +312,11 @@ export const KYB_STEPS: KybStep[] = [
   },
   {
     id: "junta_directiva",
-    title: "Gobierno corporativo / junta directiva / consejo fundacional",
+    title:
+      "GOBIERNO CORPORATIVO / JUNTA DIRECTIVA / CONSEJO FUNDACIONAL",
     description:
-      "Hasta cinco miembros (como en el PDF). Si hay menos, use N/A en filas vacías.",
+      "Por cada fila: cargo (Presidente, Vicepresidente, Secretario, Tesorero, Director u Otro), nombre, apellidos, nacionalidad, No. de identificación y dirección. Si no aplica, N/A.",
+    pdfPage: "Pág. 1–2",
     fields: [
       ...[1, 2, 3, 4, 5].flatMap(
         (n) =>
@@ -314,7 +357,7 @@ export const KYB_STEPS: KybStep[] = [
             },
             {
               id: `junta_${n}_identificacion`,
-              label: "N.º de identificación",
+              label: "No. De identificación",
               type: "text" as const,
             },
             {
@@ -328,17 +371,19 @@ export const KYB_STEPS: KybStep[] = [
   },
   {
     id: "representante_legal",
-    title: "Representante legal o apoderado",
-    description: "Datos del representante según el PDF.",
+    title: "REPRESENTANTE LEGAL O APODERADO",
+    description:
+      "Nombre, identificación, nacionalidad, dirección, teléfono, correo, profesión, actividad económica, país de residencia y declaración sobre investigaciones.",
+    pdfPage: "Pág. 2",
     fields: [
       {
         id: "rep_nombre_apellido",
-        label: "Nombre y apellido",
+        label: "Nombre y Apellido",
         type: "text",
       },
       {
         id: "rep_identificacion",
-        label: "N.º identificación",
+        label: "No. Identificación",
         type: "text",
       },
       {
@@ -363,23 +408,23 @@ export const KYB_STEPS: KybStep[] = [
       },
       {
         id: "rep_profesion",
-        label: "Profesión / ocupación",
+        label: "Profesión / Ocupación",
         type: "text",
       },
       {
         id: "rep_actividad_economica",
-        label: "Actividad económica",
+        label: "Actividad Económica",
         type: "text",
       },
       {
         id: "rep_pais_residencia",
-        label: "País de residencia",
+        label: "País de Residencia",
         type: "text",
       },
       {
         id: "rep_investigacion_ilicita",
         label:
-          "¿El representante, apoderado o la sociedad son o han sido objeto de investigación o condena por actividad ilícita, PBC/FT, fraude o corrupción (art. 254-A CP), etc.?",
+          "Indique si el Representante Legal, Apoderado o la Sociedad misma son o han sido objeto de investigación, indagación, condena por actividad ilícita, delitos de blanqueo de capitales o financiamiento de terrorismo, fraude o corrupción pública o algunos de los delitos establecidos en el ART.254-A del código penal.",
         type: "yesno",
       },
       {
@@ -392,21 +437,28 @@ export const KYB_STEPS: KybStep[] = [
   },
   {
     id: "beneficiarios_finales",
-    title: "Accionistas o beneficiario final",
+    title: "ACCIONISTAS O BENEFICIARIO FINAL",
     description:
-      "Hasta tres filas como en el PDF. Personas naturales o jurídicas con control o influencia significativa.",
+      "ACCIONISTAS, DUEÑOS, SOCIOS O ASOCIADOS — hasta tres filas en el impreso.",
+    pdfPage: "Pág. 2",
     fields: [
+      {
+        id: "static_bf_definicion",
+        label: "",
+        type: "static",
+        hint: "Persona o personas naturales que, directa o indirectamente, poseen, controlan y/o ejercen influencia significativa sobre la relación de cuenta, relación contractual y/o de negocios o la persona natural en cuyo nombre o beneficio se realiza una transacción, lo cual incluye también a las personas naturales que ejercen control final sobre una persona jurídica.",
+      },
       ...[1, 2, 3].flatMap(
         (n) =>
           [
             {
               id: `__h_bf_${n}`,
-              label: `Beneficiario final / accionista ${n}`,
+              label: `Fila ${n} — Beneficiario final / accionista`,
               type: "heading" as const,
             },
             {
               id: `bf_${n}_tipo_persona`,
-              label: "Tipo de persona",
+              label: "Tipo de Persona (N / J)",
               type: "select" as const,
               options: [
                 { value: "", label: "Seleccionar…" },
@@ -416,13 +468,13 @@ export const KYB_STEPS: KybStep[] = [
             },
             {
               id: `bf_${n}_fecha_nac_const`,
-              label: "Fecha de nacimiento / constitución",
+              label: "Fecha de Nacimiento/constitución",
               type: "text" as const,
               placeholder: "DD/MM/AAAA o N/A",
             },
             {
               id: `bf_${n}_nombre_razon`,
-              label: "Nombre completo / razón social",
+              label: "Nombre Completo / Razón Social",
               type: "text" as const,
             },
             {
@@ -437,17 +489,17 @@ export const KYB_STEPS: KybStep[] = [
             },
             {
               id: `bf_${n}_pais_nacimiento`,
-              label: "País de nacimiento",
+              label: "País de Nacimiento",
               type: "text" as const,
             },
             {
               id: `bf_${n}_fecha_condicion_bf`,
-              label: "Fecha en que adquiere condición de beneficiario final",
+              label: "Fecha en la que adquiere condición de Beneficiario final",
               type: "text" as const,
             },
             {
               id: `bf_${n}_pct_participacion`,
-              label: "% de participación en la empresa",
+              label: "% De Participación en la empresa",
               type: "text" as const,
             },
             {
@@ -461,36 +513,39 @@ export const KYB_STEPS: KybStep[] = [
   },
   {
     id: "perfil_financiero",
-    title: "Perfil financiero",
+    title: "PERFIL FINANCIERO",
     description:
-      "Declaración de origen lícito de actividades (según PDF). Montos en USD.",
+      "Declaración y montos en USD como en el formulario impreso (después sigue «Medio de pago» en el PDF).",
+    pdfPage: "Pág. 2",
     fields: [
       {
         id: "static_origen_licito",
         label: "",
         type: "static",
-        hint: "Declaro que todas las actividades que ejerzo son de origen lícito y legal.",
+        hint: "DECLARO QUE TODAS LAS ACTIVIDADES QUE EJERZO SON DE ORIGEN LICITO Y LEGAL.",
       },
       {
         id: "ingresos_mensuales_usd",
-        label: "Ingresos mensuales aproximados (USD)",
+        label: "Ingresos mensuales aproximados son de: (USD)",
         type: "text",
       },
       {
         id: "ingresos_anuales_usd",
-        label: "Ingresos anuales aproximados (USD)",
+        label: "Ingresos anuales aproximados son de: (USD)",
         type: "text",
       },
     ],
   },
   {
     id: "referencias",
-    title: "Referencias",
-    description: "Referencia bancaria, comercial o personal (una fila principal).",
+    title: "REFERENCIAS",
+    description:
+      "Tipo de referencia, datos de contacto y declaración sobre investigaciones.",
+    pdfPage: "Pág. 3",
     fields: [
       {
         id: "ref_tipo",
-        label: "Tipo de referencia",
+        label: "Tipo de Referencia",
         type: "select",
         options: [
           { value: "", label: "Seleccionar…" },
@@ -501,18 +556,18 @@ export const KYB_STEPS: KybStep[] = [
       },
       {
         id: "ref_nombre_entidad",
-        label: "Nombre de la persona / empresa / banco",
+        label: "Nombre de la Persona/Empresa/Banco",
         type: "text",
       },
       {
         id: "ref_contacto_entidad",
-        label: "Nombre de la persona de contacto (empresa/banco)",
+        label: "Nombre de la Persona de Contacto (para Empresas/Banco)",
         type: "text",
         placeholder: "N/A",
       },
       {
         id: "ref_fecha",
-        label: "Fecha de la referencia",
+        label: "Fecha de la Referencia",
         type: "text",
       },
       {
@@ -533,7 +588,7 @@ export const KYB_STEPS: KybStep[] = [
       {
         id: "ref_investigacion_cliente",
         label:
-          "¿Ha sido objeto de investigación, indagación o condena por ilícitos PBC/FT, fraude o corrupción?",
+          "Indique si Ud. Ha sido objeto de investigación, indagación o condena por actividad ilícita, delitos de blanqueo de capitales o financiamiento de terrorismo, fraude o corrupción pública.",
         type: "yesno",
       },
       {
@@ -546,13 +601,14 @@ export const KYB_STEPS: KybStep[] = [
   },
   {
     id: "producto_medios_pago",
-    title: "Medios de pago y producto (préstamo)",
+    title: "DOCUMENTOS PARA ENTREGAR — Medio de pago y préstamo",
     description:
-      "Sección del PDF sobre descuentos, transferencias, préstamo y frecuencia. Ajuste si el producto no aplica.",
+      "En el PDF impreso esta sección aparece como «DOCUMENTOS PARA ENTREGAR» con medios de pago, motivo del préstamo, frecuencia, monto y tipo. Use N/A si no aplica.",
+    pdfPage: "Pág. 3",
     fields: [
       {
         id: "medio_descuento_directo",
-        label: "Descuento directo",
+        label: "Descuento Directo",
         type: "checkbox",
       },
       {
@@ -572,7 +628,7 @@ export const KYB_STEPS: KybStep[] = [
       },
       {
         id: "prestamo_motivo",
-        label: "Motivo del préstamo",
+        label: "Motivo del Préstamo",
         type: "textarea",
         placeholder: "N/A si no aplica",
       },
@@ -598,7 +654,7 @@ export const KYB_STEPS: KybStep[] = [
       },
       {
         id: "prestamo_monto_anual",
-        label: "Monto anual del préstamo",
+        label: "MONTO ANUAL DEL PRÉSTAMO",
         type: "select",
         options: [
           { value: "", label: "Seleccionar…" },
@@ -617,7 +673,7 @@ export const KYB_STEPS: KybStep[] = [
       },
       {
         id: "prestamo_tipo",
-        label: "Tipo de préstamo",
+        label: "TIPO DE PRÉSTAMO",
         type: "select",
         options: [
           { value: "", label: "Seleccionar…" },
@@ -632,18 +688,27 @@ export const KYB_STEPS: KybStep[] = [
   },
   {
     id: "pep",
-    title: "Persona expuesta políticamente (PEP)",
-    description: "Definición según Ley 23/2015 y normativa aplicable (resumen en el PDF).",
+    title: "PERSONA EXPUESTA POLÍTICAMENTE (PEP)",
+    description:
+      "Definición, pregunta principal y datos del PEP o familiar/estrecho colaborador (solo si aplica).",
+    pdfPage: "Pág. 3",
     fields: [
+      {
+        id: "static_pep_definicion",
+        label: "",
+        type: "static",
+        hint: "DEFINICIÓN — La legislación panameña define como Persona Expuesta Políticamente (PEP) a toda persona natural, nacional o extranjera, que desempeñe o haya desempeñado funciones públicas de alto nivel o con mando y jurisdicción en un Estado, así como a quienes se les haya confiado funciones importantes por una organización internacional. El concepto de PEP se extiende a sus familiares cercanos (cónyuge o pareja, padres, hermanos e hijos) y a sus estrechos colaboradores, conforme a la Ley 23 de 2015, artículo 4, numeral 18, y la normativa aplicable. Lo anteriormente expuesto no persigue cubrir personas de rango medio o más bajo que las categorías señaladas.",
+      },
       {
         id: "pep_alguno_catalogado",
         label:
-          "¿Alguna persona natural del formulario (dignatarios, directores, representante, apoderado y/o beneficiarios finales) es PEP o familiar/cercano de PEP, según Ley 23?",
+          "¿Alguna de las personas naturales incluidas en el presente formulario (dignatarios, directores, representante legal, apoderado y/o beneficiario(s) final(es)) desempeña o ha desempeñado en los últimos dos (2) años un cargo público que le catalogue como PEP, o es familiar cercano (cónyuge o pareja, padres, hermanos e hijos) o estrecho colaborador de una persona PEP, conforme a la Ley 23 de 2015 (artículo 4, numeral 18) y normativa aplicable?",
         type: "yesno",
       },
       {
         id: "__h_pep_datos",
-        label: "Si respondió «Sí», datos del PEP o familiar/colaborador",
+        label:
+          "DATOS GENERALES DEL PEP O DEL FAMILIAR/ESTRECHO COLABORADOR (Solo si respondió SI)",
         type: "heading",
       },
       {
@@ -678,13 +743,13 @@ export const KYB_STEPS: KybStep[] = [
       },
       {
         id: "pep_cedula_pasaporte",
-        label: "# Cédula o pasaporte",
+        label: "# Cédula o Pasaporte",
         type: "text",
         placeholder: "N/A",
       },
       {
         id: "pep_periodo_cargo",
-        label: "Periodo de cargo",
+        label: "Periodo de Cargo",
         type: "text",
         placeholder: "N/A",
       },
@@ -702,7 +767,7 @@ export const KYB_STEPS: KybStep[] = [
       },
       {
         id: "pep_parentesco",
-        label: "Parentesco o relación",
+        label: "Parentesco o Relación:",
         type: "textarea",
         placeholder: "N/A",
       },
@@ -710,29 +775,30 @@ export const KYB_STEPS: KybStep[] = [
   },
   {
     id: "documentacion_entregar",
-    title: "Documentación a entregar y observaciones",
+    title: "DOCUMENTOS PARA ENTREGAR — Documentación de soporte",
     description:
-      "Checklist del PDF. La carga de archivos se puede integrar después.",
+      "Checklist de la página 4 del PDF (cédulas, aviso de operaciones, pacto social, etc.) y observaciones. La carga de archivos se puede integrar después.",
+    pdfPage: "Pág. 4",
     fields: [
       {
         id: "doc_cedulas_dignatarios",
         label:
-          "Cédula o pasaporte de dignatarios, directores, beneficiario final, representante, apoderado, protector, administrador o consejero",
+          "Cédula o pasaporte de Dignatarios, Directores, Beneficiario Final, Representante Legal, Apoderado, Protector, Administrador o consejero.",
         type: "checkbox",
       },
       {
         id: "doc_aviso_operaciones",
-        label: "Copia de certificado de aviso de operaciones o equivalente",
+        label: "Copia de certificado de aviso de operaciones o equivalente.",
         type: "checkbox",
       },
       {
         id: "doc_pacto_social",
-        label: "Copia de pacto social y sus adendas",
+        label: "Copia de Pacto Social y sus adendas.",
         type: "checkbox",
       },
       {
         id: "doc_origen_fondos",
-        label: "Origen de fondos (declaración de renta, estados financieros, etc.)",
+        label: "Origen de fondos (declaración de renta, estados financieros, etc.).",
         type: "checkbox",
       },
       {
@@ -743,12 +809,12 @@ export const KYB_STEPS: KybStep[] = [
       {
         id: "doc_factura_servicios",
         label:
-          "Factura de servicio público (luz, agua, teléfono; antigüedad no mayor a 3 meses)",
+          "Factura de Servicios Público (Estado de cuenta de luz, agua, teléfono, con una antigüedad no mayor a tres meses)",
         type: "checkbox",
       },
       {
         id: "observaciones",
-        label: "Observaciones o comentarios adicionales",
+        label: "OBSERVACIONES O COMENTARIOS ADICIONALES",
         type: "textarea",
         placeholder: "N/A",
       },
@@ -756,19 +822,20 @@ export const KYB_STEPS: KybStep[] = [
   },
   {
     id: "declaracion",
-    title: "Declaración del cliente",
+    title: "FIRMA Y DECLARACIÓN DEL CLIENTE",
     description:
-      "Texto conforme al PDF. La firma manuscrita/digital puede añadirse en una fase posterior.",
+      "Texto legal del PDF. La firma manuscrita o electrónica puede añadirse en una fase posterior.",
+    pdfPage: "Pág. 4",
     fields: [
       {
         id: "static_declaracion",
         label: "",
         type: "static",
-        hint: "Declaro de manera voluntaria que las afirmaciones de este formulario son correctas y autorizo a Grupo Punto Pago a verificar la información. Me obligo a informar cambios en un plazo no mayor a 30 días.",
+        hint: "Declaro de manera voluntaria, libre de cualquier error, fuerza o dolo que todas las afirmaciones y respuestas que he manifestado en este documento son correctas, veraces, completas y autorizo al GRUPO PUNTO PAGO a verificar toda la información detallada. Además, me obligo a informar al GRUPO PUNTO PAGO de cualquier cambio o actualización de información que pueda afectar las afirmaciones y respuestas anotadas en este formulario, en un término no mayor a 30 días.",
       },
       {
         id: "decl_nombre_cliente",
-        label: "Nombre del cliente (quien declara)",
+        label: "Nombre del cliente",
         type: "text",
       },
       {
