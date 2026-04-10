@@ -320,11 +320,13 @@ export const KYB_STEPS: KybStep[] = [
         id: "telefonos_generales",
         label: "Teléfono(s)",
         type: "text",
+        hint: "Mismo prefijo que en identificación del cliente. Fijo o celular (8 dígitos tras +507). Varios números: péguelos con coma o escríbalos en el campo completo.",
       },
       {
         id: "celulares_generales",
         label: "Celular(es)",
         type: "text",
+        hint: "Prefijo según país de la empresa; suelen ser celulares (ej. 6…). Varios números: igual que en teléfonos, con coma.",
       },
       {
         id: "email_generales",

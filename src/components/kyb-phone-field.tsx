@@ -31,12 +31,18 @@ export function KybPhoneField({
   formatErr,
   onTypingKey,
 }: Props) {
+  const hasMultiNumberSeparators = useMemo(
+    () => Boolean(value.trim()) && /[,;/|]/.test(value),
+    [value],
+  );
+
   const internationalMismatch = useMemo(() => {
     if (!splitPrefix || !dialDigits || !value.trim()) return false;
+    if (hasMultiNumberSeparators) return true;
     const allD = normalizePhoneDigits(value);
     const dialN = normalizePhoneDigits(dialDigits);
     return !allD.startsWith(dialN);
-  }, [value, dialDigits, splitPrefix]);
+  }, [value, dialDigits, splitPrefix, hasMultiNumberSeparators]);
 
   const useSplit =
     Boolean(splitPrefix && dialDigits) && !internationalMismatch;
@@ -116,9 +122,18 @@ export function KybPhoneField({
           inputMode="numeric"
           autoComplete="tel-national"
           className={`min-w-0 flex-1 ${inputClass}`}
-          placeholder={placeholderText ?? "Solo dígitos locales"}
+          placeholder={
+            placeholderText ?? "Fijo o celular, 8 dígitos locales"
+          }
           value={nationalDigits}
           onChange={(e) => onNationalChange(e.target.value)}
+          onPaste={(e) => {
+            const t = e.clipboardData.getData("text");
+            if (/[,;/|]/.test(t)) {
+              e.preventDefault();
+              onChange(t.trim());
+            }
+          }}
           onKeyDown={onTypingKey}
           aria-invalid={invalid || undefined}
         />

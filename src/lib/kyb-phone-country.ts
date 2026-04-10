@@ -4,6 +4,8 @@ import type { FormState } from "@/lib/kyb-field-complete";
 /** Teléfonos donde mostramos prefijo fijo + parte nacional (un número típico). */
 export const PHONE_SPLIT_PREFIX_FIELD_IDS = new Set([
   "persona_contacto_telefono",
+  "telefonos_generales",
+  "celulares_generales",
   "rep_telefono",
   "ref_telefono",
 ]);
