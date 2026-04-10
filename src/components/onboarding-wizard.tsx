@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { KybCombobox } from "@/components/kyb-combobox";
 import { KybDateField } from "@/components/kyb-date-field";
 import { KybLanding } from "@/components/kyb-landing";
+import { KybAddressPaField } from "@/components/kyb-address-pa-field";
 import { KybPhoneField } from "@/components/kyb-phone-field";
 import { PAIS_OPTIONS } from "@/data/paises";
 import { KYB_ACTIVITY_NOT_LISTED_VALUE } from "@/lib/kyb-activity-extra-option";
@@ -24,6 +25,7 @@ import {
   getDialDigitsForPhoneField,
   PHONE_SPLIT_PREFIX_FIELD_IDS,
 } from "@/lib/kyb-phone-country";
+import { showPanamaCommercialAddressLookup } from "@/lib/kyb-panama-address-eligibility";
 import type { KybField, KybStep } from "@/lib/kyb-steps";
 import {
   buildEmptyFormState,
@@ -561,6 +563,26 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
             placeholder={field.placeholder}
             hint={field.hint}
             formatErr={formatErr}
+            onTypingKey={typingKey}
+          />
+        </div>
+      );
+      return wrapField(field, inner);
+    }
+
+    if (
+      field.id === "direccion_comercial" &&
+      field.type === "textarea" &&
+      showPanamaCommercialAddressLookup(values)
+    ) {
+      const inner = (
+        <div key={field.id} className="block">
+          <KybAddressPaField
+            label={field.label}
+            hint={field.hint}
+            value={values[field.id] ?? ""}
+            onChange={(v) => setField(field.id, v)}
+            inputClass={inputClass}
             onTypingKey={typingKey}
           />
         </div>
