@@ -1,2 +1,3 @@
-# Backend Python en otro deploy (Railway, Fly, etc.); evita que Vercel instale deps Python aquí.
-api/
+# Backend Python en la raíz (otro deploy). Solo /api/ en raíz — no usar "api/" suelto o también
+# se ignoraría Next.js en src/app/api/ (listados KYB dejarían de existir en Vercel).
+/api/
