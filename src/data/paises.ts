@@ -197,10 +197,11 @@ const RESTO = [
   "Zimbabue",
 ];
 
-const PANAMA = "Panamá";
+/** Valor guardado en el formulario cuando el país es Panamá */
+export const PAIS_PANAMA = "Panamá";
 
 export const PAIS_OPTIONS: { value: string; label: string }[] = [
-  { value: PANAMA, label: PANAMA },
+  { value: PAIS_PANAMA, label: PAIS_PANAMA },
   ...[...RESTO].sort((a, b) => a.localeCompare(b, "es")).map((label) => ({
     value: label,
     label,

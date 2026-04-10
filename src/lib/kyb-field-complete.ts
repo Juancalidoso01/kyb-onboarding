@@ -1,4 +1,10 @@
 import { KYB_ACTIVITY_NOT_LISTED_VALUE } from "@/lib/kyb-activity-extra-option";
+import {
+  expectPanamaPhoneForField,
+  isValidEmailFormat,
+  PHONE_TEXT_FIELD_IDS,
+  validatePhoneValue,
+} from "@/lib/kyb-format-validation";
 import type { KybField } from "@/lib/kyb-steps";
 import { isValidPanamaDate } from "@/lib/kyb-date";
 
@@ -55,6 +61,14 @@ export function isFieldComplete(field: KybField, values: FormState): boolean {
     return v.trim().length > 0;
   }
 
+  if (PHONE_TEXT_FIELD_IDS.has(field.id)) {
+    if (!v.trim()) return false;
+    return validatePhoneValue(
+      v,
+      expectPanamaPhoneForField(field.id, values),
+    );
+  }
+
   switch (field.type) {
     case "checkbox":
       return v === "true";
@@ -68,7 +82,13 @@ export function isFieldComplete(field: KybField, values: FormState): boolean {
     case "date":
       return isValidPanamaDate(v);
     case "email":
+      return v.trim().length > 0 && isValidEmailFormat(v);
     case "tel":
+      if (!v.trim()) return false;
+      return validatePhoneValue(
+        v,
+        expectPanamaPhoneForField(field.id, values),
+      );
     case "text":
     case "textarea":
       return v.trim().length > 0;

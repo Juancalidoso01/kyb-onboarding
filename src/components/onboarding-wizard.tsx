@@ -14,6 +14,10 @@ import {
 } from "@/hooks/use-kyb-sheet-options";
 import type { FormState } from "@/lib/kyb-field-complete";
 import { isFieldComplete } from "@/lib/kyb-field-complete";
+import {
+  getContactFormatError,
+  PHONE_TEXT_FIELD_IDS,
+} from "@/lib/kyb-format-validation";
 import type { KybField, KybStep } from "@/lib/kyb-steps";
 import {
   buildEmptyFormState,
@@ -58,11 +62,42 @@ function stepVariantsFor(reduce: boolean) {
 
 const fieldStagger = 0.035;
 
-function FieldCheck({ show }: { show: boolean }) {
+function FieldFormatStatus({
+  complete,
+  error,
+}: {
+  complete: boolean;
+  error: string | null;
+}) {
   return (
     <div className="flex w-10 shrink-0 items-center justify-center self-stretch">
       <AnimatePresence mode="wait">
-        {show ? (
+        {error ? (
+          <motion.div
+            key="err"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 400, damping: 24 }}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500/15 ring-1 ring-red-500/30"
+            title={error}
+            role="img"
+            aria-label={error}
+          >
+            <svg
+              className="h-4 w-4 text-red-600"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </motion.div>
+        ) : complete ? (
           <motion.div
             key="ok"
             initial={{ scale: 0, opacity: 0 }}
@@ -270,10 +305,11 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       return inner;
     }
     const complete = isFieldComplete(field, values);
+    const formatErr = getContactFormatError(field, values);
     return (
       <div className="flex gap-1 sm:gap-2">
         <div className="min-w-0 flex-1">{inner}</div>
-        <FieldCheck show={complete} />
+        <FieldFormatStatus complete={complete} error={formatErr} />
       </div>
     );
   };
@@ -444,6 +480,16 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       return wrapField(field, inner);
     }
 
+    const formatErr = getContactFormatError(field, values);
+    const contactInputInvalid =
+      formatErr !== null &&
+      (field.type === "email" ||
+        field.type === "tel" ||
+        PHONE_TEXT_FIELD_IDS.has(field.id));
+    const fieldInputClass = contactInputInvalid
+      ? `${inputClass} border-red-400/95 focus:border-red-500 focus:ring-red-500/20`
+      : inputClass;
+
     const inner = (
       <label key={field.id} className="block">
         <span
@@ -490,16 +536,22 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
         ) : (
           <input
             type={field.type === "email" ? "email" : field.type === "tel" ? "tel" : "text"}
-            className={inputClass}
+            className={fieldInputClass}
             placeholder={field.placeholder}
             value={values[field.id] ?? ""}
             onChange={(e) => setField(field.id, e.target.value)}
             onKeyDown={typingKey}
             required={field.id === NOMBRE_DILIGENCIA_FIELD_ID}
+            aria-invalid={contactInputInvalid || undefined}
           />
         )}
         {field.hint ? (
           <span className="mt-1.5 block text-xs text-slate-500">{field.hint}</span>
+        ) : null}
+        {formatErr ? (
+          <span className="mt-1.5 block text-xs font-medium text-red-600" role="alert">
+            {formatErr}
+          </span>
         ) : null}
       </label>
     );
