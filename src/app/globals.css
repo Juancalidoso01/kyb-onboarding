@@ -166,6 +166,21 @@ body {
   left: 0;
 }
 
+/* Aro fino alrededor del puntero (estilo puntopago.net) */
+.pp-cursor-ring {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--color-brand) 92%, #fff);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-brand) 25%, transparent),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  background: transparent;
+  opacity: 0;
+  will-change: transform;
+  transition: opacity 0.12s ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pp-blob-a,
   .pp-blob-b,
