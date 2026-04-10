@@ -8,7 +8,10 @@ export const FALLBACK_ACTIVIDADES: { value: string; label: string }[] = [
   { value: "Servicios profesionales", label: "Servicios profesionales" },
   { value: "Industria / manufactura", label: "Industria / manufactura" },
   { value: "Construcción", label: "Construcción" },
-  { value: "Otra actividad (detallar en observaciones)", label: "Otra actividad (detallar en observaciones)" },
+  {
+    value: "Otra actividad (detallar en observaciones)",
+    label: "Otra actividad (detallar en observaciones)",
+  },
 ];
 
 export const FALLBACK_PROFESIONES: { value: string; label: string }[] = [

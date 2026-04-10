@@ -16,6 +16,15 @@ function norm(s: string): string {
     .replace(/\p{M}/gu, "");
 }
 
+/** Cada palabra del texto de búsqueda debe aparecer en la etiqueta (más tolerante que un solo substring). */
+function labelMatchesQuery(label: string, value: string, queryNorm: string): boolean {
+  if (!queryNorm) return true;
+  const hay = `${norm(label)} ${norm(value)}`;
+  const words = queryNorm.split(/\s+/).filter((w) => w.length > 0);
+  if (words.length === 0) return true;
+  return words.every((w) => hay.includes(w));
+}
+
 function isOptDisabled(o: ComboboxOption): boolean {
   return Boolean(o.disabled) || o.value.startsWith("__section_");
 }
@@ -61,9 +70,7 @@ export function KybCombobox({
   const filtered = useMemo(() => {
     const q = norm(query.trim());
     if (!q) return options;
-    return options.filter(
-      (o) => norm(o.label).includes(q) || norm(o.value).includes(q),
-    );
+    return options.filter((o) => labelMatchesQuery(o.label, o.value, q));
   }, [options, query]);
 
   const selectable = useMemo(
