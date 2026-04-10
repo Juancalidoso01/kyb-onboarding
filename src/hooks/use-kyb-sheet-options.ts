@@ -5,6 +5,7 @@ import {
   FALLBACK_ACTIVIDADES,
   FALLBACK_PROFESIONES,
 } from "@/lib/kyb-sheet-csv";
+import { loadSheetOptionsClient } from "@/lib/kyb-sheet-load-client";
 
 export type SheetOptionsKind = "actividades" | "profesiones";
 
@@ -22,16 +23,9 @@ export function useKybSheetOptions(kind: SheetOptionsKind) {
     let cancelled = false;
     const fallback = fallbackFor(kind);
 
-    fetch(`/api/kyb/sheet-options?kind=${kind}`)
-      .then(async (r) => {
-        const j: unknown = await r.json().catch(() => ({}));
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        const opts = (j as { options?: unknown }).options;
-        if (!Array.isArray(opts) || opts.length === 0) return fallback;
-        return opts as { value: string; label: string }[];
-      })
+    loadSheetOptionsClient(kind)
       .then((opts) => {
-        if (!cancelled) setOptions(opts);
+        if (!cancelled) setOptions(opts.length > 0 ? opts : fallback);
       })
       .catch(() => {
         if (!cancelled) setOptions(fallback);
