@@ -9,8 +9,14 @@ api/.pytest_cache/
 api/*.pyc
 api/.env
 
-# Next.js
-web/.next/
-web/out/
-web/node_modules/
-web/.env.local
+# Next.js (app en la raíz del repo)
+.next/
+out/
+node_modules/
+.env.local
+.env*.local
+.vercel
+*.tsbuildinfo
+
+# testing
+/coverage
