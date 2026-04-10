@@ -192,6 +192,9 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       ) {
         next.rep_actividad_economica_especifique = "";
       }
+      if (id === "doc_identidad_tipo" && v !== "otro_id") {
+        next.doc_identidad_otro = "";
+      }
       return next;
     });
   };
@@ -610,6 +613,9 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                         values.rep_actividad_economica ===
                         KYB_ACTIVITY_NOT_LISTED_VALUE
                       );
+                    }
+                    if (f.id === "doc_identidad_otro") {
+                      return values.doc_identidad_tipo === "otro_id";
                     }
                     return true;
                   })

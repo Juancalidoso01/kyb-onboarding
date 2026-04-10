@@ -217,7 +217,7 @@ export const KYB_STEPS: KybStep[] = [
       },
       {
         id: "doc_identidad_otro",
-        label: "Otro ID — especifique",
+        label: "Especifique el documento (solo si eligió «Otro ID» arriba)",
         type: "text",
       },
       {

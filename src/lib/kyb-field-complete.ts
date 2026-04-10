@@ -50,6 +50,11 @@ export function isFieldComplete(field: KybField, values: FormState): boolean {
     return v.trim().length > 0;
   }
 
+  if (field.id === "doc_identidad_otro") {
+    if (values.doc_identidad_tipo !== "otro_id") return true;
+    return v.trim().length > 0;
+  }
+
   switch (field.type) {
     case "checkbox":
       return v === "true";
