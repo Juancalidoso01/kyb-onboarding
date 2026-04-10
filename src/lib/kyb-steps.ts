@@ -15,7 +15,8 @@ export type KybFieldType =
   | "checkbox"
   | "yesno"
   | "heading"
-  | "static";
+  | "static"
+  | "date";
 
 export type KybField = {
   id: string;
@@ -42,14 +43,14 @@ export const KYB_STEPS: KybStep[] = [
     id: "intro_formulario",
     title: "FORMULARIO PERFIL DEL CLIENTE — PERSONA JURÍDICA",
     description:
-      "Indique sus iniciales si aplica. Los textos legales generales están en la introducción.",
+      "Indique quién diligencia este formulario. Los demás pasos se personalizarán con su nombre.",
     pdfPage: "Pág. 1 (encabezado)",
     fields: [
       {
-        id: "iniciales",
-        label: "Iniciales",
+        id: "nombre_diligencia",
+        label: "Nombre completo de quien diligencia este formulario",
         type: "text",
-        placeholder: "Opcional; N/A si no aplica",
+        placeholder: "Ej. María González de León",
       },
     ],
   },
@@ -88,7 +89,6 @@ export const KYB_STEPS: KybStep[] = [
         id: "conocio_otro_texto",
         label: "Otro:",
         type: "text",
-        placeholder: "N/A si no aplica",
       },
     ],
   },
@@ -145,7 +145,6 @@ export const KYB_STEPS: KybStep[] = [
         id: "tipo_sociedad_otros_especifique",
         label: "Especifique (si Tipo de Sociedad = Otros)",
         type: "textarea",
-        placeholder: "N/A si no aplica",
       },
       {
         id: "actividad_empresa",
@@ -156,7 +155,6 @@ export const KYB_STEPS: KybStep[] = [
         id: "pct_actividad",
         label: "% de actividad dedicada (si aplica)",
         type: "text",
-        placeholder: "N/A",
       },
       {
         id: "cotiza_bolsa",
@@ -177,8 +175,7 @@ export const KYB_STEPS: KybStep[] = [
       {
         id: "fecha_constitucion",
         label: "Fecha de Constitución",
-        type: "text",
-        placeholder: "DD/MM/AAAA",
+        type: "date",
       },
       {
         id: "pais_opera",
@@ -217,7 +214,6 @@ export const KYB_STEPS: KybStep[] = [
         id: "doc_identidad_otro",
         label: "Otro ID — especifique",
         type: "text",
-        placeholder: "N/A",
       },
       {
         id: "doc_identidad_numero",
@@ -274,7 +270,6 @@ export const KYB_STEPS: KybStep[] = [
         label:
           "Dirección Auxiliar de Facturación o Correspondencia (si es diferente a la anterior)",
         type: "textarea",
-        placeholder: "N/A",
       },
       {
         id: "telefonos_generales",
@@ -298,7 +293,7 @@ export const KYB_STEPS: KybStep[] = [
     title:
       "GOBIERNO CORPORATIVO / JUNTA DIRECTIVA / CONSEJO FUNDACIONAL",
     description:
-      "Por cada fila: cargo (Presidente, Vicepresidente, Secretario, Tesorero, Director u Otro), nombre, apellidos, nacionalidad, No. de identificación y dirección. Si no aplica, N/A.",
+      "Por cada fila: cargo (Presidente, Vicepresidente, Secretario, Tesorero, Director u Otro), nombre, apellidos, nacionalidad, No. de identificación y dirección.",
     pdfPage: "Pág. 1–2",
     fields: [
       ...[1, 2, 3, 4, 5].flatMap(
@@ -414,7 +409,6 @@ export const KYB_STEPS: KybStep[] = [
         id: "rep_investigacion_explicacion",
         label: "En caso afirmativo, explique",
         type: "textarea",
-        placeholder: "N/A",
       },
     ],
   },
@@ -452,8 +446,7 @@ export const KYB_STEPS: KybStep[] = [
             {
               id: `bf_${n}_fecha_nac_const`,
               label: "Fecha de Nacimiento/constitución",
-              type: "text" as const,
-              placeholder: "DD/MM/AAAA o N/A",
+              type: "date" as const,
             },
             {
               id: `bf_${n}_nombre_razon`,
@@ -478,7 +471,7 @@ export const KYB_STEPS: KybStep[] = [
             {
               id: `bf_${n}_fecha_condicion_bf`,
               label: "Fecha en la que adquiere condición de Beneficiario final",
-              type: "text" as const,
+              type: "date" as const,
             },
             {
               id: `bf_${n}_pct_participacion`,
@@ -546,12 +539,11 @@ export const KYB_STEPS: KybStep[] = [
         id: "ref_contacto_entidad",
         label: "Nombre de la Persona de Contacto (para Empresas/Banco)",
         type: "text",
-        placeholder: "N/A",
       },
       {
         id: "ref_fecha",
         label: "Fecha de la Referencia",
-        type: "text",
+        type: "date",
       },
       {
         id: "ref_anios_relacion",
@@ -578,7 +570,6 @@ export const KYB_STEPS: KybStep[] = [
         id: "ref_investigacion_explicacion",
         label: "En caso afirmativo, explique",
         type: "textarea",
-        placeholder: "N/A",
       },
     ],
   },
@@ -586,7 +577,7 @@ export const KYB_STEPS: KybStep[] = [
     id: "producto_medios_pago",
     title: "DOCUMENTOS PARA ENTREGAR — Medio de pago y préstamo",
     description:
-      "Medios de pago, motivo del préstamo, frecuencia, monto y tipo. Use N/A si no aplica.",
+      "Medios de pago, motivo del préstamo, frecuencia, monto y tipo.",
     pdfPage: "Pág. 3",
     fields: [
       {
@@ -613,7 +604,6 @@ export const KYB_STEPS: KybStep[] = [
         id: "prestamo_motivo",
         label: "Motivo del Préstamo",
         type: "textarea",
-        placeholder: "N/A si no aplica",
       },
       {
         id: "prestamo_frecuencia",
@@ -633,7 +623,6 @@ export const KYB_STEPS: KybStep[] = [
         id: "prestamo_frecuencia_otro",
         label: "Si «Otro», especifique",
         type: "text",
-        placeholder: "N/A",
       },
       {
         id: "prestamo_monto_anual",
@@ -652,7 +641,6 @@ export const KYB_STEPS: KybStep[] = [
         id: "prestamo_monto_otros",
         label: "Si «Otros» en monto, especifique",
         type: "text",
-        placeholder: "N/A",
       },
       {
         id: "prestamo_tipo",
@@ -698,61 +686,51 @@ export const KYB_STEPS: KybStep[] = [
         id: "pep_primer_nombre",
         label: "Primer nombre",
         type: "text",
-        placeholder: "N/A",
       },
       {
         id: "pep_segundo_nombre",
         label: "Segundo nombre",
         type: "text",
-        placeholder: "N/A",
       },
       {
         id: "pep_primer_apellido",
         label: "Primer apellido",
         type: "text",
-        placeholder: "N/A",
       },
       {
         id: "pep_segundo_apellido",
         label: "Segundo apellido",
         type: "text",
-        placeholder: "N/A",
       },
       {
         id: "pep_nacionalidad",
         label: "Nacionalidad",
         type: "text",
-        placeholder: "N/A",
       },
       {
         id: "pep_cedula_pasaporte",
         label: "# Cédula o Pasaporte",
         type: "text",
-        placeholder: "N/A",
       },
       {
         id: "pep_periodo_cargo",
         label: "Periodo de Cargo",
         type: "text",
-        placeholder: "N/A",
       },
       {
         id: "pep_pais",
         label: "País",
         type: "text",
-        placeholder: "N/A",
       },
       {
         id: "pep_funciones_cargo",
         label: "¿Qué funciones o cargo público desempeña o ha desempeñado?",
         type: "textarea",
-        placeholder: "N/A",
       },
       {
         id: "pep_parentesco",
         label: "Parentesco o Relación:",
         type: "textarea",
-        placeholder: "N/A",
       },
     ],
   },
@@ -799,7 +777,6 @@ export const KYB_STEPS: KybStep[] = [
         id: "observaciones",
         label: "OBSERVACIONES O COMENTARIOS ADICIONALES",
         type: "textarea",
-        placeholder: "N/A",
       },
     ],
   },
@@ -824,8 +801,7 @@ export const KYB_STEPS: KybStep[] = [
       {
         id: "decl_fecha",
         label: "Fecha",
-        type: "text",
-        placeholder: "DD/MM/AAAA",
+        type: "date",
       },
     ],
   },
@@ -835,3 +811,6 @@ export const KYB_STEPS: KybStep[] = [
 export function isRenderableValueField(f: KybField): boolean {
   return f.type !== "heading" && f.type !== "static";
 }
+
+/** Primer paso: nombre de quien diligencia (obligatorio para avanzar). */
+export const NOMBRE_DILIGENCIA_FIELD_ID = "nombre_diligencia" as const;

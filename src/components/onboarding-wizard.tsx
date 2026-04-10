@@ -1,23 +1,19 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { useMemo, useState } from "react";
+import type { KeyboardEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { KybDateField } from "@/components/kyb-date-field";
 import { KybLanding } from "@/components/kyb-landing";
+import type { FormState } from "@/lib/kyb-field-complete";
+import { isFieldComplete } from "@/lib/kyb-field-complete";
 import type { KybField, KybStep } from "@/lib/kyb-steps";
-import { isRenderableValueField, KYB_STEPS } from "@/lib/kyb-steps";
-
-type FormState = Record<string, string>;
-
-const initialState = (): FormState => {
-  const s: FormState = {};
-  for (const step of KYB_STEPS) {
-    for (const f of step.fields) {
-      if (!isRenderableValueField(f)) continue;
-      s[f.id] = "";
-    }
-  }
-  return s;
-};
+import {
+  isRenderableValueField,
+  KYB_STEPS,
+  NOMBRE_DILIGENCIA_FIELD_ID,
+} from "@/lib/kyb-steps";
+import { playFieldComplete, playKeyTap, unlockAudio } from "@/lib/kyb-sounds";
 
 function stepVariantsFor(reduce: boolean) {
   if (reduce) {
@@ -49,11 +45,53 @@ function stepVariantsFor(reduce: boolean) {
 
 const fieldStagger = 0.035;
 
+function FieldCheck({ show }: { show: boolean }) {
+  return (
+    <div className="flex w-10 shrink-0 items-center justify-center self-stretch">
+      <AnimatePresence mode="wait">
+        {show ? (
+          <motion.div
+            key="ok"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 400, damping: 24 }}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/15 ring-1 ring-emerald-500/25"
+            aria-hidden
+          >
+            <svg
+              className="h-4 w-4 text-emerald-600"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M20 6L9 17l-5-5" />
+            </svg>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   const reduceMotion = useReducedMotion();
+  const reduce = Boolean(reduceMotion);
   const [started, setStarted] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
-  const [values, setValues] = useState<FormState>(initialState);
+  const [values, setValues] = useState<FormState>(() => {
+    const s: FormState = {};
+    for (const step of KYB_STEPS) {
+      for (const f of step.fields) {
+        if (!isRenderableValueField(f)) continue;
+        s[f.id] = "";
+      }
+    }
+    return s;
+  });
   const [apiStatus, setApiStatus] = useState<string | null>(null);
 
   const step = steps[stepIndex];
@@ -64,6 +102,44 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     () => Math.round(((stepIndex + 1) / steps.length) * 100),
     [stepIndex, steps.length],
   );
+
+  const nombreDiligencia = (values[NOMBRE_DILIGENCIA_FIELD_ID] ?? "").trim();
+  const canLeaveIntro = nombreDiligencia.length > 0;
+
+  const prevCompleteRef = useRef<Record<string, boolean>>({});
+  const lastKeySoundRef = useRef(0);
+
+  useEffect(() => {
+    if (!started) return;
+    const onPointer = () => {
+      unlockAudio();
+    };
+    window.addEventListener("pointerdown", onPointer, { once: true });
+    return () => window.removeEventListener("pointerdown", onPointer);
+  }, [started]);
+
+  useEffect(() => {
+    if (!started) return;
+    for (const st of steps) {
+      for (const f of st.fields) {
+        if (!isRenderableValueField(f)) continue;
+        const c = isFieldComplete(f, values);
+        const prev = prevCompleteRef.current[f.id];
+        if (c && !prev) {
+          playFieldComplete();
+        }
+        prevCompleteRef.current[f.id] = c;
+      }
+    }
+  }, [values, started, steps]);
+
+  const typingKey = useCallback((e: KeyboardEvent) => {
+    if (e.key.length !== 1) return;
+    const now = Date.now();
+    if (now - lastKeySoundRef.current < 42) return;
+    lastKeySoundRef.current = now;
+    playKeyTap();
+  }, []);
 
   const setField = (id: string, v: string) => {
     setValues((prev) => ({ ...prev, [id]: v }));
@@ -105,6 +181,19 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   const inputClass =
     "w-full rounded-xl border border-slate-200/95 bg-white/95 px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition duration-200 placeholder:text-slate-400 focus:border-[#4749B6] focus:ring-2 focus:ring-[#4749B6]/20";
 
+  const wrapField = (field: KybField, inner: React.ReactNode) => {
+    if (field.type === "heading" || field.type === "static") {
+      return inner;
+    }
+    const complete = isFieldComplete(field, values);
+    return (
+      <div className="flex gap-1 sm:gap-2">
+        <div className="min-w-0 flex-1">{inner}</div>
+        <FieldCheck show={complete} />
+      </div>
+    );
+  };
+
   const renderField = (field: KybField) => {
     if (field.type === "heading") {
       return (
@@ -128,7 +217,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     }
 
     if (field.type === "checkbox") {
-      return (
+      const inner = (
         <label
           key={field.id}
           className="group flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200/90 bg-white/95 px-3.5 py-3 shadow-sm transition duration-200 hover:border-[#4749B6]/35 hover:shadow-md"
@@ -142,9 +231,33 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
           <span className="text-sm font-medium text-slate-800">{field.label}</span>
         </label>
       );
+      return wrapField(field, inner);
     }
 
-    return (
+    if (field.type === "date") {
+      const inner = (
+        <label key={field.id} className="block">
+          <span
+            className={`mb-1.5 block font-medium text-[#0B0B13] ${
+              field.label.length > 120 ? "text-xs leading-snug sm:text-sm" : "text-sm"
+            }`}
+          >
+            {field.label}
+          </span>
+          <KybDateField
+            value={values[field.id] ?? ""}
+            onChange={(v) => setField(field.id, v)}
+            className={inputClass}
+          />
+          {field.hint ? (
+            <span className="mt-1.5 block text-xs text-slate-500">{field.hint}</span>
+          ) : null}
+        </label>
+      );
+      return wrapField(field, inner);
+    }
+
+    const inner = (
       <label key={field.id} className="block">
         <span
           className={`mb-1.5 block font-medium text-[#0B0B13] ${
@@ -162,6 +275,8 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
             placeholder={field.placeholder}
             value={values[field.id] ?? ""}
             onChange={(e) => setField(field.id, e.target.value)}
+            onKeyDown={typingKey}
+            required={field.id === NOMBRE_DILIGENCIA_FIELD_ID}
           />
         ) : field.type === "select" ? (
           <select
@@ -192,6 +307,8 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
             placeholder={field.placeholder}
             value={values[field.id] ?? ""}
             onChange={(e) => setField(field.id, e.target.value)}
+            onKeyDown={typingKey}
+            required={field.id === NOMBRE_DILIGENCIA_FIELD_ID}
           />
         )}
         {field.hint ? (
@@ -199,10 +316,18 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
         ) : null}
       </label>
     );
+    return wrapField(field, inner);
   };
 
   if (!started) {
-    return <KybLanding onContinue={() => setStarted(true)} />;
+    return (
+      <KybLanding
+        onContinue={() => {
+          unlockAudio();
+          setStarted(true);
+        }}
+      />
+    );
   }
 
   return (
@@ -230,6 +355,16 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
           >
             Formulario KYB
           </motion.h1>
+          {nombreDiligencia && stepIndex > 0 ? (
+            <motion.p
+              className="mt-3 rounded-xl border border-[#4749B6]/20 bg-[#4749B6]/[0.06] px-3 py-2 text-sm text-slate-700"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <span className="font-semibold text-[#4749B6]">{nombreDiligencia}</span>, sigamos
+              con la siguiente información.
+            </motion.p>
+          ) : null}
           <div className="mt-5">
             <div className="flex items-center justify-between gap-3 text-xs text-slate-500">
               <span>Progreso</span>
@@ -256,7 +391,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
           <AnimatePresence mode="wait">
             <motion.div
               key={step.id}
-              variants={stepVariantsFor(!!reduceMotion)}
+              variants={stepVariantsFor(reduce)}
               initial="initial"
               animate="animate"
               exit="exit"
@@ -272,11 +407,11 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                 {step.fields.map((field, i) => (
                   <motion.div
                     key={`${step.id}-${field.id}-${i}`}
-                    initial={reduceMotion ? false : { opacity: 0, y: 10 }}
-                    animate={reduceMotion ? false : { opacity: 1, y: 0 }}
+                    initial={reduce ? false : { opacity: 0, y: 10 }}
+                    animate={reduce ? false : { opacity: 1, y: 0 }}
                     transition={{
-                      delay: reduceMotion ? 0 : 0.08 + Math.min(i * fieldStagger, 0.45),
-                      duration: reduceMotion ? 0 : 0.38,
+                      delay: reduce ? 0 : 0.08 + Math.min(i * fieldStagger, 0.45),
+                      duration: reduce ? 0 : 0.38,
                       ease: [0.22, 1, 0.36, 1],
                     }}
                   >
@@ -314,11 +449,18 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                   {!isLast ? (
                     <motion.button
                       type="button"
-                      className="rounded-xl bg-gradient-to-b from-[#4749B6] to-[#3B3DA6] px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#4749B6]/30"
+                      className="rounded-xl bg-gradient-to-b from-[#4749B6] to-[#3B3DA6] px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#4749B6]/30 disabled:cursor-not-allowed disabled:opacity-50"
+                      disabled={step.id === "intro_formulario" && !canLeaveIntro}
                       onClick={() =>
                         setStepIndex((j) => Math.min(steps.length - 1, j + 1))
                       }
-                      whileHover={{ scale: 1.03, boxShadow: "0 12px 28px -6px rgba(71,73,182,0.45)" }}
+                      whileHover={{
+                        scale: step.id === "intro_formulario" && !canLeaveIntro ? 1 : 1.03,
+                        boxShadow:
+                          step.id === "intro_formulario" && !canLeaveIntro
+                            ? undefined
+                            : "0 12px 28px -6px rgba(71,73,182,0.45)",
+                      }}
                       whileTap={{ scale: 0.97 }}
                     >
                       Siguiente
