@@ -1,3 +1,4 @@
+import { SOCIEDAD_COMBO_OPTIONS } from "@/data/sociedad-tipos";
 import { KYB_TEXT_PEP_BLOQUE_ANTES_PREGUNTA } from "@/lib/kyb-pep-content";
 
 /**
@@ -16,14 +17,18 @@ export type KybFieldType =
   | "yesno"
   | "heading"
   | "static"
-  | "date";
+  | "date"
+  | "combobox"
+  | "country"
+  | "activity_search"
+  | "profession_search";
 
 export type KybField = {
   id: string;
   label: string;
   type: KybFieldType;
   placeholder?: string;
-  options?: { value: string; label: string }[];
+  options?: { value: string; label: string; disabled?: boolean }[];
   /** Texto de ayuda bajo el campo */
   hint?: string;
 };
@@ -132,24 +137,19 @@ export const KYB_STEPS: KybStep[] = [
       {
         id: "tipo_sociedad",
         label: "Tipo de Sociedad",
-        type: "select",
-        options: [
-          { value: "", label: "Seleccionar…" },
-          { value: "anonima", label: "Sociedad Anónima" },
-          { value: "civil", label: "Sociedad Civil" },
-          { value: "fundacion", label: "Fundación" },
-          { value: "otros", label: "Otros" },
-        ],
+        type: "combobox",
+        options: SOCIEDAD_COMBO_OPTIONS,
       },
       {
         id: "tipo_sociedad_otros_especifique",
-        label: "Especifique (si Tipo de Sociedad = Otros)",
+        label: "Especifique el tipo de sociedad (solo si eligió «Otro»)",
         type: "textarea",
       },
       {
         id: "actividad_empresa",
         label: "Actividad a la que se dedica su empresa",
-        type: "textarea",
+        type: "activity_search",
+        placeholder: "Buscar actividad…",
       },
       {
         id: "pct_actividad",
@@ -180,17 +180,17 @@ export const KYB_STEPS: KybStep[] = [
       {
         id: "pais_opera",
         label: "País donde Opera",
-        type: "text",
+        type: "country",
       },
       {
         id: "pais_constitucion",
         label: "País de Constitución",
-        type: "text",
+        type: "country",
       },
       {
         id: "pais_tributa_ingresos",
         label: "País donde Tributa sus ingresos",
-        type: "text",
+        type: "country",
       },
       {
         id: "no_identificacion_tributaria",
@@ -253,7 +253,7 @@ export const KYB_STEPS: KybStep[] = [
       {
         id: "pais",
         label: "País",
-        type: "text",
+        type: "country",
       },
       {
         id: "ciudad",
@@ -387,17 +387,19 @@ export const KYB_STEPS: KybStep[] = [
       {
         id: "rep_profesion",
         label: "Profesión / Ocupación",
-        type: "text",
+        type: "profession_search",
+        placeholder: "Buscar profesión u ocupación…",
       },
       {
         id: "rep_actividad_economica",
         label: "Actividad Económica",
-        type: "text",
+        type: "activity_search",
+        placeholder: "Buscar actividad económica…",
       },
       {
         id: "rep_pais_residencia",
         label: "País de Residencia",
-        type: "text",
+        type: "country",
       },
       {
         id: "rep_investigacion_ilicita",
@@ -466,7 +468,7 @@ export const KYB_STEPS: KybStep[] = [
             {
               id: `bf_${n}_pais_nacimiento`,
               label: "País de Nacimiento",
-              type: "text" as const,
+              type: "country" as const,
             },
             {
               id: `bf_${n}_fecha_condicion_bf`,
@@ -720,7 +722,7 @@ export const KYB_STEPS: KybStep[] = [
       {
         id: "pep_pais",
         label: "País",
-        type: "text",
+        type: "country",
       },
       {
         id: "pep_funciones_cargo",

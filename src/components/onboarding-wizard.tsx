@@ -1,10 +1,16 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import type { KeyboardEvent } from "react";
+import type { KeyboardEvent, ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { KybCombobox } from "@/components/kyb-combobox";
 import { KybDateField } from "@/components/kyb-date-field";
 import { KybLanding } from "@/components/kyb-landing";
+import { PAIS_OPTIONS } from "@/data/paises";
+import {
+  useActivityOptions,
+  useProfessionOptions,
+} from "@/hooks/use-kyb-sheet-options";
 import type { FormState } from "@/lib/kyb-field-complete";
 import { isFieldComplete } from "@/lib/kyb-field-complete";
 import type { KybField, KybStep } from "@/lib/kyb-steps";
@@ -93,6 +99,10 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     return s;
   });
   const [apiStatus, setApiStatus] = useState<string | null>(null);
+  const { options: activityOptions, loading: activityLoading } =
+    useActivityOptions();
+  const { options: professionOptions, loading: professionLoading } =
+    useProfessionOptions();
 
   const step = steps[stepIndex];
   const isFirst = stepIndex === 0;
@@ -142,7 +152,13 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   }, []);
 
   const setField = (id: string, v: string) => {
-    setValues((prev) => ({ ...prev, [id]: v }));
+    setValues((prev) => {
+      const next: FormState = { ...prev, [id]: v };
+      if (id === "tipo_sociedad" && v !== "__otro__") {
+        next.tipo_sociedad_otros_especifique = "";
+      }
+      return next;
+    });
   };
 
   const toggleCheckbox = (id: string) => {
@@ -181,7 +197,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   const inputClass =
     "w-full rounded-xl border border-slate-200/95 bg-white/95 px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition duration-200 placeholder:text-slate-400 focus:border-[#4749B6] focus:ring-2 focus:ring-[#4749B6]/20";
 
-  const wrapField = (field: KybField, inner: React.ReactNode) => {
+  const wrapField = (field: KybField, inner: ReactNode) => {
     if (field.type === "heading" || field.type === "static") {
       return inner;
     }
@@ -253,6 +269,108 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
             <span className="mt-1.5 block text-xs text-slate-500">{field.hint}</span>
           ) : null}
         </label>
+      );
+      return wrapField(field, inner);
+    }
+
+    if (field.type === "combobox") {
+      const inner = (
+        <div key={field.id} className="block">
+          <span className="mb-1.5 block text-sm font-medium text-[#0B0B13]">
+            {field.label}
+          </span>
+          <KybCombobox
+            options={field.options ?? []}
+            value={values[field.id] ?? ""}
+            onChange={(v) => setField(field.id, v)}
+            placeholder={field.placeholder ?? "Buscar o seleccionar…"}
+            className={inputClass}
+            emptyMessage="Sin coincidencias"
+            onTypingKey={typingKey}
+          />
+          {field.hint ? (
+            <span className="mt-1.5 block text-xs text-slate-500">{field.hint}</span>
+          ) : null}
+        </div>
+      );
+      return wrapField(field, inner);
+    }
+
+    if (field.type === "country") {
+      const inner = (
+        <div key={field.id} className="block">
+          <span className="mb-1.5 block text-sm font-medium text-[#0B0B13]">
+            {field.label}
+          </span>
+          <KybCombobox
+            options={PAIS_OPTIONS}
+            value={values[field.id] ?? ""}
+            onChange={(v) => setField(field.id, v)}
+            placeholder={field.placeholder ?? "Buscar país…"}
+            className={inputClass}
+            emptyMessage="Sin coincidencias"
+            onTypingKey={typingKey}
+          />
+          {field.hint ? (
+            <span className="mt-1.5 block text-xs text-slate-500">{field.hint}</span>
+          ) : null}
+        </div>
+      );
+      return wrapField(field, inner);
+    }
+
+    if (field.type === "activity_search") {
+      const inner = (
+        <div key={field.id} className="block">
+          <span className="mb-1.5 block text-sm font-medium text-[#0B0B13]">
+            {field.label}
+          </span>
+          <KybCombobox
+            options={activityOptions}
+            value={values[field.id] ?? ""}
+            onChange={(v) => setField(field.id, v)}
+            placeholder={
+              activityLoading
+                ? "Cargando actividades…"
+                : (field.placeholder ?? "Buscar actividad…")
+            }
+            className={inputClass}
+            emptyMessage="Sin coincidencias"
+            onTypingKey={typingKey}
+            disabled={activityLoading}
+          />
+          {field.hint ? (
+            <span className="mt-1.5 block text-xs text-slate-500">{field.hint}</span>
+          ) : null}
+        </div>
+      );
+      return wrapField(field, inner);
+    }
+
+    if (field.type === "profession_search") {
+      const inner = (
+        <div key={field.id} className="block">
+          <span className="mb-1.5 block text-sm font-medium text-[#0B0B13]">
+            {field.label}
+          </span>
+          <KybCombobox
+            options={professionOptions}
+            value={values[field.id] ?? ""}
+            onChange={(v) => setField(field.id, v)}
+            placeholder={
+              professionLoading
+                ? "Cargando profesiones…"
+                : (field.placeholder ?? "Buscar profesión u ocupación…")
+            }
+            className={inputClass}
+            emptyMessage="Sin coincidencias"
+            onTypingKey={typingKey}
+            disabled={professionLoading}
+          />
+          {field.hint ? (
+            <span className="mt-1.5 block text-xs text-slate-500">{field.hint}</span>
+          ) : null}
+        </div>
       );
       return wrapField(field, inner);
     }
@@ -404,7 +522,14 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
               </p>
 
               <div className="mt-7 space-y-4">
-                {step.fields.map((field, i) => (
+                {step.fields
+                  .filter((f) => {
+                    if (f.id === "tipo_sociedad_otros_especifique") {
+                      return values.tipo_sociedad === "__otro__";
+                    }
+                    return true;
+                  })
+                  .map((field, i) => (
                   <motion.div
                     key={`${step.id}-${field.id}-${i}`}
                     initial={reduce ? false : { opacity: 0, y: 10 }}
