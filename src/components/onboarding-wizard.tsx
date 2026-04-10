@@ -16,6 +16,12 @@ import type { FormState } from "@/lib/kyb-field-complete";
 import { isFieldComplete } from "@/lib/kyb-field-complete";
 import type { KybField, KybStep } from "@/lib/kyb-steps";
 import {
+  buildEmptyFormState,
+  clearDraft,
+  readDraft,
+  saveDraft,
+} from "@/lib/kyb-local-draft";
+import {
   isRenderableValueField,
   KYB_STEPS,
   NOMBRE_DILIGENCIA_FIELD_ID,
@@ -89,16 +95,8 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   const reduce = Boolean(reduceMotion);
   const [started, setStarted] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
-  const [values, setValues] = useState<FormState>(() => {
-    const s: FormState = {};
-    for (const step of KYB_STEPS) {
-      for (const f of step.fields) {
-        if (!isRenderableValueField(f)) continue;
-        s[f.id] = "";
-      }
-    }
-    return s;
-  });
+  const [values, setValues] = useState<FormState>(() => buildEmptyFormState(steps));
+  const [landingDraftAt, setLandingDraftAt] = useState<number | null>(null);
   const [apiStatus, setApiStatus] = useState<string | null>(null);
   const { options: activityOptions, loading: activityLoading } =
     useActivityOptions();
@@ -119,6 +117,33 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
 
   const prevCompleteRef = useRef<Record<string, boolean>>({});
   const lastKeySoundRef = useRef(0);
+
+  useEffect(() => {
+    const d = readDraft(steps);
+    setLandingDraftAt(d ? d.savedAt : null);
+  }, [steps]);
+
+  useEffect(() => {
+    if (!started) return;
+    const t = window.setTimeout(() => {
+      saveDraft({ stepIndex, values });
+    }, 500);
+    return () => window.clearTimeout(t);
+  }, [started, stepIndex, values]);
+
+  useEffect(() => {
+    if (!started) return;
+    const flush = () => saveDraft({ stepIndex, values });
+    const onVis = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+    window.addEventListener("beforeunload", flush);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.removeEventListener("beforeunload", flush);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [started, stepIndex, values]);
 
   useEffect(() => {
     if (!started) return;
@@ -198,10 +223,40 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
         body: JSON.stringify(values),
       });
       const j = await r.json();
+      clearDraft();
       setApiStatus(`Borrador enviado: ${JSON.stringify(j)}`);
     } catch (e) {
       setApiStatus(`Error al enviar: ${String(e)}`);
     }
+  };
+
+  const continueFromLanding = () => {
+    unlockAudio();
+    const d = readDraft(steps);
+    if (d) {
+      setValues(d.values);
+      setStepIndex(d.stepIndex);
+    } else {
+      setValues(buildEmptyFormState(steps));
+      setStepIndex(0);
+    }
+    setStarted(true);
+  };
+
+  const startFormFresh = () => {
+    clearDraft();
+    setValues(buildEmptyFormState(steps));
+    setStepIndex(0);
+    setLandingDraftAt(null);
+    unlockAudio();
+    setStarted(true);
+  };
+
+  const clearLocalDraftOnly = () => {
+    clearDraft();
+    setValues(buildEmptyFormState(steps));
+    setStepIndex(0);
+    setLandingDraftAt(null);
   };
 
   const inputClass =
@@ -450,10 +505,9 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   if (!started) {
     return (
       <KybLanding
-        onContinue={() => {
-          unlockAudio();
-          setStarted(true);
-        }}
+        onContinue={continueFromLanding}
+        savedDraftAt={landingDraftAt}
+        onStartFresh={startFormFresh}
       />
     );
   }
@@ -511,6 +565,16 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
             <p className="mt-2 text-xs text-slate-500">
               Paso <span className="font-medium text-slate-700">{stepIndex + 1}</span>{" "}
               de <span className="font-medium text-slate-700">{steps.length}</span>
+            </p>
+            <p className="mt-2 text-[11px] leading-snug text-slate-400">
+              Avance guardado en este navegador.{" "}
+              <button
+                type="button"
+                className="font-medium text-[#4749B6] underline-offset-2 hover:underline"
+                onClick={clearLocalDraftOnly}
+              >
+                Borrar borrador local
+              </button>
             </p>
           </div>
         </div>
@@ -581,8 +645,11 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                       type="button"
                       className="text-sm font-medium text-slate-500 underline-offset-2 transition hover:text-[#4749B6] hover:underline"
                       onClick={() => {
+                        saveDraft({ stepIndex, values });
                         setStarted(false);
                         setStepIndex(0);
+                        const d = readDraft(steps);
+                        setLandingDraftAt(d ? d.savedAt : null);
                       }}
                     >
                       Volver a la introducción

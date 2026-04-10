@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import { KybWelcomeIntro } from "@/components/kyb-welcome-intro";
+import { formatDraftSavedAt } from "@/lib/kyb-local-draft";
 
 const SBP_LOGO_URL =
   "https://www.superbancos.gob.pa/sites/default/files/logo-oficial_0.png";
@@ -12,6 +13,10 @@ const SBP_RESOLUCIONES_URL =
 
 type Props = {
   onContinue: () => void;
+  /** Si existe borrador en localStorage, timestamp para mostrar aviso */
+  savedDraftAt?: number | null;
+  /** Borra el borrador local y abre el formulario vacío */
+  onStartFresh?: () => void;
 };
 
 const proseClass =
@@ -41,7 +46,11 @@ function AnimatedBlock({
   );
 }
 
-export function KybLanding({ onContinue }: Props) {
+export function KybLanding({
+  onContinue,
+  savedDraftAt,
+  onStartFresh,
+}: Props) {
   const reduceMotion = useReducedMotion();
   const reduce = Boolean(reduceMotion);
   const base = reduce ? 0 : 0.06;
@@ -153,6 +162,24 @@ export function KybLanding({ onContinue }: Props) {
         </div>
 
         <div className="border-t border-slate-100/90 px-6 py-6 sm:px-10">
+          {savedDraftAt != null && onStartFresh ? (
+            <div className="mb-5 rounded-xl border border-amber-200/90 bg-amber-50/90 px-4 py-3 text-sm text-amber-950 shadow-sm">
+              <p className="font-medium">Hay un borrador guardado en este navegador</p>
+              <p className="mt-1 text-xs text-amber-900/90">
+                Último guardado: {formatDraftSavedAt(savedDraftAt)}. Puede continuar desde ahí
+                o empezar un formulario nuevo (se borrará el borrador local).
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className="rounded-lg border border-amber-300/90 bg-white px-3 py-2 text-sm font-semibold text-amber-950 shadow-sm transition hover:bg-amber-100/80"
+                  onClick={onStartFresh}
+                >
+                  Empezar de nuevo
+                </button>
+              </div>
+            </div>
+          ) : null}
           <motion.button
             type="button"
             className="w-full rounded-xl bg-gradient-to-b from-[#4749B6] to-[#3B3DA6] px-6 py-3.5 text-base font-semibold text-white shadow-lg shadow-[#4749B6]/30 sm:w-auto sm:min-w-[220px]"
@@ -160,8 +187,13 @@ export function KybLanding({ onContinue }: Props) {
             whileHover={reduce ? undefined : { scale: 1.02 }}
             whileTap={reduce ? undefined : { scale: 0.98 }}
           >
-            Continuar al formulario
+            {savedDraftAt != null ? "Continuar borrador" : "Continuar al formulario"}
           </motion.button>
+          <p className="mt-3 max-w-xl text-xs leading-relaxed text-slate-500">
+            El avance del formulario se guarda automáticamente en este navegador (solo en este
+            equipo o teléfono). Si borra datos del sitio o usa otro navegador, no se recupera
+            el borrador.
+          </p>
         </div>
       </motion.div>
     </div>
