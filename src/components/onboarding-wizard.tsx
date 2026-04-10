@@ -329,6 +329,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
             value={values[field.id] ?? ""}
             onChange={(v) => setField(field.id, v)}
             className={inputClass}
+            onKeyDown={typingKey}
           />
           {field.hint ? (
             <span className="mt-1.5 block text-xs text-slate-500">{field.hint}</span>
