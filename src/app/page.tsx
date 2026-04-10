@@ -1,9 +1,10 @@
+import { KybChrome } from "@/components/kyb-chrome";
 import { OnboardingWizard } from "@/components/onboarding-wizard";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+    <KybChrome>
       <OnboardingWizard />
-    </div>
+    </KybChrome>
   );
 }
