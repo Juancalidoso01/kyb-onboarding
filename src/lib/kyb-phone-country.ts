@@ -15,9 +15,6 @@ export function phoneCountrySourceKey(
     case "persona_contacto_telefono":
     case "ref_telefono":
       return "pais_opera";
-    case "telefonos_generales":
-    case "celulares_generales":
-      return "pais";
     case "rep_telefono":
       return "rep_pais_residencia";
     default:
@@ -29,6 +26,11 @@ export function getDialDigitsForPhoneField(
   fieldId: string,
   values: FormState,
 ): string | null {
+  if (fieldId === "telefonos_generales" || fieldId === "celulares_generales") {
+    const p =
+      (values.pais ?? "").trim() || (values.pais_opera ?? "").trim();
+    return dialDigitsForPaisNombre(p);
+  }
   const key = phoneCountrySourceKey(fieldId);
   if (!key) return null;
   return dialDigitsForPaisNombre(String(values[key] ?? ""));

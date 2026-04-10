@@ -1,5 +1,6 @@
 import type { FormState } from "@/lib/kyb-field-complete";
 import { PAIS_PANAMA } from "@/data/paises";
+import { showPanamaAddressLookup } from "@/lib/kyb-panama-address-eligibility";
 import type { KybField } from "@/lib/kyb-steps";
 
 /** Subconjunto práctico de correo con @, dominio y TLD con punto. */
@@ -61,7 +62,7 @@ export function expectPanamaPhoneForField(
       return values.pais_opera === PAIS_PANAMA;
     case "telefonos_generales":
     case "celulares_generales":
-      return values.pais === PAIS_PANAMA;
+      return showPanamaAddressLookup(values);
     case "rep_telefono":
       return values.rep_pais_residencia === PAIS_PANAMA;
     case "ref_telefono":
@@ -88,9 +89,13 @@ export function getContactFormatError(
   if (isPhoneLikeField(field)) {
     const expectPa = expectPanamaPhoneForField(field.id, values);
     if (!validatePhoneValue(v, expectPa)) {
-      return expectPa
-        ? "Para Panamá indique +507 y 8 dígitos (ej. +507 6123-4567) u 8 dígitos locales. Puede separar varios números con coma."
-        : "Use al menos 8 dígitos (puede incluir código de país). Varios números: sepárelos con coma.";
+      if (expectPa) {
+        if (field.id === "telefonos_generales") {
+          return "Para Panamá use +507 y 8 dígitos, fijo o celular (ej. +507 200-0000 o +507 6123-4567). Varios números: sepárelos con coma.";
+        }
+        return "Para Panamá indique +507 y 8 dígitos (ej. +507 6123-4567) u 8 dígitos locales. Puede separar varios números con coma.";
+      }
+      return "Use al menos 8 dígitos (puede incluir código de país). Varios números: sepárelos con coma.";
     }
     return null;
   }

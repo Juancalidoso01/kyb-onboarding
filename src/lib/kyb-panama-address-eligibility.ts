@@ -2,10 +2,10 @@ import { PAIS_PANAMA } from "@/data/paises";
 import type { FormState } from "@/lib/kyb-field-complete";
 
 /**
- * Autocompletado Panamá (Geoapify + lista local) cuando la operación y el país
- * del domicilio comercial no contradicen Panamá.
+ * Panamá para direcciones asistidas y teléfonos en datos generales: coherente con
+ * país donde opera y país del domicilio (oculto / sincronizado).
  */
-export function showPanamaCommercialAddressLookup(values: FormState): boolean {
+export function showPanamaAddressLookup(values: FormState): boolean {
   const paisDg = (values.pais ?? "").trim();
   if (paisDg && paisDg !== PAIS_PANAMA) return false;
   const paisOp = (values.pais_opera ?? "").trim();

@@ -76,6 +76,20 @@ export function isFieldComplete(field: KybField, values: FormState): boolean {
     return v.trim().length > 0;
   }
 
+  if (field.hidden && field.id === "pais") {
+    return (
+      (values.pais ?? "").trim().length > 0 ||
+      (values.pais_opera ?? "").trim().length > 0
+    );
+  }
+
+  if (
+    field.hidden &&
+    (field.id === "ciudad" || field.id === "provincia")
+  ) {
+    return true;
+  }
+
   if (PHONE_TEXT_FIELD_IDS.has(field.id)) {
     if (!v.trim()) return false;
     return validatePhoneValue(

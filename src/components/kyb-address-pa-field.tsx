@@ -29,6 +29,11 @@ type SuggestionRow =
   | { kind: "local"; text: string }
   | { kind: "api"; text: string; item: GeoapifyAddressItem };
 
+export type KybAddressStructuredMeta = {
+  provincia: string;
+  ciudad: string;
+};
+
 type Props = {
   label: string;
   hint?: string;
@@ -36,6 +41,8 @@ type Props = {
   onChange: (v: string) => void;
   inputClass: string;
   onTypingKey: (e: KeyboardEvent) => void;
+  /** Al elegir sugerencia del API o de la lista local con formato «barrio, provincia». */
+  onStructuredFromApi?: (meta: KybAddressStructuredMeta) => void;
 };
 
 export function KybAddressPaField({
@@ -45,6 +52,7 @@ export function KybAddressPaField({
   onChange,
   inputClass,
   onTypingKey,
+  onStructuredFromApi,
 }: Props) {
   const [booting, setBooting] = useState(true);
   const [inputValue, setInputValue] = useState(value);
@@ -178,11 +186,26 @@ export function KybAddressPaField({
         finalizePick(inputValue, "");
         return;
       }
+      const m = row.text.match(/^(.+),\s*(.+)$/);
+      onStructuredFromApi?.({
+        ciudad: m ? m[1].trim() : "",
+        provincia: m ? m[2].trim() : "",
+      });
       finalizePick(row.text, parsedFromLocalPick(row.text));
       return;
     }
-    const fmt = formatGeoapifyDisplay(row.item);
-    finalizePick(fmt, geoapifyParsedSummary(row.item));
+    const item = row.item;
+    onStructuredFromApi?.({
+      provincia: (item.state ?? "").trim(),
+      ciudad: (
+        item.city ||
+        item.suburb ||
+        item.county ||
+        ""
+      ).trim(),
+    });
+    const fmt = formatGeoapifyDisplay(item);
+    finalizePick(fmt, geoapifyParsedSummary(item));
   };
 
   return (
@@ -191,8 +214,8 @@ export function KybAddressPaField({
         {label}
       </span>
       <p className="mb-2 text-xs text-slate-600">
-        Escriba y elija una sugerencia. Incluye barrios frecuentes y, si hay
-        clave Geoapify, búsqueda en Panamá.
+        Escriba calle, barrio o zona y elija una sugerencia de la lista. Se
+        combinan opciones frecuentes con búsqueda de direcciones en Panamá.
       </p>
 
       <div className="relative min-h-[96px]">

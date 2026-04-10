@@ -32,6 +32,8 @@ export type KybField = {
   options?: { value: string; label: string; disabled?: boolean }[];
   /** Texto de ayuda bajo el campo */
   hint?: string;
+  /** Valor en estado/API pero sin control visible (sincronizado por lógica). */
+  hidden?: boolean;
 };
 
 export type KybStep = {
@@ -281,35 +283,38 @@ export const KYB_STEPS: KybStep[] = [
     id: "datos_generales",
     title: "DATOS GENERALES",
     description:
-      "Dirección comercial, auxiliar de facturación/correspondencia y datos de contacto.",
+      "Dirección comercial y auxiliar (misma búsqueda asistida en Panamá), país/provincia/ciudad según identificación y dirección; teléfonos y correo.",
     pdfPage: "Pág. 1",
     fields: [
       {
         id: "direccion_comercial",
         label:
-          "Dirección Comercial (Calle, Número, Urbanización/Edificio, Piso, Local, etc.)",
+          "Dirección Comercial de la empresa (Calle, Número, Urbanización/Edificio, Piso, Local, etc.)",
         type: "textarea",
-      },
-      {
-        id: "pais",
-        label: "País",
-        type: "country",
-      },
-      {
-        id: "ciudad",
-        label: "Ciudad",
-        type: "text",
-      },
-      {
-        id: "provincia",
-        label: "Provincia",
-        type: "text",
       },
       {
         id: "direccion_auxiliar",
         label:
           "Dirección Auxiliar de Facturación o Correspondencia (si es diferente a la anterior)",
         type: "textarea",
+      },
+      {
+        id: "pais",
+        label: "País",
+        type: "country",
+        hidden: true,
+      },
+      {
+        id: "ciudad",
+        label: "Ciudad",
+        type: "text",
+        hidden: true,
+      },
+      {
+        id: "provincia",
+        label: "Provincia",
+        type: "text",
+        hidden: true,
       },
       {
         id: "telefonos_generales",

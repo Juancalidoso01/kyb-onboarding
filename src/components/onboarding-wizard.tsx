@@ -25,7 +25,7 @@ import {
   getDialDigitsForPhoneField,
   PHONE_SPLIT_PREFIX_FIELD_IDS,
 } from "@/lib/kyb-phone-country";
-import { showPanamaCommercialAddressLookup } from "@/lib/kyb-panama-address-eligibility";
+import { showPanamaAddressLookup } from "@/lib/kyb-panama-address-eligibility";
 import type { KybField, KybStep } from "@/lib/kyb-steps";
 import {
   buildEmptyFormState,
@@ -199,9 +199,17 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
 
   useEffect(() => {
     if (!started) return;
+    const op = (values.pais_opera ?? "").trim();
+    if (op) {
+      setValues((prev) => (prev.pais === op ? prev : { ...prev, pais: op }));
+    }
+  }, [started, values.pais_opera]);
+
+  useEffect(() => {
+    if (!started) return;
     for (const st of steps) {
       for (const f of st.fields) {
-        if (!isRenderableValueField(f)) continue;
+        if (!isRenderableValueField(f) || f.hidden) continue;
         const c = isFieldComplete(f, values);
         const prev = prevCompleteRef.current[f.id];
         if (c && !prev) {
@@ -571,9 +579,10 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     }
 
     if (
-      field.id === "direccion_comercial" &&
+      (field.id === "direccion_comercial" ||
+        field.id === "direccion_auxiliar") &&
       field.type === "textarea" &&
-      showPanamaCommercialAddressLookup(values)
+      showPanamaAddressLookup(values)
     ) {
       const inner = (
         <div key={field.id} className="block">
@@ -584,6 +593,17 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
             onChange={(v) => setField(field.id, v)}
             inputClass={inputClass}
             onTypingKey={typingKey}
+            onStructuredFromApi={
+              field.id === "direccion_comercial"
+                ? (meta) => {
+                    setValues((prev) => ({
+                      ...prev,
+                      provincia: meta.provincia,
+                      ciudad: meta.ciudad,
+                    }));
+                  }
+                : undefined
+            }
           />
         </div>
       );
@@ -761,6 +781,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
               <div className="mt-7 space-y-4">
                 {step.fields
                   .filter((f) => {
+                    if (f.hidden) return false;
                     if (f.id === "tipo_sociedad_otros_especifique") {
                       return values.tipo_sociedad === "__otro__";
                     }
