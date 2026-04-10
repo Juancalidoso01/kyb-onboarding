@@ -35,6 +35,9 @@ import {
 } from "@/lib/kyb-local-draft";
 import {
   isRenderableValueField,
+  JUNTA_DIRECTIVA_STEP_ID,
+  JUNTA_MEMBER_SLOTS_MAX,
+  juntaFieldMemberSlot,
   KYB_STEPS,
   NOMBRE_DILIGENCIA_FIELD_ID,
 } from "@/lib/kyb-steps";
@@ -139,6 +142,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   const [started, setStarted] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [values, setValues] = useState<FormState>(() => buildEmptyFormState(steps));
+  const [juntaMemberSlots, setJuntaMemberSlots] = useState(1);
   const [landingDraftAt, setLandingDraftAt] = useState<number | null>(null);
   const [apiStatus, setApiStatus] = useState<string | null>(null);
   const { options: activityOptions, loading: activityLoading } =
@@ -169,14 +173,14 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   useEffect(() => {
     if (!started) return;
     const t = window.setTimeout(() => {
-      saveDraft({ stepIndex, values });
+      saveDraft({ stepIndex, values, juntaMemberSlots });
     }, 500);
     return () => window.clearTimeout(t);
-  }, [started, stepIndex, values]);
+  }, [started, stepIndex, values, juntaMemberSlots]);
 
   useEffect(() => {
     if (!started) return;
-    const flush = () => saveDraft({ stepIndex, values });
+    const flush = () => saveDraft({ stepIndex, values, juntaMemberSlots });
     const onVis = () => {
       if (document.visibilityState === "hidden") flush();
     };
@@ -186,7 +190,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       window.removeEventListener("beforeunload", flush);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [started, stepIndex, values]);
+  }, [started, stepIndex, values, juntaMemberSlots]);
 
   useEffect(() => {
     if (!started) return;
@@ -293,9 +297,11 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     if (d) {
       setValues(d.values);
       setStepIndex(d.stepIndex);
+      setJuntaMemberSlots(d.juntaMemberSlots ?? 1);
     } else {
       setValues(buildEmptyFormState(steps));
       setStepIndex(0);
+      setJuntaMemberSlots(1);
     }
     setStarted(true);
   };
@@ -304,6 +310,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     clearDraft();
     setValues(buildEmptyFormState(steps));
     setStepIndex(0);
+    setJuntaMemberSlots(1);
     setLandingDraftAt(null);
     unlockAudio();
     setStarted(true);
@@ -313,6 +320,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     clearDraft();
     setValues(buildEmptyFormState(steps));
     setStepIndex(0);
+    setJuntaMemberSlots(1);
     setLandingDraftAt(null);
   };
 
@@ -579,6 +587,26 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     }
 
     if (
+      field.type === "textarea" &&
+      /^junta_\d+_direccion$/.test(field.id)
+    ) {
+      const inner = (
+        <div key={field.id} className="block">
+          <KybAddressPaField
+            variant="worldwide"
+            label={field.label}
+            hint={field.hint}
+            value={values[field.id] ?? ""}
+            onChange={(v) => setField(field.id, v)}
+            inputClass={inputClass}
+            onTypingKey={typingKey}
+          />
+        </div>
+      );
+      return wrapField(field, inner);
+    }
+
+    if (
       (field.id === "direccion_comercial" ||
         field.id === "direccion_auxiliar") &&
       field.type === "textarea" &&
@@ -782,6 +810,10 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                 {step.fields
                   .filter((f) => {
                     if (f.hidden) return false;
+                    if (step.id === JUNTA_DIRECTIVA_STEP_ID) {
+                      const slot = juntaFieldMemberSlot(f.id);
+                      if (slot !== null && slot > juntaMemberSlots) return false;
+                    }
                     if (f.id === "tipo_sociedad_otros_especifique") {
                       return values.tipo_sociedad === "__otro__";
                     }
@@ -816,6 +848,31 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                     {renderField(field)}
                   </motion.div>
                 ))}
+                {step.id === JUNTA_DIRECTIVA_STEP_ID &&
+                juntaMemberSlots < JUNTA_MEMBER_SLOTS_MAX ? (
+                  <motion.div
+                    initial={reduce ? false : { opacity: 0, y: 8 }}
+                    animate={reduce ? false : { opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                    className="flex justify-center pt-2"
+                  >
+                    <button
+                      type="button"
+                      className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border-2 border-dashed border-[#4749B6]/35 bg-[#4749B6]/[0.04] px-4 py-2.5 text-sm font-semibold text-[#4749B6] shadow-sm transition hover:border-[#4749B6]/55 hover:bg-[#4749B6]/[0.08]"
+                      aria-label="Agregar otro miembro de la junta o consejo"
+                      onClick={() =>
+                        setJuntaMemberSlots((n) =>
+                          Math.min(JUNTA_MEMBER_SLOTS_MAX, n + 1),
+                        )
+                      }
+                    >
+                      <span className="text-lg leading-none" aria-hidden>
+                        +
+                      </span>
+                      <span className="ml-2">Agregar miembro</span>
+                    </button>
+                  </motion.div>
+                ) : null}
               </div>
 
               <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100/90 pt-8">
@@ -835,7 +892,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                       type="button"
                       className="text-sm font-medium text-slate-500 underline-offset-2 transition hover:text-[#4749B6] hover:underline"
                       onClick={() => {
-                        saveDraft({ stepIndex, values });
+                        saveDraft({ stepIndex, values, juntaMemberSlots });
                         setStarted(false);
                         setStepIndex(0);
                         const d = readDraft(steps);

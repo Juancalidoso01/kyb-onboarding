@@ -2,6 +2,10 @@
  * Sugerencias locales inmediatas (sin API), alineadas al demo checkout.
  */
 export const PANAMA_ADDRESS_LOCAL_SUGGESTIONS: string[] = [
+  "P.H. Trinity Tower, Bella Vista, Panamá",
+  "P.H. Pacific Village, Punta Pacífica, Panamá",
+  "PH Waters on the Bay, Av. Balboa, Panamá",
+  "Torre PH Regent, Punta Pacífica, Panamá",
   "Bella Vista, Panamá",
   "Bella Vista Viejo, Panamá",
   "El Cangrejo, Panamá",

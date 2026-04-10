@@ -14,15 +14,59 @@ export type GeoapifyAddressItem = {
 
 type GeoapifyResponse = { results?: GeoapifyAddressItem[] };
 
+/** Centro aproximado Ciudad de Panamá (sesgo de proximidad para mejores aciertos). */
+const PA_CITY_BIAS = "proximity:-79.5195,8.9824";
+
+/**
+ * Enriquece el texto que enviamos al geocoder: abreviaturas típicas y ancla suave
+ * solo en consultas muy cortas (evita forzar “Panamá” en “Santiago, Veraguas”, etc.).
+ */
+export function enrichGeocodeAutocompleteText(raw: string): string {
+  let t = raw.trim();
+  if (!t) return t;
+  if (/^ph\.?$/i.test(t)) t = "P.H.";
+  else t = t.replace(/\bph\b/gi, "P.H.");
+  const lower = t.toLowerCase();
+  const hasPa =
+    lower.includes("panam") ||
+    lower.includes("panama") ||
+    lower.includes("ciudad de panam");
+  if (hasPa) return t;
+  // Palabras sueltas muy cortas: sesgar a área metropolitana (PH, calle, número…)
+  if (t.length <= 5 && !/\s/.test(t)) {
+    return `${t}, Ciudad de Panamá`;
+  }
+  return t;
+}
+
 /** URL del autocomplete Geoapify (misma firma que el demo checkout / documentación). */
 export function buildGeoapifyAutocompleteUrl(text: string, apiKey: string): string {
+  const enriched = enrichGeocodeAutocompleteText(text);
+  return (
+    "https://api.geoapify.com/v1/geocode/autocomplete?" +
+    new URLSearchParams({
+      text: `${enriched}, Panama`,
+      filter: "countrycode:pa",
+      limit: "15",
+      format: "json",
+      lang: "es",
+      bias: PA_CITY_BIAS,
+      apiKey,
+    }).toString()
+  );
+}
+
+/** Autocomplete sin restricción de país (direcciones de junta / extranjero). */
+export function buildGeoapifyAutocompleteUrlWorldwide(
+  text: string,
+  apiKey: string,
+): string {
   const t = text.trim();
   return (
     "https://api.geoapify.com/v1/geocode/autocomplete?" +
     new URLSearchParams({
-      text: `${t}, Panama`,
-      filter: "countrycode:pa",
-      limit: "8",
+      text: t,
+      limit: "15",
       format: "json",
       lang: "es",
       apiKey,
@@ -38,6 +82,18 @@ export async function geoapifyAutocompletePanama(
   const t = text.trim();
   if (!apiKey || t.length < 2) return [];
   const r = await fetch(buildGeoapifyAutocompleteUrl(t, apiKey));
+  if (!r.ok) return [];
+  const data = (await r.json()) as GeoapifyResponse;
+  return Array.isArray(data.results) ? data.results : [];
+}
+
+export async function geoapifyAutocompleteWorldwide(
+  text: string,
+  apiKey: string,
+): Promise<GeoapifyAddressItem[]> {
+  const t = text.trim();
+  if (!apiKey || t.length < 2) return [];
+  const r = await fetch(buildGeoapifyAutocompleteUrlWorldwide(t, apiKey));
   if (!r.ok) return [];
   const data = (await r.json()) as GeoapifyResponse;
   return Array.isArray(data.results) ? data.results : [];
@@ -72,6 +128,30 @@ export async function geoapifyAutocompletePanamaClientSide(
   } catch {
     const pub = process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY?.trim();
     if (pub) return geoapifyAutocompletePanama(t, pub);
+    return [];
+  }
+}
+
+export async function geoapifyAutocompleteWorldwideClientSide(
+  text: string,
+): Promise<GeoapifyAddressItem[]> {
+  const t = text.trim();
+  if (t.length < 2) return [];
+  try {
+    const r = await fetch(
+      `/api/geoapify/autocomplete?${new URLSearchParams({ text: t, scope: "world" }).toString()}`,
+    );
+    const data = (await r.json()) as AutocompleteProxyJson;
+    const results = Array.isArray(data.results) ? data.results : [];
+    if (results.length > 0) return results;
+    if (data.serverKeyConfigured === false) {
+      const pub = process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY?.trim();
+      if (pub) return geoapifyAutocompleteWorldwide(t, pub);
+    }
+    return [];
+  } catch {
+    const pub = process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY?.trim();
+    if (pub) return geoapifyAutocompleteWorldwide(t, pub);
     return [];
   }
 }

@@ -46,6 +46,19 @@ export type KybStep = {
   fields: KybField[];
 };
 
+/** Paso junta / consejo: máximo de filas en PDF; la UI muestra 1 al inicio y “+” para el resto. */
+export const JUNTA_DIRECTIVA_STEP_ID = "junta_directiva" as const;
+export const JUNTA_MEMBER_SLOTS_MAX = 5;
+
+/** Índice de miembro (1..N) si el id pertenece a la sección junta; si no, null. */
+export function juntaFieldMemberSlot(fieldId: string): number | null {
+  const h = fieldId.match(/^__h_junta_(\d+)$/);
+  if (h) return parseInt(h[1], 10);
+  const j = fieldId.match(/^junta_(\d+)_/);
+  if (j) return parseInt(j[1], 10);
+  return null;
+}
+
 export const KYB_STEPS: KybStep[] = [
   {
     id: "intro_formulario",
@@ -340,7 +353,7 @@ export const KYB_STEPS: KybStep[] = [
     title:
       "GOBIERNO CORPORATIVO / JUNTA DIRECTIVA / CONSEJO FUNDACIONAL",
     description:
-      "Por cada fila: cargo (Presidente, Vicepresidente, Secretario, Tesorero, Director u Otro), nombre, apellidos, nacionalidad, No. de identificación y dirección.",
+      "Indique al menos un miembro (cargo, nombre, apellidos, nacionalidad, No. de identificación y dirección). Si hay más personas en la junta o consejo, use + Agregar miembro.",
     pdfPage: "Pág. 1–2",
     fields: [
       ...[1, 2, 3, 4, 5].flatMap(

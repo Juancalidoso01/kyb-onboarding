@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   buildGeoapifyAutocompleteUrl,
+  buildGeoapifyAutocompleteUrlWorldwide,
   type GeoapifyAddressItem,
 } from "@/lib/geoapify-address";
 
@@ -10,6 +11,8 @@ import {
  */
 export async function GET(req: NextRequest) {
   const text = req.nextUrl.searchParams.get("text")?.trim() ?? "";
+  const scope = req.nextUrl.searchParams.get("scope")?.trim().toLowerCase();
+  const worldwide = scope === "world";
   const serverKey = process.env.GEOAPIFY_API_KEY?.trim();
 
   if (text.length < 2) {
@@ -27,7 +30,10 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const r = await fetch(buildGeoapifyAutocompleteUrl(text, serverKey), {
+    const url = worldwide
+      ? buildGeoapifyAutocompleteUrlWorldwide(text, serverKey)
+      : buildGeoapifyAutocompleteUrl(text, serverKey);
+    const r = await fetch(url, {
       cache: "no-store",
     });
     if (!r.ok) {

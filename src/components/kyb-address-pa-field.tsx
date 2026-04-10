@@ -2,17 +2,27 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import type { KeyboardEvent } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { PANAMA_ADDRESS_LOCAL_SUGGESTIONS } from "@/data/panama-address-seed";
+import {
+  filterLocalAddressSuggestions,
+  normalizeAddressSearchText,
+} from "@/lib/address-search-match";
 import {
   formatGeoapifyDisplay,
   geoapifyAutocompletePanamaClientSide,
+  geoapifyAutocompleteWorldwideClientSide,
   geoapifyParsedSummary,
   type GeoapifyAddressItem,
 } from "@/lib/geoapify-address";
 
-/** Tiempo mínimo de la animación de “carga de base” al montar el campo. */
-const MIN_BOOT_MS = 1400;
+/** Arranque inicial del campo: breve, sin bloquear tanto la escritura. */
+const MIN_BOOT_MS = 450;
+
+const DEBOUNCE_REMOTE_MS = 120;
+
+const LOCAL_MERGE_CAP = 8;
+const LOCAL_LIST_CAP = 24;
 
 const OTHER_OPTION = "Otra dirección (especificar)";
 
@@ -29,10 +39,24 @@ type SuggestionRow =
   | { kind: "local"; text: string }
   | { kind: "api"; text: string; item: GeoapifyAddressItem };
 
+function dedupeSuggestionRows(rows: SuggestionRow[]): SuggestionRow[] {
+  const seen = new Set<string>();
+  const out: SuggestionRow[] = [];
+  for (const r of rows) {
+    const k = normalizeAddressSearchText(r.text);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(r);
+  }
+  return out;
+}
+
 export type KybAddressStructuredMeta = {
   provincia: string;
   ciudad: string;
 };
+
+export type KybAddressFieldVariant = "panama" | "worldwide";
 
 type Props = {
   label: string;
@@ -41,6 +65,8 @@ type Props = {
   onChange: (v: string) => void;
   inputClass: string;
   onTypingKey: (e: KeyboardEvent) => void;
+  /** Panamá: lista local + API filtrado PA. Mundial: solo API Geoapify sin filtro de país. */
+  variant?: KybAddressFieldVariant;
   /** Al elegir sugerencia del API o de la lista local con formato «barrio, provincia». */
   onStructuredFromApi?: (meta: KybAddressStructuredMeta) => void;
 };
@@ -52,8 +78,11 @@ export function KybAddressPaField({
   onChange,
   inputClass,
   onTypingKey,
+  variant = "panama",
   onStructuredFromApi,
 }: Props) {
+  const listboxId = useId();
+  const worldwide = variant === "worldwide";
   const [booting, setBooting] = useState(true);
   const [inputValue, setInputValue] = useState(value);
   const [open, setOpen] = useState(false);
@@ -99,9 +128,10 @@ export function KybAddressPaField({
   );
 
   const renderLocalRows = useCallback((raw: string) => {
-    const lower = raw.toLowerCase();
-    const matches = PANAMA_ADDRESS_LOCAL_SUGGESTIONS.filter((a) =>
-      a.toLowerCase().includes(lower),
+    const matches = filterLocalAddressSuggestions(
+      raw,
+      PANAMA_ADDRESS_LOCAL_SUGGESTIONS,
+      LOCAL_LIST_CAP,
     );
     const out: SuggestionRow[] = [];
     if (matches.length === 0) {
@@ -112,6 +142,11 @@ export function KybAddressPaField({
       }
     }
     setRows(out);
+    setOpen(true);
+  }, []);
+
+  const renderWorldFallbackRows = useCallback(() => {
+    setRows([{ kind: "local", text: OTHER_OPTION }]);
     setOpen(true);
   }, []);
 
@@ -130,36 +165,72 @@ export function KybAddressPaField({
         setOpen(true);
         setRows([]);
         debounceRef.current = setTimeout(() => {
-          void geoapifyAutocompletePanamaClientSide(val)
+          const fetchFn = worldwide
+            ? geoapifyAutocompleteWorldwideClientSide
+            : geoapifyAutocompletePanamaClientSide;
+          void fetchFn(val)
             .then((items) => {
               if (seq !== requestSeq.current) return;
               setFetching(false);
-              if (items.length > 0) {
-                const apiRows: SuggestionRow[] = items.map((it) => ({
-                  kind: "api" as const,
-                  text: formatGeoapifyDisplay(it) || "Dirección",
-                  item: it,
-                }));
-                apiRows.push({ kind: "local", text: OTHER_OPTION });
-                setRows(apiRows);
+              if (worldwide) {
+                if (items.length > 0) {
+                  const apiRows: SuggestionRow[] = items.map((it) => ({
+                    kind: "api" as const,
+                    text: formatGeoapifyDisplay(it) || "Dirección",
+                    item: it,
+                  }));
+                  const merged = dedupeSuggestionRows(apiRows);
+                  merged.push({ kind: "local", text: OTHER_OPTION });
+                  setRows(merged);
+                } else {
+                  renderWorldFallbackRows();
+                }
               } else {
-                renderLocalRows(val);
+                const localHits = filterLocalAddressSuggestions(
+                  val,
+                  PANAMA_ADDRESS_LOCAL_SUGGESTIONS,
+                  LOCAL_MERGE_CAP,
+                ).map((text) => ({ kind: "local" as const, text }));
+
+                if (items.length > 0) {
+                  const apiRows: SuggestionRow[] = items.map((it) => ({
+                    kind: "api" as const,
+                    text: formatGeoapifyDisplay(it) || "Dirección",
+                    item: it,
+                  }));
+                  const merged = dedupeSuggestionRows([
+                    ...localHits,
+                    ...apiRows,
+                  ]);
+                  merged.push({ kind: "local", text: OTHER_OPTION });
+                  setRows(merged);
+                } else {
+                  renderLocalRows(val);
+                }
               }
               setOpen(true);
             })
             .catch(() => {
               if (seq !== requestSeq.current) return;
               setFetching(false);
-              renderLocalRows(val);
+              if (worldwide) {
+                renderWorldFallbackRows();
+              } else {
+                renderLocalRows(val);
+              }
               setOpen(true);
             });
-        }, 250);
+        }, DEBOUNCE_REMOTE_MS);
         return;
       }
       setFetching(false);
-      renderLocalRows(val);
+      if (worldwide) {
+        renderWorldFallbackRows();
+      } else {
+        renderLocalRows(val);
+      }
     },
-    [renderLocalRows],
+    [renderLocalRows, renderWorldFallbackRows, worldwide],
   );
 
   const onInputChange = (raw: string) => {
@@ -214,8 +285,21 @@ export function KybAddressPaField({
         {label}
       </span>
       <p className="mb-2 text-xs text-slate-600">
-        Escriba calle, barrio o zona y elija una sugerencia de la lista. Se
-        combinan opciones frecuentes con búsqueda de direcciones en Panamá.
+        {worldwide ? (
+          <>
+            Escriba calle, ciudad y país (o código postal) y elija una sugerencia.
+            La búsqueda es mundial; si no aparece su dirección exacta, use{" "}
+            <span className="font-medium">Otra dirección (especificar)</span> y
+            complétela a mano.
+          </>
+        ) : (
+          <>
+            Escriba calle, barrio, torre o abreviatura (ej.{" "}
+            <span className="font-medium">PH</span> o{" "}
+            <span className="font-medium">P.H.</span>) y elija una sugerencia. La
+            lista mezcla coincidencias locales con direcciones en Panamá.
+          </>
+        )}
       </p>
 
       <div className="relative min-h-[96px]">
@@ -237,7 +321,9 @@ export function KybAddressPaField({
                 aria-hidden
               />
               <p className="text-center text-sm font-medium text-slate-700">
-                Preparando direcciones para Panamá…
+                {worldwide
+                  ? "Preparando búsqueda de direcciones…"
+                  : "Preparando direcciones para Panamá…"}
               </p>
               <p className="text-center text-xs text-slate-500">
                 Un momento por favor.
@@ -250,10 +336,15 @@ export function KybAddressPaField({
           <div className="relative">
             <textarea
               rows={3}
-              className={`${inputClass} min-h-[96px] resize-y`}
+              className={`${inputClass} min-h-[96px] resize-y ${fetching && !booting ? "pr-11" : ""}`}
               autoComplete="off"
-              placeholder="Ej: Av. Central, Bella Vista, Panamá"
+              placeholder={
+                worldwide
+                  ? "Ej: Calle Mayor 1, Madrid · 221B Baker Street, London"
+                  : "Ej: PH Trinity, Av. Balboa, Calle 50, Bella Vista…"
+              }
               value={inputValue}
+              aria-busy={fetching && !booting}
               onChange={(e) => onInputChange(e.target.value)}
               onKeyDown={(e) => {
                 onTypingKey(e);
@@ -274,26 +365,26 @@ export function KybAddressPaField({
                 }, 160);
               }}
             />
-            <AnimatePresence>
-              {fetching && open ? (
-                <motion.div
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="absolute left-0 right-0 top-full z-30 mt-1 flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs text-slate-600 shadow-lg"
-                >
-                  <span
-                    className="h-3.5 w-3.5 shrink-0 rounded-full border-2 border-[#4749B6]/25 border-t-[#4749B6] animate-spin"
-                    aria-hidden
-                  />
-                  Consultando servicio de direcciones…
-                </motion.div>
-              ) : null}
-            </AnimatePresence>
+            {fetching && !booting ? (
+              <div
+                className="pointer-events-none absolute right-3 top-3 flex items-center gap-2"
+                aria-hidden
+              >
+                <span className="h-5 w-5 shrink-0 rounded-full border-2 border-[#4749B6]/20 border-t-[#4749B6] animate-spin" />
+              </div>
+            ) : null}
+            {fetching && !booting ? (
+              <p
+                className="mt-1 flex items-center gap-2 text-xs text-slate-500"
+                aria-live="polite"
+              >
+                Buscando coincidencias…
+              </p>
+            ) : null}
 
             {open && !fetching && rows.length > 0 ? (
               <ul
-                id="kyb-address-pa-suggestions"
+                id={listboxId}
                 role="listbox"
                 className="absolute left-0 right-0 top-full z-40 mt-1 max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-xl"
               >

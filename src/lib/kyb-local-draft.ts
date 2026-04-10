@@ -1,5 +1,5 @@
 import type { FormState } from "@/lib/kyb-field-complete";
-import { KYB_PDF_FORM_VERSION } from "@/lib/kyb-steps";
+import { JUNTA_MEMBER_SLOTS_MAX, KYB_PDF_FORM_VERSION } from "@/lib/kyb-steps";
 import type { KybStep } from "@/lib/kyb-steps";
 import { isRenderableValueField } from "@/lib/kyb-steps";
 
@@ -11,6 +11,8 @@ export type KybLocalDraft = {
   stepIndex: number;
   values: FormState;
   savedAt: number;
+  /** Cuántas filas de junta/consejo estaban visibles (1–5). */
+  juntaMemberSlots?: number;
 };
 
 export function buildEmptyFormState(steps: KybStep[]): FormState {
@@ -51,18 +53,29 @@ export function readDraft(steps: KybStep[]): KybLocalDraft | null {
     const base = buildEmptyFormState(steps);
     const merged = mergeDraftValues(base, d.values as FormState);
     const maxStep = Math.max(0, steps.length - 1);
+    const juntaMemberSlots =
+      typeof d.juntaMemberSlots === "number" &&
+      d.juntaMemberSlots >= 1 &&
+      d.juntaMemberSlots <= JUNTA_MEMBER_SLOTS_MAX
+        ? d.juntaMemberSlots
+        : 1;
     return {
       version: KYB_PDF_FORM_VERSION,
       stepIndex: Math.min(Math.max(0, d.stepIndex), maxStep),
       values: merged,
       savedAt: d.savedAt,
+      juntaMemberSlots,
     };
   } catch {
     return null;
   }
 }
 
-export function saveDraft(payload: Pick<KybLocalDraft, "stepIndex" | "values">): void {
+export function saveDraft(
+  payload: Pick<KybLocalDraft, "stepIndex" | "values"> & {
+    juntaMemberSlots?: number;
+  },
+): void {
   if (typeof window === "undefined") return;
   try {
     const full: KybLocalDraft = {
@@ -70,6 +83,11 @@ export function saveDraft(payload: Pick<KybLocalDraft, "stepIndex" | "values">):
       stepIndex: payload.stepIndex,
       values: payload.values,
       savedAt: Date.now(),
+      ...(typeof payload.juntaMemberSlots === "number" &&
+      payload.juntaMemberSlots >= 1 &&
+      payload.juntaMemberSlots <= JUNTA_MEMBER_SLOTS_MAX
+        ? { juntaMemberSlots: payload.juntaMemberSlots }
+        : {}),
     };
     localStorage.setItem(KYB_LOCAL_STORAGE_KEY, JSON.stringify(full));
   } catch {
