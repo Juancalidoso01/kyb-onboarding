@@ -7,7 +7,6 @@ import {
   KYB_TEXT_CONFIDENCIALIDAD,
   KYB_TEXT_CUMPLIMIENTO,
   KYB_TEXT_DEBIDA_DILIGENCIA,
-  KYB_TEXT_PEP_DEFINICION,
 } from "@/lib/kyb-welcome-content";
 
 const sectionClass =
@@ -51,22 +50,6 @@ export function KybWelcomeIntro() {
       <Section delay={base + 0.15}>
         <p className="font-semibold text-[#0B0B13]">{KYB_TEXT_CAMPOS_OBLIGATORIOS}</p>
       </Section>
-
-      <motion.div
-        initial={reduce ? false : { opacity: 0, y: 12 }}
-        animate={reduce ? false : { opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: base + 0.2, ease: [0.22, 1, 0.36, 1] }}
-        className="overflow-hidden rounded-xl border border-[#4749B6]/25 bg-gradient-to-br from-[#4749B6]/[0.07] via-white/95 to-white/90 shadow-sm"
-      >
-        <div className="border-b border-[#4749B6]/15 px-4 py-3 sm:px-5">
-          <h3 className="text-xs font-bold uppercase tracking-[0.12em] text-[#3B3DA6]">
-            Persona expuesta políticamente (PEP)
-          </h3>
-        </div>
-        <div className="px-4 py-4 text-sm leading-relaxed text-slate-700 sm:px-5 sm:py-5">
-          <p className="whitespace-pre-wrap">{KYB_TEXT_PEP_DEFINICION}</p>
-        </div>
-      </motion.div>
     </div>
   );
 }

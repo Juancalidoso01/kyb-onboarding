@@ -6,7 +6,7 @@ Orden de pasos **alineado al impreso**; el paso `bienvenida` es solo web (textos
 
 | Orden | Paso (`step.id`) | Sección PDF | Notas |
 |------:|-------------------|-------------|--------|
-| 1 | `bienvenida` | — | Solo UI: objetivo, marco legal, N/A, definición PEP (`variant: welcome`) |
+| 1 | `bienvenida` | — | Solo UI: objetivo, marco legal y N/A (`variant: welcome`) |
 | 2 | `intro_formulario` | Encabezado pág. 1 | Iniciales (textos legales en bienvenida) |
 | 3 | `como_conocio` | INDIQUE COMO CONOCIÓ… | Checkboxes + Otro |
 | 4 | `identificacion_cliente` | IDENTIFICACIÓN DEL CLIENTE | |

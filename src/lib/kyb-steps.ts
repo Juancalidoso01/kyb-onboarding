@@ -1,4 +1,4 @@
-import { KYB_TEXT_PEP_DEFINICION } from "@/lib/kyb-welcome-content";
+import { KYB_TEXT_PEP_BLOQUE_ANTES_PREGUNTA } from "@/lib/kyb-pep-content";
 
 /**
  * Formulario «Perfil del Cliente PJ» — Punto Pago Panamá V2-2026 (PDF V002-2026).
@@ -52,7 +52,7 @@ export const KYB_STEPS: KybStep[] = [
     id: "intro_formulario",
     title: "FORMULARIO PERFIL DEL CLIENTE — PERSONA JURÍDICA",
     description:
-      "Inicio del documento oficial (pág. 1). Los textos legales y la definición de PEP están en la pantalla anterior.",
+      "Inicio del documento oficial (pág. 1). Los textos legales generales están en la pantalla anterior.",
     pdfPage: "Pág. 1 (encabezado)",
     fields: [
       {
@@ -682,16 +682,16 @@ export const KYB_STEPS: KybStep[] = [
   },
   {
     id: "pep",
-    title: "PERSONA EXPUESTA POLÍTICAMENTE (PEP)",
+    title: "Persona expuesta políticamente (PEP)",
     description:
-      "Definición, pregunta principal y datos del PEP o familiar/estrecho colaborador (solo si aplica).",
+      "Lea la definición y responda la pregunta. Si aplica, complete los datos del PEP o familiar/estrecho colaborador.",
     pdfPage: "Pág. 3",
     fields: [
       {
         id: "static_pep_definicion",
         label: "",
         type: "static",
-        hint: KYB_TEXT_PEP_DEFINICION,
+        hint: KYB_TEXT_PEP_BLOQUE_ANTES_PREGUNTA,
       },
       {
         id: "pep_alguno_catalogado",
