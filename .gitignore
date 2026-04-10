@@ -1,0 +1,16 @@
+# Root
+.DS_Store
+*.log
+
+# Python
+api/.venv/
+api/__pycache__/
+api/.pytest_cache/
+api/*.pyc
+api/.env
+
+# Next.js
+web/.next/
+web/out/
+web/node_modules/
+web/.env.local
