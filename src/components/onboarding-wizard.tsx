@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useMemo, useState } from "react";
-import { KybWelcomeIntro } from "@/components/kyb-welcome-intro";
+import { KybLanding } from "@/components/kyb-landing";
 import type { KybField, KybStep } from "@/lib/kyb-steps";
 import { isRenderableValueField, KYB_STEPS } from "@/lib/kyb-steps";
 
@@ -51,6 +51,7 @@ const fieldStagger = 0.035;
 
 export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   const reduceMotion = useReducedMotion();
+  const [started, setStarted] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [values, setValues] = useState<FormState>(initialState);
   const [apiStatus, setApiStatus] = useState<string | null>(null);
@@ -200,6 +201,10 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     );
   };
 
+  if (!started) {
+    return <KybLanding onContinue={() => setStarted(true)} />;
+  }
+
   return (
     <div className="mx-auto max-w-3xl">
       <motion.div
@@ -225,12 +230,6 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
           >
             Formulario KYB
           </motion.h1>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-600">
-            Debida diligencia · Persona jurídica. Alineado al PDF oficial V002-2026.
-            Primero verá la bienvenida y el marco legal; luego podrá diligenciar paso a
-            paso. Si un dato no aplica, use{" "}
-            <span className="font-semibold text-slate-800">N/A</span>.
-          </p>
           <div className="mt-5">
             <div className="flex items-center justify-between gap-3 text-xs text-slate-500">
               <span>Progreso</span>
@@ -262,16 +261,6 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
               animate="animate"
               exit="exit"
             >
-              {step.pdfPage ? (
-                <motion.p
-                  className="mb-3 inline-flex items-center rounded-lg bg-[#4749B6]/12 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#3B3DA6]"
-                  initial={{ opacity: 0, scale: 0.96 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.05 }}
-                >
-                  {step.pdfPage}
-                </motion.p>
-              ) : null}
               <h2 className="text-base font-bold leading-snug text-[#0B0B13] sm:text-lg">
                 {step.title}
               </h2>
@@ -279,40 +268,48 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                 {step.description}
               </p>
 
-              {step.variant === "welcome" ? (
-                <div className="mt-7">
-                  <KybWelcomeIntro />
-                </div>
-              ) : (
-                <div className="mt-7 space-y-4">
-                  {step.fields.map((field, i) => (
-                    <motion.div
-                      key={`${step.id}-${field.id}-${i}`}
-                      initial={reduceMotion ? false : { opacity: 0, y: 10 }}
-                      animate={reduceMotion ? false : { opacity: 1, y: 0 }}
-                      transition={{
-                        delay: reduceMotion ? 0 : 0.08 + Math.min(i * fieldStagger, 0.45),
-                        duration: reduceMotion ? 0 : 0.38,
-                        ease: [0.22, 1, 0.36, 1],
-                      }}
-                    >
-                      {renderField(field)}
-                    </motion.div>
-                  ))}
-                </div>
-              )}
+              <div className="mt-7 space-y-4">
+                {step.fields.map((field, i) => (
+                  <motion.div
+                    key={`${step.id}-${field.id}-${i}`}
+                    initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+                    animate={reduceMotion ? false : { opacity: 1, y: 0 }}
+                    transition={{
+                      delay: reduceMotion ? 0 : 0.08 + Math.min(i * fieldStagger, 0.45),
+                      duration: reduceMotion ? 0 : 0.38,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
+                  >
+                    {renderField(field)}
+                  </motion.div>
+                ))}
+              </div>
 
               <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100/90 pt-8">
-                <motion.button
-                  type="button"
-                  className="rounded-xl border border-slate-200/95 bg-white/90 px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm backdrop-blur-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                  disabled={isFirst}
-                  onClick={() => setStepIndex((j) => Math.max(0, j - 1))}
-                  whileHover={{ scale: isFirst ? 1 : 1.02 }}
-                  whileTap={{ scale: isFirst ? 1 : 0.98 }}
-                >
-                  Anterior
-                </motion.button>
+                <div className="flex flex-wrap items-center gap-3">
+                  <motion.button
+                    type="button"
+                    className="rounded-xl border border-slate-200/95 bg-white/90 px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm backdrop-blur-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                    disabled={isFirst}
+                    onClick={() => setStepIndex((j) => Math.max(0, j - 1))}
+                    whileHover={{ scale: isFirst ? 1 : 1.02 }}
+                    whileTap={{ scale: isFirst ? 1 : 0.98 }}
+                  >
+                    Anterior
+                  </motion.button>
+                  {isFirst ? (
+                    <button
+                      type="button"
+                      className="text-sm font-medium text-slate-500 underline-offset-2 transition hover:text-[#4749B6] hover:underline"
+                      onClick={() => {
+                        setStarted(false);
+                        setStepIndex(0);
+                      }}
+                    >
+                      Volver a la introducción
+                    </button>
+                  ) : null}
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {!isLast ? (
                     <motion.button
@@ -324,9 +321,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                       whileHover={{ scale: 1.03, boxShadow: "0 12px 28px -6px rgba(71,73,182,0.45)" }}
                       whileTap={{ scale: 0.97 }}
                     >
-                      {step.variant === "welcome"
-                        ? "Comenzar formulario"
-                        : "Siguiente"}
+                      Siguiente
                     </motion.button>
                   ) : (
                     <motion.button

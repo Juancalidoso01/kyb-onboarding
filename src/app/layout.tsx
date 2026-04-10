@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Perfil del cliente PJ · KYB Punto Pago Panamá",
   description:
-    "Formulario de debida diligencia (persona jurídica) alineado al PDF V002-2026",
+    "Formulario de debida diligencia para persona jurídica — Grupo Punto Pago Panamá",
 };
 
 export default function RootLayout({

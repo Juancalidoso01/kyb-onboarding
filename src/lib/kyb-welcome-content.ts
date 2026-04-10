@@ -1,6 +1,6 @@
 /**
  * Textos legales e informativos (introducción al formulario KYB).
- * Fuente: criterios del PDF V002-2026 y redacción solicitada por negocio.
+ * Textos legales de introducción (redacción solicitada por negocio).
  */
 
 export const KYB_TEXT_DEBIDA_DILIGENCIA =

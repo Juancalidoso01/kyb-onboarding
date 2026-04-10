@@ -34,40 +34,29 @@ export type KybStep = {
   description: string;
   /** Ubicación en el formulario impreso V002-2026 (útil para generar PDF final) */
   pdfPage?: string;
-  /** Pantalla solo informativa (sin campos), p. ej. bienvenida con textos legales */
-  variant?: "welcome";
   fields: KybField[];
 };
 
 export const KYB_STEPS: KybStep[] = [
   {
-    id: "bienvenida",
-    title: "Bienvenida",
-    description:
-      "Este formulario recopila la información necesaria para la debida diligencia y el registro de su empresa ante Grupo Punto Pago. Puede leer el marco legal con calma; al continuar irá completando el perfil paso a paso, guardar borrador cuando lo necesite y usar N/A cuando un dato no aplique.",
-    variant: "welcome",
-    fields: [],
-  },
-  {
     id: "intro_formulario",
     title: "FORMULARIO PERFIL DEL CLIENTE — PERSONA JURÍDICA",
     description:
-      "Inicio del documento oficial (pág. 1). Los textos legales generales están en la pantalla anterior.",
+      "Indique sus iniciales si aplica. Los textos legales generales están en la introducción.",
     pdfPage: "Pág. 1 (encabezado)",
     fields: [
       {
         id: "iniciales",
-        label: "Iniciales (como en el PDF impreso)",
+        label: "Iniciales",
         type: "text",
-        placeholder: "Opcional en digital; N/A si no aplica",
+        placeholder: "Opcional; N/A si no aplica",
       },
     ],
   },
   {
     id: "como_conocio",
     title: "INDIQUE COMO CONOCIÓ A LA EMPRESA",
-    description:
-      "Marque las opciones que apliquen, como en la primera tabla del formulario impreso.",
+    description: "Marque las opciones que apliquen.",
     pdfPage: "Pág. 1",
     fields: [
       {
@@ -433,7 +422,7 @@ export const KYB_STEPS: KybStep[] = [
     id: "beneficiarios_finales",
     title: "ACCIONISTAS O BENEFICIARIO FINAL",
     description:
-      "ACCIONISTAS, DUEÑOS, SOCIOS O ASOCIADOS — hasta tres filas en el impreso.",
+      "ACCIONISTAS, DUEÑOS, SOCIOS O ASOCIADOS — hasta tres filas.",
     pdfPage: "Pág. 2",
     fields: [
       {
@@ -509,7 +498,7 @@ export const KYB_STEPS: KybStep[] = [
     id: "perfil_financiero",
     title: "PERFIL FINANCIERO",
     description:
-      "Declaración y montos en USD como en el formulario impreso (después sigue «Medio de pago» en el PDF).",
+      "Declaración y montos en USD. Indique medio de pago y datos del préstamo en el siguiente paso si aplica.",
     pdfPage: "Pág. 2",
     fields: [
       {
@@ -597,7 +586,7 @@ export const KYB_STEPS: KybStep[] = [
     id: "producto_medios_pago",
     title: "DOCUMENTOS PARA ENTREGAR — Medio de pago y préstamo",
     description:
-      "En el PDF impreso esta sección aparece como «DOCUMENTOS PARA ENTREGAR» con medios de pago, motivo del préstamo, frecuencia, monto y tipo. Use N/A si no aplica.",
+      "Medios de pago, motivo del préstamo, frecuencia, monto y tipo. Use N/A si no aplica.",
     pdfPage: "Pág. 3",
     fields: [
       {
@@ -771,7 +760,7 @@ export const KYB_STEPS: KybStep[] = [
     id: "documentacion_entregar",
     title: "DOCUMENTOS PARA ENTREGAR — Documentación de soporte",
     description:
-      "Checklist de la página 4 del PDF (cédulas, aviso de operaciones, pacto social, etc.) y observaciones. La carga de archivos se puede integrar después.",
+      "Marque la documentación que entregará (cédulas, aviso de operaciones, pacto social, etc.) y añada observaciones si corresponde.",
     pdfPage: "Pág. 4",
     fields: [
       {
@@ -818,7 +807,7 @@ export const KYB_STEPS: KybStep[] = [
     id: "declaracion",
     title: "FIRMA Y DECLARACIÓN DEL CLIENTE",
     description:
-      "Texto legal del PDF. La firma manuscrita o electrónica puede añadirse en una fase posterior.",
+      "Lea la declaración y complete nombre y fecha. La firma puede completarse según el proceso indicado por su asesor.",
     pdfPage: "Pág. 4",
     fields: [
       {
