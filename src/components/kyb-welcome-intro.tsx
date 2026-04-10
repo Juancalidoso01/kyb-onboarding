@@ -1,60 +1,88 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import {
-  KYB_TEXT_CAMPOS_OBLIGATORIOS,
   KYB_TEXT_CONFIDENCIALIDAD,
   KYB_TEXT_CUMPLIMIENTO,
   KYB_TEXT_DEBIDA_DILIGENCIA,
 } from "@/lib/kyb-welcome-content";
 
-const sectionClass =
-  "rounded-xl border border-slate-200/90 border-l-[3px] border-l-[#4749B6] bg-white/90 p-4 text-sm text-slate-700 shadow-sm sm:p-5";
+const brandPattern = /(GRUPO PUNTO PAGO|Grupo Punto Pago)/gi;
 
-const legalProse =
-  "whitespace-pre-wrap text-justify hyphens-auto leading-[1.75] [text-wrap:pretty] sm:text-[15px] sm:leading-[1.8]";
-
-function Section({
-  children,
-  delay,
-}: {
-  children: ReactNode;
-  delay: number;
-}) {
-  const reduce = useReducedMotion();
+function TextWithBrand({ children }: { children: string }) {
+  const parts = children.split(brandPattern);
   return (
-    <motion.div
-      initial={reduce ? false : { opacity: 0, y: 12 }}
-      animate={reduce ? false : { opacity: 1, y: 0 }}
-      transition={{ duration: 0.38, delay, ease: [0.22, 1, 0.36, 1] }}
-      className={sectionClass}
-    >
-      {children}
-    </motion.div>
+    <>
+      {parts.map((part, i) =>
+        /^grupo punto pago$/i.test(part) ? (
+          <span key={i} className="font-semibold text-[#4749B6]">
+            Grupo Punto Pago
+          </span>
+        ) : (
+          <span key={i}>{part}</span>
+        ),
+      )}
+    </>
   );
 }
 
+const prose =
+  "text-[15px] leading-[1.82] text-slate-700 text-justify hyphens-auto [text-wrap:pretty] sm:text-base sm:leading-[1.85]";
+
 export function KybWelcomeIntro() {
-  const reduce = useReducedMotion();
-  const base = reduce ? 0 : 0.06;
+  const reduce = Boolean(useReducedMotion());
+
+  const paragraphs = [KYB_TEXT_DEBIDA_DILIGENCIA, KYB_TEXT_CUMPLIMIENTO, KYB_TEXT_CONFIDENCIALIDAD];
 
   return (
-    <div className="space-y-4">
-      <Section delay={base}>
-        <p className={legalProse}>{KYB_TEXT_DEBIDA_DILIGENCIA}</p>
-      </Section>
-      <Section delay={base + 0.05}>
-        <p className={legalProse}>{KYB_TEXT_CUMPLIMIENTO}</p>
-      </Section>
-      <Section delay={base + 0.1}>
-        <p className={legalProse}>{KYB_TEXT_CONFIDENCIALIDAD}</p>
-      </Section>
-      <Section delay={base + 0.15}>
-        <p className={`${legalProse} font-semibold text-[#0B0B13]`}>
-          {KYB_TEXT_CAMPOS_OBLIGATORIOS}
-        </p>
-      </Section>
-    </div>
+    <motion.div
+      className="relative overflow-hidden rounded-2xl px-4 py-6 sm:px-6 sm:py-8"
+      initial={reduce ? false : { opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <div
+        className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-[#4749B6]/[0.07] via-transparent to-[#6366f1]/[0.04]"
+        aria-hidden
+      />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#4749B6]/25 to-transparent" />
+
+      <motion.div
+        className="relative space-y-6 sm:space-y-7"
+        initial="hidden"
+        animate="show"
+        variants={
+          reduce
+            ? { hidden: {}, show: {} }
+            : {
+                hidden: {},
+                show: {
+                  transition: { staggerChildren: 0.11, delayChildren: 0.06 },
+                },
+              }
+        }
+      >
+        {paragraphs.map((text, idx) => (
+          <motion.p
+            key={idx}
+            className={prose}
+            variants={
+              reduce
+                ? {}
+                : {
+                    hidden: { opacity: 0, y: 12 },
+                    show: {
+                      opacity: 1,
+                      y: 0,
+                      transition: { duration: 0.42, ease: [0.22, 1, 0.36, 1] },
+                    },
+                  }
+            }
+          >
+            <TextWithBrand>{text}</TextWithBrand>
+          </motion.p>
+        ))}
+      </motion.div>
+    </motion.div>
   );
 }
