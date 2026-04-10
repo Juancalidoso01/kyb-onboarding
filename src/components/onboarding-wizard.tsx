@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useMemo, useState } from "react";
 import type { KybField, KybStep } from "@/lib/kyb-steps";
 import { isRenderableValueField, KYB_STEPS } from "@/lib/kyb-steps";
@@ -17,7 +18,38 @@ const initialState = (): FormState => {
   return s;
 };
 
+function stepVariantsFor(reduce: boolean) {
+  if (reduce) {
+    return {
+      initial: { opacity: 0 },
+      animate: {
+        opacity: 1,
+        transition: { duration: 0.2 },
+      },
+      exit: { opacity: 0, transition: { duration: 0.15 } },
+    };
+  }
+  return {
+    initial: { opacity: 0, x: 28, filter: "blur(4px)" },
+    animate: {
+      opacity: 1,
+      x: 0,
+      filter: "blur(0px)",
+      transition: { duration: 0.42, ease: [0.22, 1, 0.36, 1] as const },
+    },
+    exit: {
+      opacity: 0,
+      x: -20,
+      filter: "blur(3px)",
+      transition: { duration: 0.28, ease: [0.4, 0, 1, 1] as const },
+    },
+  };
+}
+
+const fieldStagger = 0.035;
+
 export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
+  const reduceMotion = useReducedMotion();
   const [stepIndex, setStepIndex] = useState(0);
   const [values, setValues] = useState<FormState>(initialState);
   const [apiStatus, setApiStatus] = useState<string | null>(null);
@@ -69,13 +101,13 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   };
 
   const inputClass =
-    "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#4749B6] focus:ring-2 focus:ring-[#4749B6]/20";
+    "w-full rounded-xl border border-slate-200/95 bg-white/95 px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition duration-200 placeholder:text-slate-400 focus:border-[#4749B6] focus:ring-2 focus:ring-[#4749B6]/20";
 
   const renderField = (field: KybField) => {
     if (field.type === "heading") {
       return (
         <div key={field.id} className="pt-2">
-          <h3 className="border-b border-[#4749B6]/15 pb-2 text-sm font-semibold tracking-tight text-[#0B0B13]">
+          <h3 className="border-b border-[#4749B6]/20 pb-2 text-sm font-semibold tracking-tight text-[#0B0B13]">
             {field.label}
           </h3>
         </div>
@@ -97,11 +129,11 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       return (
         <label
           key={field.id}
-          className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200/90 bg-white px-3.5 py-3 shadow-sm transition hover:border-[#4749B6]/25 hover:shadow-md"
+          className="group flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200/90 bg-white/95 px-3.5 py-3 shadow-sm transition duration-200 hover:border-[#4749B6]/35 hover:shadow-md"
         >
           <input
             type="checkbox"
-            className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#4749B6] focus:ring-[#4749B6]"
+            className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#4749B6] transition focus:ring-[#4749B6]"
             checked={values[field.id] === "true"}
             onChange={() => toggleCheckbox(field.id)}
           />
@@ -169,14 +201,29 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-[0_4px_24px_-4px_rgba(15,23,42,0.08),0_0_0_1px_rgba(15,23,42,0.04)]">
-        <div className="border-b border-slate-100 bg-gradient-to-br from-[#4749B6]/[0.07] via-white to-white px-5 py-6 sm:px-8 sm:py-8">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#4749B6]">
+      <motion.div
+        className="overflow-hidden rounded-2xl border border-white/70 bg-white/75 shadow-[0_8px_40px_-12px_rgba(71,73,182,0.18),0_0_0_1px_rgba(15,23,42,0.05)] backdrop-blur-xl"
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <div className="border-b border-slate-100/90 bg-gradient-to-br from-[#4749B6]/[0.1] via-white/90 to-white/70 px-5 py-6 sm:px-8 sm:py-8">
+          <motion.p
+            className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#4749B6]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1 }}
+          >
             Punto Pago Panamá
-          </p>
-          <h1 className="mt-2 text-2xl font-bold tracking-tight text-[#0B0B13] sm:text-[1.75rem] sm:leading-tight">
+          </motion.p>
+          <motion.h1
+            className="mt-2 text-2xl font-bold tracking-tight text-[#0B0B13] sm:text-[1.75rem] sm:leading-tight"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15, duration: 0.45 }}
+          >
             Formulario KYB
-          </h1>
+          </motion.h1>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-600">
             Debida diligencia · Persona jurídica. Alineado al PDF oficial V002-2026.
             Cada paso indica la página del impreso. Si un dato no aplica, use{" "}
@@ -190,9 +237,11 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
               </span>
             </div>
             <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200/90">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-[#4749B6] to-[#3B3DA6] transition-[width] duration-500 ease-out"
-                style={{ width: `${progress}%` }}
+              <motion.div
+                className="h-full rounded-full bg-gradient-to-r from-[#4749B6] to-[#6366f1]"
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                transition={{ type: "spring", stiffness: 120, damping: 22 }}
               />
             </div>
             <p className="mt-2 text-xs text-slate-500">
@@ -203,58 +252,99 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
         </div>
 
         <section className="px-5 py-6 sm:px-8 sm:py-8">
-          {step.pdfPage ? (
-            <p className="mb-3 inline-flex items-center rounded-lg bg-[#4749B6]/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#3B3DA6]">
-              {step.pdfPage}
-            </p>
-          ) : null}
-          <h2 className="text-base font-bold leading-snug text-[#0B0B13] sm:text-lg">
-            {step.title}
-          </h2>
-          <p className="mt-2 text-sm leading-relaxed text-slate-600">
-            {step.description}
-          </p>
-
-          <div className="mt-7 space-y-4">{step.fields.map(renderField)}</div>
-
-          <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-8">
-            <button
-              type="button"
-              className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-              disabled={isFirst}
-              onClick={() => setStepIndex((i) => Math.max(0, i - 1))}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={step.id}
+              variants={stepVariantsFor(!!reduceMotion)}
+              initial="initial"
+              animate="animate"
+              exit="exit"
             >
-              Anterior
-            </button>
-            <div className="flex flex-wrap gap-2">
-              {!isLast ? (
-                <button
-                  type="button"
-                  className="rounded-xl bg-gradient-to-b from-[#4749B6] to-[#3B3DA6] px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-[#4749B6]/25 transition hover:brightness-105 active:brightness-95"
-                  onClick={() =>
-                    setStepIndex((i) => Math.min(steps.length - 1, i + 1))
-                  }
+              {step.pdfPage ? (
+                <motion.p
+                  className="mb-3 inline-flex items-center rounded-lg bg-[#4749B6]/12 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#3B3DA6]"
+                  initial={{ opacity: 0, scale: 0.96 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.05 }}
                 >
-                  Siguiente
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="rounded-xl bg-gradient-to-b from-[#4749B6] to-[#3B3DA6] px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-[#4749B6]/25 transition hover:brightness-105 active:brightness-95"
-                  onClick={submitDraft}
-                >
-                  Enviar borrador
-                </button>
-              )}
-            </div>
-          </div>
-        </section>
-      </div>
+                  {step.pdfPage}
+                </motion.p>
+              ) : null}
+              <h2 className="text-base font-bold leading-snug text-[#0B0B13] sm:text-lg">
+                {step.title}
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                {step.description}
+              </p>
 
-      <p className="mt-6 text-center text-xs text-slate-500">
+              <div className="mt-7 space-y-4">
+                {step.fields.map((field, i) => (
+                  <motion.div
+                    key={`${step.id}-${field.id}-${i}`}
+                    initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+                    animate={reduceMotion ? false : { opacity: 1, y: 0 }}
+                    transition={{
+                      delay: reduceMotion ? 0 : 0.08 + Math.min(i * fieldStagger, 0.45),
+                      duration: reduceMotion ? 0 : 0.38,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
+                  >
+                    {renderField(field)}
+                  </motion.div>
+                ))}
+              </div>
+
+              <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100/90 pt-8">
+                <motion.button
+                  type="button"
+                  className="rounded-xl border border-slate-200/95 bg-white/90 px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm backdrop-blur-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  disabled={isFirst}
+                  onClick={() => setStepIndex((j) => Math.max(0, j - 1))}
+                  whileHover={{ scale: isFirst ? 1 : 1.02 }}
+                  whileTap={{ scale: isFirst ? 1 : 0.98 }}
+                >
+                  Anterior
+                </motion.button>
+                <div className="flex flex-wrap gap-2">
+                  {!isLast ? (
+                    <motion.button
+                      type="button"
+                      className="rounded-xl bg-gradient-to-b from-[#4749B6] to-[#3B3DA6] px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#4749B6]/30"
+                      onClick={() =>
+                        setStepIndex((j) => Math.min(steps.length - 1, j + 1))
+                      }
+                      whileHover={{ scale: 1.03, boxShadow: "0 12px 28px -6px rgba(71,73,182,0.45)" }}
+                      whileTap={{ scale: 0.97 }}
+                    >
+                      Siguiente
+                    </motion.button>
+                  ) : (
+                    <motion.button
+                      type="button"
+                      className="rounded-xl bg-gradient-to-b from-[#4749B6] to-[#3B3DA6] px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#4749B6]/30"
+                      onClick={submitDraft}
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                    >
+                      Enviar borrador
+                    </motion.button>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </section>
+      </motion.div>
+
+      <motion.p
+        className="mt-6 text-center text-xs text-slate-500"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.6 }}
+      >
         <button
           type="button"
-          className="font-medium text-[#4749B6] underline-offset-2 hover:underline"
+          className="font-medium text-[#4749B6] underline-offset-2 transition hover:underline"
           onClick={pingApi}
         >
           Probar conexión con API
@@ -262,7 +352,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
         {apiStatus ? (
           <span className="ml-2 text-slate-600">{apiStatus}</span>
         ) : null}
-      </p>
+      </motion.p>
     </div>
   );
 }
