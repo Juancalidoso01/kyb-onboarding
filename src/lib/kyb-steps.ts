@@ -1,3 +1,5 @@
+import { KYB_TEXT_PEP_DEFINICION } from "@/lib/kyb-welcome-content";
+
 /**
  * Formulario «Perfil del Cliente PJ» — Punto Pago Panamá V2-2026 (PDF V002-2026).
  * Campos alineados por sección del PDF; ids estables para API / generación de PDF futura.
@@ -32,35 +34,27 @@ export type KybStep = {
   description: string;
   /** Ubicación en el formulario impreso V002-2026 (útil para generar PDF final) */
   pdfPage?: string;
+  /** Pantalla solo informativa (sin campos), p. ej. bienvenida con textos legales */
+  variant?: "welcome";
   fields: KybField[];
 };
 
 export const KYB_STEPS: KybStep[] = [
   {
+    id: "bienvenida",
+    title: "Bienvenida",
+    description:
+      "Este formulario recopila la información necesaria para la debida diligencia y el registro de su empresa ante Grupo Punto Pago. Puede leer el marco legal con calma; al continuar irá completando el perfil paso a paso, guardar borrador cuando lo necesite y usar N/A cuando un dato no aplique.",
+    variant: "welcome",
+    fields: [],
+  },
+  {
     id: "intro_formulario",
     title: "FORMULARIO PERFIL DEL CLIENTE — PERSONA JURÍDICA",
     description:
-      "Texto introductorio y reglas del documento oficial. Versión PDF V002-2026.",
+      "Inicio del documento oficial (pág. 1). Los textos legales y la definición de PEP están en la pantalla anterior.",
     pdfPage: "Pág. 1 (encabezado)",
     fields: [
-      {
-        id: "static_intro_debida_diligencia",
-        label: "",
-        type: "static",
-        hint: "Este formulario y la documentación solicitada constituyen los requerimientos mínimos de debida diligencia para la identificación, verificación y actualización del perfil del cliente persona jurídica, así como de sus dignatarios, representante(s) legal(es), apoderado(s) y beneficiario(s) final(es), conforme a la normativa panameña aplicable en materia de PBC/FT/FPADM. La información podrá ser requerida y utilizada por GRUPO PUNTO PAGO, según corresponda al producto o servicio solicitado y a los fines de cumplimiento y gestión de riesgos.",
-      },
-      {
-        id: "static_intro_normativa",
-        label: "",
-        type: "static",
-        hint: "En cumplimiento de la Ley 23 de 27 de abril de 2015; del Decreto Ejecutivo No. 35 de 6 de septiembre de 2022; del Acuerdo de Prevención para Otros Sujetos Obligados Financieros No. 004-2018 y demás normativa aplicable emitida por la Superintendencia de Bancos de Panamá, así como de las guías/catálogos vigentes de la Unidad de Análisis Financiero (UAF). La información será tratada con confidencialidad, conforme a la Ley 81 de 2019 y su reglamentación.",
-      },
-      {
-        id: "static_campos_obligatorios",
-        label: "",
-        type: "static",
-        hint: "Todos los campos son obligatorios. Si algún dato no aplica, registre N/A en el campo correspondiente.",
-      },
       {
         id: "iniciales",
         label: "Iniciales (como en el PDF impreso)",
@@ -697,7 +691,7 @@ export const KYB_STEPS: KybStep[] = [
         id: "static_pep_definicion",
         label: "",
         type: "static",
-        hint: "DEFINICIÓN — La legislación panameña define como Persona Expuesta Políticamente (PEP) a toda persona natural, nacional o extranjera, que desempeñe o haya desempeñado funciones públicas de alto nivel o con mando y jurisdicción en un Estado, así como a quienes se les haya confiado funciones importantes por una organización internacional. El concepto de PEP se extiende a sus familiares cercanos (cónyuge o pareja, padres, hermanos e hijos) y a sus estrechos colaboradores, conforme a la Ley 23 de 2015, artículo 4, numeral 18, y la normativa aplicable. Lo anteriormente expuesto no persigue cubrir personas de rango medio o más bajo que las categorías señaladas.",
+        hint: KYB_TEXT_PEP_DEFINICION,
       },
       {
         id: "pep_alguno_catalogado",

@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useMemo, useState } from "react";
+import { KybWelcomeIntro } from "@/components/kyb-welcome-intro";
 import type { KybField, KybStep } from "@/lib/kyb-steps";
 import { isRenderableValueField, KYB_STEPS } from "@/lib/kyb-steps";
 
@@ -226,7 +227,8 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
           </motion.h1>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-600">
             Debida diligencia · Persona jurídica. Alineado al PDF oficial V002-2026.
-            Cada paso indica la página del impreso. Si un dato no aplica, use{" "}
+            Primero verá la bienvenida y el marco legal; luego podrá diligenciar paso a
+            paso. Si un dato no aplica, use{" "}
             <span className="font-semibold text-slate-800">N/A</span>.
           </p>
           <div className="mt-5">
@@ -277,22 +279,28 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                 {step.description}
               </p>
 
-              <div className="mt-7 space-y-4">
-                {step.fields.map((field, i) => (
-                  <motion.div
-                    key={`${step.id}-${field.id}-${i}`}
-                    initial={reduceMotion ? false : { opacity: 0, y: 10 }}
-                    animate={reduceMotion ? false : { opacity: 1, y: 0 }}
-                    transition={{
-                      delay: reduceMotion ? 0 : 0.08 + Math.min(i * fieldStagger, 0.45),
-                      duration: reduceMotion ? 0 : 0.38,
-                      ease: [0.22, 1, 0.36, 1],
-                    }}
-                  >
-                    {renderField(field)}
-                  </motion.div>
-                ))}
-              </div>
+              {step.variant === "welcome" ? (
+                <div className="mt-7">
+                  <KybWelcomeIntro />
+                </div>
+              ) : (
+                <div className="mt-7 space-y-4">
+                  {step.fields.map((field, i) => (
+                    <motion.div
+                      key={`${step.id}-${field.id}-${i}`}
+                      initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+                      animate={reduceMotion ? false : { opacity: 1, y: 0 }}
+                      transition={{
+                        delay: reduceMotion ? 0 : 0.08 + Math.min(i * fieldStagger, 0.45),
+                        duration: reduceMotion ? 0 : 0.38,
+                        ease: [0.22, 1, 0.36, 1],
+                      }}
+                    >
+                      {renderField(field)}
+                    </motion.div>
+                  ))}
+                </div>
+              )}
 
               <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100/90 pt-8">
                 <motion.button
@@ -316,7 +324,9 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                       whileHover={{ scale: 1.03, boxShadow: "0 12px 28px -6px rgba(71,73,182,0.45)" }}
                       whileTap={{ scale: 0.97 }}
                     >
-                      Siguiente
+                      {step.variant === "welcome"
+                        ? "Comenzar formulario"
+                        : "Siguiente"}
                     </motion.button>
                   ) : (
                     <motion.button
