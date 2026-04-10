@@ -10,7 +10,10 @@ import {
 } from "@/lib/kyb-welcome-content";
 
 const sectionClass =
-  "rounded-xl border border-slate-200/90 border-l-[3px] border-l-[#4749B6] bg-white/90 p-4 text-sm leading-relaxed text-slate-700 shadow-sm sm:p-5";
+  "rounded-xl border border-slate-200/90 border-l-[3px] border-l-[#4749B6] bg-white/90 p-4 text-sm text-slate-700 shadow-sm sm:p-5";
+
+const legalProse =
+  "whitespace-pre-wrap text-justify hyphens-auto leading-[1.75] [text-wrap:pretty] sm:text-[15px] sm:leading-[1.8]";
 
 function Section({
   children,
@@ -39,16 +42,18 @@ export function KybWelcomeIntro() {
   return (
     <div className="space-y-4">
       <Section delay={base}>
-        <p className="whitespace-pre-wrap">{KYB_TEXT_DEBIDA_DILIGENCIA}</p>
+        <p className={legalProse}>{KYB_TEXT_DEBIDA_DILIGENCIA}</p>
       </Section>
       <Section delay={base + 0.05}>
-        <p className="whitespace-pre-wrap">{KYB_TEXT_CUMPLIMIENTO}</p>
+        <p className={legalProse}>{KYB_TEXT_CUMPLIMIENTO}</p>
       </Section>
       <Section delay={base + 0.1}>
-        <p className="whitespace-pre-wrap">{KYB_TEXT_CONFIDENCIALIDAD}</p>
+        <p className={legalProse}>{KYB_TEXT_CONFIDENCIALIDAD}</p>
       </Section>
       <Section delay={base + 0.15}>
-        <p className="font-semibold text-[#0B0B13]">{KYB_TEXT_CAMPOS_OBLIGATORIOS}</p>
+        <p className={`${legalProse} font-semibold text-[#0B0B13]`}>
+          {KYB_TEXT_CAMPOS_OBLIGATORIOS}
+        </p>
       </Section>
     </div>
   );
