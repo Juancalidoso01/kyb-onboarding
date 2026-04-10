@@ -97,3 +97,39 @@ export function getContactFormatError(
 
   return null;
 }
+
+/** Solo dígitos; entero 0–100 para guardar en el estado (sin el símbolo %). */
+export function normalizePercentInput(raw: string): string {
+  const d = raw.replace(/\D/g, "");
+  if (d === "") return "";
+  let n = parseInt(d, 10);
+  if (Number.isNaN(n)) return "";
+  if (n > 100) n = 100;
+  return String(n);
+}
+
+export function getPercentFormatError(
+  field: KybField,
+  values: FormState,
+): string | null {
+  if (field.type !== "percent") return null;
+  const raw = (values[field.id] ?? "").trim();
+  if (raw === "") return null;
+  const norm = normalizePercentInput(raw);
+  if (norm === "" && raw !== "") {
+    return "Use solo números de 0 a 100. El símbolo % se muestra al lado; no hace falta escribirlo.";
+  }
+  if (norm === "") return null;
+  const n = parseInt(norm, 10);
+  if (n < 0 || n > 100) {
+    return "El porcentaje debe estar entre 0 y 100.";
+  }
+  return null;
+}
+
+export function getFormatErrorForField(
+  field: KybField,
+  values: FormState,
+): string | null {
+  return getContactFormatError(field, values) ?? getPercentFormatError(field, values);
+}

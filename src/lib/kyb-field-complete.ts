@@ -2,6 +2,7 @@ import { KYB_ACTIVITY_NOT_LISTED_VALUE } from "@/lib/kyb-activity-extra-option";
 import {
   expectPanamaPhoneForField,
   isValidEmailFormat,
+  normalizePercentInput,
   PHONE_TEXT_FIELD_IDS,
   validatePhoneValue,
 } from "@/lib/kyb-format-validation";
@@ -81,6 +82,14 @@ export function isFieldComplete(field: KybField, values: FormState): boolean {
       return v.trim().length > 0;
     case "date":
       return isValidPanamaDate(v);
+    case "percent": {
+      const raw = v.trim();
+      if (raw === "") return true;
+      const norm = normalizePercentInput(raw);
+      if (norm === "") return false;
+      const n = parseInt(norm, 10);
+      return n >= 0 && n <= 100;
+    }
     case "email":
       return v.trim().length > 0 && isValidEmailFormat(v);
     case "tel":

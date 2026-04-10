@@ -21,7 +21,8 @@ export type KybFieldType =
   | "combobox"
   | "country"
   | "activity_search"
-  | "profession_search";
+  | "profession_search"
+  | "percent";
 
 export type KybField = {
   id: string;
@@ -159,7 +160,9 @@ export const KYB_STEPS: KybStep[] = [
       {
         id: "pct_actividad",
         label: "% de actividad dedicada (si aplica)",
-        type: "text",
+        type: "percent",
+        placeholder: "0–100",
+        hint: "Solo valores de 0 a 100. Deje vacío si no aplica.",
       },
       {
         id: "cotiza_bolsa",
@@ -489,7 +492,9 @@ export const KYB_STEPS: KybStep[] = [
             {
               id: `bf_${n}_pct_participacion`,
               label: "% De Participación en la empresa",
-              type: "text" as const,
+              type: "percent" as const,
+              placeholder: "0–100",
+              hint: "Solo valores de 0 a 100. Deje vacío si no aplica.",
             },
             {
               id: `bf_${n}_direccion`,

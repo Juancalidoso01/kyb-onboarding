@@ -15,7 +15,8 @@ import {
 import type { FormState } from "@/lib/kyb-field-complete";
 import { isFieldComplete } from "@/lib/kyb-field-complete";
 import {
-  getContactFormatError,
+  getFormatErrorForField,
+  normalizePercentInput,
   PHONE_TEXT_FIELD_IDS,
 } from "@/lib/kyb-format-validation";
 import type { KybField, KybStep } from "@/lib/kyb-steps";
@@ -305,7 +306,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       return inner;
     }
     const complete = isFieldComplete(field, values);
-    const formatErr = getContactFormatError(field, values);
+    const formatErr = getFormatErrorForField(field, values);
     return (
       <div className="flex gap-1 sm:gap-2">
         <div className="min-w-0 flex-1">{inner}</div>
@@ -480,7 +481,58 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       return wrapField(field, inner);
     }
 
-    const formatErr = getContactFormatError(field, values);
+    if (field.type === "percent") {
+      const formatErr = getFormatErrorForField(field, values);
+      const invalid = Boolean(formatErr);
+      const pctClass = invalid
+        ? `${inputClass} border-red-400/95 pr-10 tabular-nums focus:border-red-500 focus:ring-red-500/20`
+        : `${inputClass} pr-10 tabular-nums`;
+
+      const inner = (
+        <label key={field.id} className="block">
+          <span className="mb-1.5 block text-sm font-medium text-[#0B0B13]">
+            {field.label}
+          </span>
+          <div className="relative">
+            <input
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              className={pctClass}
+              placeholder={field.placeholder ?? "0–100"}
+              value={normalizePercentInput(values[field.id] ?? "")}
+              onChange={(e) =>
+                setField(field.id, normalizePercentInput(e.target.value))
+              }
+              onBlur={() => {
+                const id = field.id;
+                const normalized = normalizePercentInput(values[id] ?? "");
+                if (normalized !== (values[id] ?? "")) setField(id, normalized);
+              }}
+              onKeyDown={typingKey}
+              aria-invalid={invalid || undefined}
+            />
+            <span
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-500"
+              aria-hidden
+            >
+              %
+            </span>
+          </div>
+          {field.hint ? (
+            <span className="mt-1.5 block text-xs text-slate-500">{field.hint}</span>
+          ) : null}
+          {formatErr ? (
+            <span className="mt-1.5 block text-xs font-medium text-red-600" role="alert">
+              {formatErr}
+            </span>
+          ) : null}
+        </label>
+      );
+      return wrapField(field, inner);
+    }
+
+    const formatErr = getFormatErrorForField(field, values);
     const contactInputInvalid =
       formatErr !== null &&
       (field.type === "email" ||
