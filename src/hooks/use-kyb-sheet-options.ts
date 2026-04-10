@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { appendActivityNotListedOption } from "@/lib/kyb-activity-extra-option";
 import {
   FALLBACK_ACTIVIDADES,
   FALLBACK_PROFESIONES,
@@ -14,9 +15,10 @@ function fallbackFor(kind: SheetOptionsKind) {
 }
 
 export function useKybSheetOptions(kind: SheetOptionsKind) {
-  const [options, setOptions] = useState<{ value: string; label: string }[]>(() =>
-    fallbackFor(kind),
-  );
+  const [options, setOptions] = useState<{ value: string; label: string }[]>(() => {
+    const base = fallbackFor(kind);
+    return kind === "actividades" ? appendActivityNotListedOption(base) : base;
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,10 +27,16 @@ export function useKybSheetOptions(kind: SheetOptionsKind) {
 
     loadSheetOptionsClient(kind)
       .then((opts) => {
-        if (!cancelled) setOptions(opts.length > 0 ? opts : fallback);
+        if (!cancelled) setOptions(opts);
       })
       .catch(() => {
-        if (!cancelled) setOptions(fallback);
+        if (!cancelled) {
+          setOptions(
+            kind === "actividades"
+              ? appendActivityNotListedOption(fallback)
+              : fallback,
+          );
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

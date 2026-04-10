@@ -152,6 +152,11 @@ export const KYB_STEPS: KybStep[] = [
         placeholder: "Buscar actividad…",
       },
       {
+        id: "actividad_empresa_especifique",
+        label: "Describa la actividad (solo si eligió «Actividad no enlistada»)",
+        type: "textarea",
+      },
+      {
         id: "pct_actividad",
         label: "% de actividad dedicada (si aplica)",
         type: "text",
@@ -395,6 +400,12 @@ export const KYB_STEPS: KybStep[] = [
         label: "Actividad Económica",
         type: "activity_search",
         placeholder: "Buscar actividad económica…",
+      },
+      {
+        id: "rep_actividad_economica_especifique",
+        label:
+          "Describa la actividad económica (solo si eligió «Actividad no enlistada»)",
+        type: "textarea",
       },
       {
         id: "rep_pais_residencia",

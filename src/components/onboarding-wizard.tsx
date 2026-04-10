@@ -7,6 +7,7 @@ import { KybCombobox } from "@/components/kyb-combobox";
 import { KybDateField } from "@/components/kyb-date-field";
 import { KybLanding } from "@/components/kyb-landing";
 import { PAIS_OPTIONS } from "@/data/paises";
+import { KYB_ACTIVITY_NOT_LISTED_VALUE } from "@/lib/kyb-activity-extra-option";
 import {
   useActivityOptions,
   useProfessionOptions,
@@ -156,6 +157,15 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       const next: FormState = { ...prev, [id]: v };
       if (id === "tipo_sociedad" && v !== "__otro__") {
         next.tipo_sociedad_otros_especifique = "";
+      }
+      if (id === "actividad_empresa" && v !== KYB_ACTIVITY_NOT_LISTED_VALUE) {
+        next.actividad_empresa_especifique = "";
+      }
+      if (
+        id === "rep_actividad_economica" &&
+        v !== KYB_ACTIVITY_NOT_LISTED_VALUE
+      ) {
+        next.rep_actividad_economica_especifique = "";
       }
       return next;
     });
@@ -526,6 +536,15 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                   .filter((f) => {
                     if (f.id === "tipo_sociedad_otros_especifique") {
                       return values.tipo_sociedad === "__otro__";
+                    }
+                    if (f.id === "actividad_empresa_especifique") {
+                      return values.actividad_empresa === KYB_ACTIVITY_NOT_LISTED_VALUE;
+                    }
+                    if (f.id === "rep_actividad_economica_especifique") {
+                      return (
+                        values.rep_actividad_economica ===
+                        KYB_ACTIVITY_NOT_LISTED_VALUE
+                      );
                     }
                     return true;
                   })

@@ -1,3 +1,4 @@
+import { KYB_ACTIVITY_NOT_LISTED_VALUE } from "@/lib/kyb-activity-extra-option";
 import type { KybField } from "@/lib/kyb-steps";
 import { isValidPanamaDate } from "@/lib/kyb-date";
 
@@ -17,6 +18,35 @@ export function isFieldComplete(field: KybField, values: FormState): boolean {
 
   if (field.id === "tipo_sociedad_otros_especifique") {
     if (values.tipo_sociedad !== "__otro__") return true;
+    return v.trim().length > 0;
+  }
+
+  if (field.id === "actividad_empresa") {
+    const a = values.actividad_empresa ?? "";
+    if (!a) return false;
+    if (a === KYB_ACTIVITY_NOT_LISTED_VALUE) {
+      return (values.actividad_empresa_especifique ?? "").trim().length > 0;
+    }
+    return true;
+  }
+
+  if (field.id === "actividad_empresa_especifique") {
+    if (values.actividad_empresa !== KYB_ACTIVITY_NOT_LISTED_VALUE) return true;
+    return v.trim().length > 0;
+  }
+
+  if (field.id === "rep_actividad_economica") {
+    const a = values.rep_actividad_economica ?? "";
+    if (!a) return false;
+    if (a === KYB_ACTIVITY_NOT_LISTED_VALUE) {
+      return (values.rep_actividad_economica_especifique ?? "").trim().length > 0;
+    }
+    return true;
+  }
+
+  if (field.id === "rep_actividad_economica_especifique") {
+    if (values.rep_actividad_economica !== KYB_ACTIVITY_NOT_LISTED_VALUE)
+      return true;
     return v.trim().length > 0;
   }
 

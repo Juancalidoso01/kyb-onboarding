@@ -1,3 +1,4 @@
+import { appendActivityNotListedOption } from "@/lib/kyb-activity-extra-option";
 import {
   FALLBACK_ACTIVIDADES,
   FALLBACK_PROFESIONES,
@@ -20,6 +21,14 @@ function csvUrlFor(kind: SheetOptionsKind): string {
   return kind === "profesiones" ? getProfesionesCsvUrl() : getActividadesCsvUrl();
 }
 
+function finalizeOptions(
+  kind: SheetOptionsKind,
+  opts: { value: string; label: string }[],
+): { value: string; label: string }[] {
+  if (kind === "actividades") return appendActivityNotListedOption(opts);
+  return opts;
+}
+
 /**
  * Carga opciones en el navegador sin depender solo de /api (sirve para static export o sin servidor Node).
  * Orden: JSON en public/ → API Next → CSV directo desde Google → fallback local.
@@ -35,7 +44,7 @@ export async function loadSheetOptionsClient(
       const j: unknown = await r.json();
       const opts = (j as { options?: unknown }).options;
       if (Array.isArray(opts) && opts.length > 0) {
-        return opts as { value: string; label: string }[];
+        return finalizeOptions(kind, opts as { value: string; label: string }[]);
       }
     }
   } catch {
@@ -48,7 +57,7 @@ export async function loadSheetOptionsClient(
     if (r.ok) {
       const opts = (j as { options?: unknown }).options;
       if (Array.isArray(opts) && opts.length > 0) {
-        return opts as { value: string; label: string }[];
+        return finalizeOptions(kind, opts as { value: string; label: string }[]);
       }
     }
   } catch {
@@ -60,11 +69,11 @@ export async function loadSheetOptionsClient(
     if (r.ok) {
       const text = await r.text();
       const parsed = parseParametrizedSheetCsv(text);
-      if (parsed.length > 0) return parsed;
+      if (parsed.length > 0) return finalizeOptions(kind, parsed);
     }
   } catch {
     /* Google suele bloquear CORS desde el navegador; no es crítico */
   }
 
-  return fallback;
+  return finalizeOptions(kind, fallback);
 }
