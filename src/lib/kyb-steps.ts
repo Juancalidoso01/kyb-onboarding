@@ -59,6 +59,20 @@ export function juntaFieldMemberSlot(fieldId: string): number | null {
   return null;
 }
 
+/** Claves de valor por fila de junta (para vaciar al eliminar último miembro). */
+export const JUNTA_MEMBER_FIELD_SUFFIXES = [
+  "cargo",
+  "nombre",
+  "apellidos",
+  "nacionalidad",
+  "identificacion",
+  "direccion",
+] as const;
+
+export function formKeysForJuntaMemberSlot(slot: number): string[] {
+  return JUNTA_MEMBER_FIELD_SUFFIXES.map((s) => `junta_${slot}_${s}`);
+}
+
 export const KYB_STEPS: KybStep[] = [
   {
     id: "intro_formulario",
@@ -353,7 +367,7 @@ export const KYB_STEPS: KybStep[] = [
     title:
       "GOBIERNO CORPORATIVO / JUNTA DIRECTIVA / CONSEJO FUNDACIONAL",
     description:
-      "Indique al menos un miembro (cargo, nombre, apellidos, nacionalidad, No. de identificación y dirección). Si hay más personas en la junta o consejo, use + Agregar miembro.",
+      "Indique al menos un miembro (cargo, nombre, apellidos, nacionalidad, No. de identificación y dirección). Puede añadir filas con + Agregar miembro o quitar la última con Eliminar último miembro si se equivocó.",
     pdfPage: "Pág. 1–2",
     fields: [
       ...[1, 2, 3, 4, 5].flatMap(
@@ -391,7 +405,8 @@ export const KYB_STEPS: KybStep[] = [
             {
               id: `junta_${n}_nacionalidad`,
               label: "Nacionalidad",
-              type: "text" as const,
+              type: "country" as const,
+              placeholder: "Buscar país…",
             },
             {
               id: `junta_${n}_identificacion`,
@@ -427,7 +442,8 @@ export const KYB_STEPS: KybStep[] = [
       {
         id: "rep_nacionalidad",
         label: "Nacionalidad",
-        type: "text",
+        type: "country",
+        placeholder: "Buscar país…",
       },
       {
         id: "rep_direccion",
@@ -529,7 +545,8 @@ export const KYB_STEPS: KybStep[] = [
             {
               id: `bf_${n}_nacionalidad`,
               label: "Nacionalidad",
-              type: "text" as const,
+              type: "country" as const,
+              placeholder: "Buscar país…",
             },
             {
               id: `bf_${n}_pais_nacimiento`,
@@ -775,7 +792,8 @@ export const KYB_STEPS: KybStep[] = [
       {
         id: "pep_nacionalidad",
         label: "Nacionalidad",
-        type: "text",
+        type: "country",
+        placeholder: "Buscar país…",
       },
       {
         id: "pep_cedula_pasaporte",

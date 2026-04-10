@@ -34,6 +34,7 @@ import {
   saveDraft,
 } from "@/lib/kyb-local-draft";
 import {
+  formKeysForJuntaMemberSlot,
   isRenderableValueField,
   JUNTA_DIRECTIVA_STEP_ID,
   JUNTA_MEMBER_SLOTS_MAX,
@@ -849,28 +850,51 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                   </motion.div>
                 ))}
                 {step.id === JUNTA_DIRECTIVA_STEP_ID &&
-                juntaMemberSlots < JUNTA_MEMBER_SLOTS_MAX ? (
+                (juntaMemberSlots < JUNTA_MEMBER_SLOTS_MAX ||
+                  juntaMemberSlots > 1) ? (
                   <motion.div
                     initial={reduce ? false : { opacity: 0, y: 8 }}
                     animate={reduce ? false : { opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                    className="flex justify-center pt-2"
+                    className="flex flex-wrap items-center justify-center gap-3 pt-2"
                   >
-                    <button
-                      type="button"
-                      className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border-2 border-dashed border-[#4749B6]/35 bg-[#4749B6]/[0.04] px-4 py-2.5 text-sm font-semibold text-[#4749B6] shadow-sm transition hover:border-[#4749B6]/55 hover:bg-[#4749B6]/[0.08]"
-                      aria-label="Agregar otro miembro de la junta o consejo"
-                      onClick={() =>
-                        setJuntaMemberSlots((n) =>
-                          Math.min(JUNTA_MEMBER_SLOTS_MAX, n + 1),
-                        )
-                      }
-                    >
-                      <span className="text-lg leading-none" aria-hidden>
-                        +
-                      </span>
-                      <span className="ml-2">Agregar miembro</span>
-                    </button>
+                    {juntaMemberSlots < JUNTA_MEMBER_SLOTS_MAX ? (
+                      <button
+                        type="button"
+                        className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border-2 border-dashed border-[#4749B6]/35 bg-[#4749B6]/[0.04] px-4 py-2.5 text-sm font-semibold text-[#4749B6] shadow-sm transition hover:border-[#4749B6]/55 hover:bg-[#4749B6]/[0.08]"
+                        aria-label="Agregar otro miembro de la junta o consejo"
+                        onClick={() =>
+                          setJuntaMemberSlots((n) =>
+                            Math.min(JUNTA_MEMBER_SLOTS_MAX, n + 1),
+                          )
+                        }
+                      >
+                        <span className="text-lg leading-none" aria-hidden>
+                          +
+                        </span>
+                        <span className="ml-2">Agregar miembro</span>
+                      </button>
+                    ) : null}
+                    {juntaMemberSlots > 1 ? (
+                      <button
+                        type="button"
+                        className="rounded-xl border border-red-200/90 bg-red-50/80 px-4 py-2.5 text-sm font-semibold text-red-800 shadow-sm transition hover:border-red-300 hover:bg-red-50"
+                        aria-label="Eliminar el último miembro añadido y borrar sus datos"
+                        onClick={() => {
+                          const slot = juntaMemberSlots;
+                          setValues((prev) => {
+                            const next = { ...prev };
+                            for (const id of formKeysForJuntaMemberSlot(slot)) {
+                              next[id] = "";
+                            }
+                            return next;
+                          });
+                          setJuntaMemberSlots((n) => Math.max(1, n - 1));
+                        }}
+                      >
+                        Eliminar último miembro
+                      </button>
+                    ) : null}
                   </motion.div>
                 ) : null}
               </div>
