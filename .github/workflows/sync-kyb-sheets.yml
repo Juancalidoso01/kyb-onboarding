@@ -1,0 +1,42 @@
+# Descarga el CSV público del Google Sheet y actualiza public/kyb-sheet-data/*.json
+# Cron: días 1 y 16 de cada mes (~cada 15 días). También se puede lanzar a mano (Actions → Run workflow).
+
+name: Sync KYB sheet lists
+
+on:
+  schedule:
+    # 08:00 UTC el día 1 y 16 (aprox. cada 15 días; el cron no admite “cada N días” exacto)
+    - cron: "0 8 1,16 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-kyb-sheets
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Descargar y generar JSON
+        run: node scripts/sync-kyb-sheets.mjs
+
+      - name: Commit y push si hubo cambios
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/kyb-sheet-data/
+          if git diff --staged --quiet; then
+            echo "Sin cambios en el Sheet."
+          else
+            git commit -m "chore: actualizar listados KYB desde Google Sheet [skip ci]"
+            git push
+          fi
