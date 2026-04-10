@@ -1,0 +1,2 @@
+# Backend Python en otro deploy (Railway, Fly, etc.); evita que Vercel instale deps Python aquí.
+api/
