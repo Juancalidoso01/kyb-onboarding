@@ -38,40 +38,20 @@ npm run dev
 
 Abre [http://localhost:3000](http://localhost:3000). El botón “Probar conexión con API Python” comprueba `GET /health`.
 
-## Crear el repositorio en GitHub
+## Ver la app en internet (Vercel)
 
-En este entorno no está instalado `gh` (GitHub CLI). Opciones:
+Repositorio: [github.com/Juancalidoso01/kyb-onboarding](https://github.com/Juancalidoso01/kyb-onboarding)
 
-### Opción A — Sitio web
+1. Entra en [vercel.com](https://vercel.com) → **Add New** → **Project** → importa `Juancalidoso01/kyb-onboarding`.
+2. En **Root Directory**, elige **`web`** (el front está en esa carpeta, no en la raíz del repo).
+3. **Framework Preset:** Next.js (detectado solo).
+4. **Deploy.** Obtendrás una URL del tipo `https://kyb-onboarding-xxx.vercel.app`.
 
-1. En GitHub: **New repository** → nombre p. ej. `kyb-onboarding` → crear vacío (sin README).
-2. En tu máquina:
-
-```bash
-cd /Users/juanpabloobregonjacome/Projects/kyb-onboarding
-git init
-git add .
-git commit -m "chore: proyecto inicial KYB (Next.js + FastAPI)"
-git branch -M main
-git remote add origin https://github.com/TU_USUARIO/kyb-onboarding.git
-git push -u origin main
-```
-
-Sustituye `TU_USUARIO` por tu cuenta (p. ej. `Juancalidoso01`).
-
-### Opción B — GitHub CLI
-
-```bash
-brew install gh
-gh auth login
-cd /Users/juanpabloobregonjacome/Projects/kyb-onboarding
-git init && git add . && git commit -m "chore: proyecto inicial KYB"
-gh repo create kyb-onboarding --private --source=. --push
-```
+Opcional: en el proyecto Vercel → **Settings → Environment Variables**, añade `NEXT_PUBLIC_API_URL` con la URL pública de tu API cuando la tengas desplegada (si no, el formulario funciona; el botón de prueba de API seguirá apuntando a la URL por defecto o fallará hasta configurar backend).
 
 ## Próximos pasos de producto
 
-- Sustituir pasos de ejemplo en `web/src/lib/kyb-steps.ts` por los campos del PDF.
+- Refinar validaciones en `web/src/lib/kyb-steps.ts` y reglas de negocio.
 - Modelo de datos y base de datos (PostgreSQL recomendado para KYB).
 - Subida de documentos y política de retención.
 - Auditoría y roles (compliance / ventas).
