@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { KybCombobox } from "@/components/kyb-combobox";
 import { KybDateField } from "@/components/kyb-date-field";
 import { KybLanding } from "@/components/kyb-landing";
+import { KybPhoneField } from "@/components/kyb-phone-field";
 import { PAIS_OPTIONS } from "@/data/paises";
 import { KYB_ACTIVITY_NOT_LISTED_VALUE } from "@/lib/kyb-activity-extra-option";
 import {
@@ -19,6 +20,10 @@ import {
   normalizePercentInput,
   PHONE_TEXT_FIELD_IDS,
 } from "@/lib/kyb-format-validation";
+import {
+  getDialDigitsForPhoneField,
+  PHONE_SPLIT_PREFIX_FIELD_IDS,
+} from "@/lib/kyb-phone-country";
 import type { KybField, KybStep } from "@/lib/kyb-steps";
 import {
   buildEmptyFormState,
@@ -230,6 +235,9 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       }
       if (id === "doc_identidad_tipo" && v !== "otro_id") {
         next.doc_identidad_otro = "";
+      }
+      if (id === "persona_contacto_cargo" && v !== "otro_cargo") {
+        next.persona_contacto_cargo_especifique = "";
       }
       return next;
     });
@@ -532,12 +540,37 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       return wrapField(field, inner);
     }
 
+    if (field.type === "tel" || PHONE_TEXT_FIELD_IDS.has(field.id)) {
+      const formatErr = getFormatErrorForField(field, values);
+      const contactInputInvalid = formatErr !== null;
+      const fieldInputClass = contactInputInvalid
+        ? `${inputClass} border-red-400/95 focus:border-red-500 focus:ring-red-500/20`
+        : inputClass;
+      const dial = getDialDigitsForPhoneField(field.id, values);
+      const split = PHONE_SPLIT_PREFIX_FIELD_IDS.has(field.id);
+      const inner = (
+        <div key={field.id} className="block">
+          <KybPhoneField
+            label={field.label}
+            value={values[field.id] ?? ""}
+            onChange={(v) => setField(field.id, v)}
+            dialDigits={dial}
+            splitPrefix={split}
+            inputClass={fieldInputClass}
+            invalid={contactInputInvalid}
+            placeholder={field.placeholder}
+            hint={field.hint}
+            formatErr={formatErr}
+            onTypingKey={typingKey}
+          />
+        </div>
+      );
+      return wrapField(field, inner);
+    }
+
     const formatErr = getFormatErrorForField(field, values);
     const contactInputInvalid =
-      formatErr !== null &&
-      (field.type === "email" ||
-        field.type === "tel" ||
-        PHONE_TEXT_FIELD_IDS.has(field.id));
+      formatErr !== null && field.type === "email";
     const fieldInputClass = contactInputInvalid
       ? `${inputClass} border-red-400/95 focus:border-red-500 focus:ring-red-500/20`
       : inputClass;
@@ -587,7 +620,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
           </select>
         ) : (
           <input
-            type={field.type === "email" ? "email" : field.type === "tel" ? "tel" : "text"}
+            type={field.type === "email" ? "email" : "text"}
             className={fieldInputClass}
             placeholder={field.placeholder}
             value={values[field.id] ?? ""}
@@ -720,6 +753,9 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                     }
                     if (f.id === "doc_identidad_otro") {
                       return values.doc_identidad_tipo === "otro_id";
+                    }
+                    if (f.id === "persona_contacto_cargo_especifique") {
+                      return values.persona_contacto_cargo === "otro_cargo";
                     }
                     return true;
                   })

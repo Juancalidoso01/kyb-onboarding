@@ -62,6 +62,20 @@ export function isFieldComplete(field: KybField, values: FormState): boolean {
     return v.trim().length > 0;
   }
 
+  if (field.id === "persona_contacto_cargo") {
+    const c = values.persona_contacto_cargo ?? "";
+    if (!c) return false;
+    if (c === "otro_cargo") {
+      return (values.persona_contacto_cargo_especifique ?? "").trim().length > 0;
+    }
+    return true;
+  }
+
+  if (field.id === "persona_contacto_cargo_especifique") {
+    if (values.persona_contacto_cargo !== "otro_cargo") return true;
+    return v.trim().length > 0;
+  }
+
   if (PHONE_TEXT_FIELD_IDS.has(field.id)) {
     if (!v.trim()) return false;
     return validatePhoneValue(

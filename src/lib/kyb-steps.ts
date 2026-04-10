@@ -234,6 +234,38 @@ export const KYB_STEPS: KybStep[] = [
         type: "text",
       },
       {
+        id: "persona_contacto_cargo",
+        label: "Cargo",
+        type: "select",
+        options: [
+          { value: "", label: "Seleccionar…" },
+          {
+            value: "director_cumplimiento",
+            label: "Director(a) de cumplimiento",
+          },
+          {
+            value: "oficial_cumplimiento",
+            label: "Oficial de cumplimiento (compliance)",
+          },
+          { value: "gerente_riesgos", label: "Gerente de riesgos" },
+          { value: "gerente_legal", label: "Gerente legal" },
+          {
+            value: "representante_legal",
+            label: "Representante legal / apoderado(a)",
+          },
+          {
+            value: "finanzas_contabilidad",
+            label: "Finanzas / contabilidad",
+          },
+          { value: "otro_cargo", label: "Otro (especifique abajo)" },
+        ],
+      },
+      {
+        id: "persona_contacto_cargo_especifique",
+        label: "Especifique el cargo",
+        type: "text",
+      },
+      {
         id: "persona_contacto_telefono",
         label: "Teléfono",
         type: "tel",
