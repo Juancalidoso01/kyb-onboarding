@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Onboarding KYB",
-  description: "Flujo de conocimiento del negocio (KYB) para clientes",
+  title: "Perfil del cliente PJ · KYB Punto Pago Panamá",
+  description:
+    "Formulario de debida diligencia (persona jurídica) alineado al PDF V002-2026",
 };
 
 export default function RootLayout({

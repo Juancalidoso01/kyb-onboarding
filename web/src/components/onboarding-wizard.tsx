@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { KybStep } from "@/lib/kyb-steps";
-import { KYB_STEPS } from "@/lib/kyb-steps";
+import type { KybField, KybStep } from "@/lib/kyb-steps";
+import { isRenderableValueField, KYB_STEPS } from "@/lib/kyb-steps";
 
 type FormState = Record<string, string>;
 
@@ -10,6 +10,7 @@ const initialState = (): FormState => {
   const s: FormState = {};
   for (const step of KYB_STEPS) {
     for (const f of step.fields) {
+      if (!isRenderableValueField(f)) continue;
       s[f.id] = "";
     }
   }
@@ -32,6 +33,13 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
 
   const setField = (id: string, v: string) => {
     setValues((prev) => ({ ...prev, [id]: v }));
+  };
+
+  const toggleCheckbox = (id: string) => {
+    setValues((prev) => ({
+      ...prev,
+      [id]: prev[id] === "true" ? "" : "true",
+    }));
   };
 
   const pingApi = async () => {
@@ -60,17 +68,111 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     }
   };
 
+  const inputClass =
+    "w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20";
+
+  const renderField = (field: KybField) => {
+    if (field.type === "heading") {
+      return (
+        <div key={field.id} className="pt-2">
+          <h3 className="border-b border-slate-200 pb-1 text-sm font-semibold text-slate-800">
+            {field.label}
+          </h3>
+        </div>
+      );
+    }
+
+    if (field.type === "static") {
+      return (
+        <div
+          key={field.id}
+          className="rounded-xl border border-amber-100 bg-amber-50/80 p-3 text-sm text-amber-950"
+        >
+          {field.hint ? <p>{field.hint}</p> : null}
+        </div>
+      );
+    }
+
+    if (field.type === "checkbox") {
+      return (
+        <label
+          key={field.id}
+          className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2.5"
+        >
+          <input
+            type="checkbox"
+            className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+            checked={values[field.id] === "true"}
+            onChange={() => toggleCheckbox(field.id)}
+          />
+          <span className="text-sm font-medium text-slate-800">{field.label}</span>
+        </label>
+      );
+    }
+
+    return (
+      <label key={field.id} className="block">
+        <span className="mb-1 block text-sm font-medium text-slate-700">
+          {field.label}
+        </span>
+        {field.type === "textarea" ? (
+          <textarea
+            className={`${inputClass} min-h-[88px]`}
+            rows={3}
+            placeholder={field.placeholder}
+            value={values[field.id] ?? ""}
+            onChange={(e) => setField(field.id, e.target.value)}
+          />
+        ) : field.type === "select" ? (
+          <select
+            className={inputClass}
+            value={values[field.id] ?? ""}
+            onChange={(e) => setField(field.id, e.target.value)}
+          >
+            {(field.options ?? []).map((o) => (
+              <option key={o.value || "empty"} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        ) : field.type === "yesno" ? (
+          <select
+            className={inputClass}
+            value={values[field.id] ?? ""}
+            onChange={(e) => setField(field.id, e.target.value)}
+          >
+            <option value="">Seleccionar…</option>
+            <option value="si">Sí</option>
+            <option value="no">No</option>
+          </select>
+        ) : (
+          <input
+            type={field.type === "email" ? "email" : field.type === "tel" ? "tel" : "text"}
+            className={inputClass}
+            placeholder={field.placeholder}
+            value={values[field.id] ?? ""}
+            onChange={(e) => setField(field.id, e.target.value)}
+          />
+        )}
+        {field.hint ? (
+          <span className="mt-1 block text-xs text-slate-500">{field.hint}</span>
+        ) : null}
+      </label>
+    );
+  };
+
   return (
-    <div className="mx-auto max-w-2xl px-4 py-10">
+    <div className="mx-auto max-w-3xl px-4 py-10">
       <header className="mb-8">
-        <p className="text-sm font-medium text-slate-500">Onboarding KYB</p>
+        <p className="text-sm font-medium text-slate-500">
+          Perfil del cliente PJ · Punto Pago Panamá
+        </p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
-          Alta de cliente
+          Formulario KYB (debida diligencia)
         </h1>
         <p className="mt-2 text-sm text-slate-600">
-          Flujo por pasos. Sustituye los bloques por los campos reales de tu PDF
-          (ver <code className="rounded bg-slate-100 px-1 text-xs">docs/MAPEO_PDF.md</code> en la raíz del repo
-          ).
+          Versión alineada al PDF V002-2026. Todos los campos son obligatorios en el
+          documento original; si no aplica, indique N/A donde corresponda.
         </p>
         <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200">
           <div
@@ -87,44 +189,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
         <h2 className="text-lg font-semibold text-slate-900">{step.title}</h2>
         <p className="mt-1 text-sm text-slate-600">{step.description}</p>
 
-        <div className="mt-6 space-y-4">
-          {step.fields.map((field) => (
-            <label key={field.id} className="block">
-              <span className="mb-1 block text-sm font-medium text-slate-700">
-                {field.label}
-              </span>
-              {field.type === "textarea" ? (
-                <textarea
-                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none ring-emerald-500/0 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                  rows={3}
-                  placeholder={field.placeholder}
-                  value={values[field.id] ?? ""}
-                  onChange={(e) => setField(field.id, e.target.value)}
-                />
-              ) : field.type === "select" ? (
-                <select
-                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                  value={values[field.id] ?? ""}
-                  onChange={(e) => setField(field.id, e.target.value)}
-                >
-                  {(field.options ?? []).map((o) => (
-                    <option key={o.value || "empty"} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  type={field.type}
-                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                  placeholder={field.placeholder}
-                  value={values[field.id] ?? ""}
-                  onChange={(e) => setField(field.id, e.target.value)}
-                />
-              )}
-            </label>
-          ))}
-        </div>
+        <div className="mt-6 space-y-4">{step.fields.map(renderField)}</div>
 
         <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-6">
           <button

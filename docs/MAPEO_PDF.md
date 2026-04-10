@@ -1,15 +1,26 @@
-# Mapeo: PDF → pantallas web
+# Mapeo: PDF V002-2026 → app web (`kyb-steps.ts`)
 
-Completa esta tabla con tu formulario PDF real. Así el equipo alinea campos, validaciones y generación de PDF final.
+**Documento fuente:** *FORMULARIO PERFIL DEL CLIENTE PJ – PUNTO PAGO PANAMÁ V2-2026* (4 páginas).
 
-| Orden PDF / sección | Campo en PDF (nombre o descripción) | ID en app (`kyb-steps.ts`) | Tipo | Notas |
-|---------------------|--------------------------------------|----------------------------|------|-------|
-| 1 | | | | |
-| 2 | | | | |
+| Sección PDF | Paso en app (`step.id`) | Notas |
+|-------------|-------------------------|--------|
+| Cómo conoció a la empresa | `como_conocio` | Casillas → checkboxes + texto «Otro» |
+| Identificación del cliente | `identificacion_cliente` | Razón social/comercial, PJ, operativa, sociedad, actividad, bolsa, capital, fechas, países, ID tributaria, doc. identidad, contacto |
+| Datos generales | `datos_generales` | Dirección comercial, país/ciudad/provincia, auxiliar, teléfonos, email |
+| Junta / consejo (hasta 5) | `junta_directiva` | Por fila: cargo, nombre, apellidos, nacionalidad, ID, dirección |
+| Representante legal / apoderado | `representante_legal` | Incluye pregunta de investigaciones + explicación |
+| Accionistas / beneficiario final (hasta 3) | `beneficiarios_finales` | Tipo N/J, fechas, participación, dirección |
+| Perfil financiero | `perfil_financiero` | Declaración origen lícito + ingresos USD |
+| Referencias | `referencias` | Tipo + datos de contacto + pregunta investigación |
+| Medios de pago / préstamo | `producto_medios_pago` | Casillas ACH etc., motivo, frecuencia, monto anual, tipo préstamo |
+| PEP | `pep` | Pregunta principal + bloque datos si aplica |
+| Documentación a entregar | `documentacion_entregar` | Checklist + observaciones |
+| Declaración del cliente | `declaracion` | Nombre y fecha (firma digital pendiente) |
 
-## Siguientes pasos sugeridos
+**No incluido en el flujo del cliente (uso interno en el PDF):** bloque *Solo para uso de Grupo Punto Pago* — conclusiones de verificación, revisado por, enlace.
 
-1. Subir el PDF de referencia al repositorio **solo si no contiene datos sensibles**, o guardarlo en un drive interno y enlazarlo aquí.
-2. Decidir si el PDF se **rellena automáticamente** (plantilla + librería PDF) o si solo **recolectas datos** y compliance genera el documento a mano.
-3. Añadir carga de archivos (R2, S3) y antivirus / límites de tamaño.
-4. Autenticación del solicitante (magic link, OTP) antes de datos sensibles.
+## Próximos pasos
+
+- Subida de PDFs / imágenes por ítem del checklist.
+- Firma electrónica o captura de aceptación de declaración.
+- Validaciones por campo (formato fechas, RUC, etc.).
