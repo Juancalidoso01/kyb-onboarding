@@ -40,6 +40,8 @@ type Props = {
   onTypingKey?: (e: KeyboardEvent<HTMLInputElement>) => void;
   /** Toque al escribir (móvil: teclado virtual). Mismo filtrado que en el wizard. */
   onInputFeedback?: (e: FormEvent<HTMLInputElement>) => void;
+  /** Tras elegir una opción (ratón o Enter); el input no siempre dispara `input`. */
+  onPick?: () => void;
   disabled?: boolean;
 };
 
@@ -53,6 +55,7 @@ export function KybCombobox({
   emptyMessage = "Sin coincidencias",
   onTypingKey,
   onInputFeedback,
+  onPick,
   disabled = false,
 }: Props) {
   const uid = useId();
@@ -97,10 +100,11 @@ export function KybCombobox({
     (opt: ComboboxOption) => {
       if (isOptDisabled(opt)) return;
       onChange(opt.value);
+      onPick?.();
       setQuery("");
       setOpen(false);
     },
-    [onChange],
+    [onChange, onPick],
   );
 
   const displayValue = open ? query : selectedLabel;

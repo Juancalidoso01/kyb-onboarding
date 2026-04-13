@@ -47,7 +47,13 @@ import {
   KYB_STEPS,
   NOMBRE_DILIGENCIA_FIELD_ID,
 } from "@/lib/kyb-steps";
-import { playFieldComplete, playKeyTap, unlockAudio } from "@/lib/kyb-sounds";
+import {
+  playChoiceTick,
+  playFieldComplete,
+  playKeyTap,
+  playWizardNav,
+  unlockAudio,
+} from "@/lib/kyb-sounds";
 
 function stepVariantsFor(reduce: boolean) {
   if (reduce) {
@@ -192,6 +198,8 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   const canLeaveIntro = nombreDiligencia.length > 0;
 
   const prevCompleteRef = useRef<Record<string, boolean>>({});
+  /** Evita una ráfaga de «campo completo» al entrar: antes se sembraba prev vacío. */
+  const fieldCompleteSeededRef = useRef(false);
   const lastKeySoundRef = useRef(0);
 
   useEffect(() => {
@@ -247,7 +255,23 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   }, [started, values.pais_opera]);
 
   useEffect(() => {
-    if (!started) return;
+    if (!started) {
+      fieldCompleteSeededRef.current = false;
+      prevCompleteRef.current = {};
+      return;
+    }
+    if (!fieldCompleteSeededRef.current) {
+      fieldCompleteSeededRef.current = true;
+      const next: Record<string, boolean> = {};
+      for (const st of visibleSteps) {
+        for (const f of st.fields) {
+          if (!isRenderableValueField(f) || f.hidden) continue;
+          next[f.id] = isFieldComplete(f, values);
+        }
+      }
+      prevCompleteRef.current = next;
+      return;
+    }
     for (const st of visibleSteps) {
       for (const f of st.fields) {
         if (!isRenderableValueField(f) || f.hidden) continue;
@@ -493,7 +517,10 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
             type="checkbox"
             className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#4749B6] transition focus:ring-[#4749B6]"
             checked={values[field.id] === "true"}
-            onChange={() => toggleCheckbox(field.id)}
+            onChange={() => {
+              playChoiceTick();
+              toggleCheckbox(field.id);
+            }}
           />
           <span className="text-sm font-medium text-slate-800">{field.label}</span>
         </label>
@@ -541,6 +568,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
             emptyMessage="Sin coincidencias"
             onTypingKey={typingKey}
             onInputFeedback={inputTypingFeedback}
+            onPick={playChoiceTick}
           />
           {field.hint ? (
             <span className="mt-1.5 block text-xs text-slate-500">{field.hint}</span>
@@ -575,6 +603,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
             emptyMessage="Sin coincidencias"
             onTypingKey={typingKey}
             onInputFeedback={inputTypingFeedback}
+            onPick={playChoiceTick}
           />
           {field.hint ? (
             <span className="mt-1.5 block text-xs text-slate-500">{field.hint}</span>
@@ -603,6 +632,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
             emptyMessage="Sin coincidencias"
             onTypingKey={typingKey}
             onInputFeedback={inputTypingFeedback}
+            onPick={playChoiceTick}
             disabled={activityLoading}
           />
           {field.hint ? (
@@ -632,6 +662,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
             emptyMessage="Sin coincidencias"
             onTypingKey={typingKey}
             onInputFeedback={inputTypingFeedback}
+            onPick={playChoiceTick}
             disabled={professionLoading}
           />
           {field.hint ? (
@@ -816,7 +847,10 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
           <select
             className={inputClass}
             value={values[field.id] ?? ""}
-            onChange={(e) => setField(field.id, e.target.value)}
+            onChange={(e) => {
+              playChoiceTick();
+              setField(field.id, e.target.value);
+            }}
           >
             {(field.options ?? []).map((o) => (
               <option key={o.value || "empty"} value={o.value}>
@@ -828,7 +862,10 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
           <select
             className={inputClass}
             value={values[field.id] ?? ""}
-            onChange={(e) => setField(field.id, e.target.value)}
+            onChange={(e) => {
+              playChoiceTick();
+              setField(field.id, e.target.value);
+            }}
           >
             <option value="">Seleccionar…</option>
             <option value="si">Sí</option>
@@ -1129,7 +1166,10 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                     type="button"
                     className="rounded-xl border border-slate-200/95 bg-white/90 px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm backdrop-blur-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
                     disabled={isFirst}
-                    onClick={() => setStepIndex((j) => Math.max(0, j - 1))}
+                    onClick={() => {
+                      playWizardNav();
+                      setStepIndex((j) => Math.max(0, j - 1));
+                    }}
                     whileHover={{ scale: isFirst ? 1 : 1.02 }}
                     whileTap={{ scale: isFirst ? 1 : 0.98 }}
                   >
@@ -1140,6 +1180,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                       type="button"
                       className="text-sm font-medium text-slate-500 underline-offset-2 transition hover:text-[#4749B6] hover:underline"
                       onClick={() => {
+                        playWizardNav();
                         saveDraft({
                           stepIndex,
                           values,
@@ -1162,11 +1203,15 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                       type="button"
                       className="rounded-xl bg-gradient-to-b from-[#4749B6] to-[#3B3DA6] px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#4749B6]/30 disabled:cursor-not-allowed disabled:opacity-50"
                       disabled={step.id === "intro_formulario" && !canLeaveIntro}
-                      onClick={() =>
+                      onClick={() => {
+                        if (step.id === "intro_formulario" && !canLeaveIntro) {
+                          return;
+                        }
+                        playWizardNav();
                         setStepIndex((j) =>
                           Math.min(visibleSteps.length - 1, j + 1),
-                        )
-                      }
+                        );
+                      }}
                       whileHover={{
                         scale: step.id === "intro_formulario" && !canLeaveIntro ? 1 : 1.03,
                         boxShadow:
@@ -1182,7 +1227,10 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                     <motion.button
                       type="button"
                       className="rounded-xl bg-gradient-to-b from-[#4749B6] to-[#3B3DA6] px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#4749B6]/30"
-                      onClick={submitDraft}
+                      onClick={() => {
+                        playWizardNav();
+                        void submitDraft();
+                      }}
                       whileHover={{ scale: 1.03 }}
                       whileTap={{ scale: 0.97 }}
                     >
