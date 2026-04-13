@@ -716,12 +716,17 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     if (
       field.type === "textarea" &&
       (/^junta_\d+_direccion$/.test(field.id) ||
-        /^bf_\d+_direccion$/.test(field.id))
+        /^bf_\d+_direccion$/.test(field.id) ||
+        field.id === "rep_direccion")
     ) {
+      const addressVariant =
+        field.id === "rep_direccion" && showPanamaAddressLookup(values)
+          ? "panama"
+          : "worldwide";
       const inner = (
         <div key={field.id} className="block">
           <KybAddressPaField
-            variant="worldwide"
+            variant={addressVariant}
             label={field.label}
             hint={field.hint}
             value={values[field.id] ?? ""}
