@@ -30,6 +30,30 @@ export type KybLocalDraft = {
   pepMemberSlots?: number;
 };
 
+function notifyDraftStorageListeners(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.dispatchEvent(new CustomEvent("kyb-draft-saved"));
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Enlace "Firma del director" solo si hay datos del flujo móvil (MetaMap / firma)
+ * en el borrador local y el formulario aún no tiene referencia de envío.
+ */
+export function shouldShowFirmaDirectorNav(draft: KybLocalDraft | null): boolean {
+  if (!draft?.values) return false;
+  const v = draft.values;
+  if ((v.decl_formulario_ref ?? "").trim()) return false;
+  const hasFirma = (v.decl_firma_canvas_data_url ?? "").trim().length > 0;
+  const hasMetamap =
+    (v.decl_metamap_verification_id ?? "").trim().length > 0 ||
+    (v.decl_metamap_identity_id ?? "").trim().length > 0;
+  return hasFirma || hasMetamap;
+}
+
 export function buildEmptyFormState(steps: KybStep[]): FormState {
   const s: FormState = {};
   for (const st of steps) {
@@ -72,6 +96,7 @@ export function readDraft(steps: KybStep[]): KybLocalDraft | null {
     }
     if (d.version !== KYB_PDF_FORM_VERSION) {
       localStorage.removeItem(KYB_LOCAL_STORAGE_KEY);
+      notifyDraftStorageListeners();
       return null;
     }
     const base = buildEmptyFormState(steps);
@@ -156,6 +181,7 @@ export function saveDraft(
         : {}),
     };
     localStorage.setItem(KYB_LOCAL_STORAGE_KEY, JSON.stringify(full));
+    notifyDraftStorageListeners();
   } catch {
     /* almacenamiento lleno o modo privado */
   }
@@ -165,6 +191,7 @@ export function clearDraft(): void {
   if (typeof window === "undefined") return;
   try {
     localStorage.removeItem(KYB_LOCAL_STORAGE_KEY);
+    notifyDraftStorageListeners();
   } catch {
     /* ignore */
   }

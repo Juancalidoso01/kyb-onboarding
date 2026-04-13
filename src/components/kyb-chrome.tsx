@@ -1,9 +1,38 @@
+"use client";
+
 import type { ReactNode } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { PpAmbient } from "@/components/pp-ambient";
+import {
+  KYB_LOCAL_STORAGE_KEY,
+  readDraft,
+  shouldShowFirmaDirectorNav,
+} from "@/lib/kyb-local-draft";
+import { KYB_STEPS } from "@/lib/kyb-steps";
 
 const BUSINESS_HUB_URL = "https://puntopago.net/business/paymentshub/";
 
 export function KybChrome({ children }: { children: ReactNode }) {
+  const [showFirmaDirector, setShowFirmaDirector] = useState(false);
+
+  const syncFirmaNav = useCallback(() => {
+    setShowFirmaDirector(shouldShowFirmaDirectorNav(readDraft(KYB_STEPS)));
+  }, []);
+
+  useEffect(() => {
+    syncFirmaNav();
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === null || e.key === KYB_LOCAL_STORAGE_KEY) syncFirmaNav();
+    };
+    const onDraftSaved: EventListener = () => syncFirmaNav();
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("kyb-draft-saved", onDraftSaved);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("kyb-draft-saved", onDraftSaved);
+    };
+  }, [syncFirmaNav]);
+
   return (
     <div className="pp-page-bg relative min-h-screen">
       <PpAmbient />
@@ -31,12 +60,14 @@ export function KybChrome({ children }: { children: ReactNode }) {
             </span>
           </a>
           <nav className="hidden items-center gap-1 sm:flex">
-            <a
-              href="/firmar-director"
-              className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-[#4749B6]"
-            >
-              Firma del director
-            </a>
+            {showFirmaDirector ? (
+              <a
+                href="/firmar-director"
+                className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-[#4749B6]"
+              >
+                Firma del director
+              </a>
+            ) : null}
             <a
               href={BUSINESS_HUB_URL}
               target="_blank"

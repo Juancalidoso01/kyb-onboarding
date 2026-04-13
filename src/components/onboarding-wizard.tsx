@@ -53,6 +53,10 @@ import { KybDeclaracionResumen } from "@/components/kyb-declaracion-resumen";
 import { KybDocumentacionPersonas } from "@/components/kyb-documentacion-personas";
 import { KybFileRow } from "@/components/kyb-file-row";
 import { KybRepresentanteCierrePaso } from "@/components/kyb-representante-cierre-paso";
+import {
+  KybStepSectionsNavMobile,
+  KybStepSectionsNavSidebar,
+} from "@/components/kyb-step-sections-nav";
 import { KybPuntoPagoServiciosMulti } from "@/components/kyb-punto-pago-servicios-multi";
 import { KybPuntoPagoMetricasPorServicio } from "@/components/kyb-punto-pago-metricas-por-servicio";
 import {
@@ -184,7 +188,9 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   const [bfMemberSlots, setBfMemberSlots] = useState(1);
   const [pepMemberSlots, setPepMemberSlots] = useState(1);
   const [landingDraftAt, setLandingDraftAt] = useState<number | null>(null);
-  const [apiStatus, setApiStatus] = useState<string | null>(null);
+  const [draftServerFeedback, setDraftServerFeedback] = useState<string | null>(
+    null,
+  );
   const [cierreRepresentanteListo, setCierreRepresentanteListo] =
     useState(false);
   const { options: activityOptions, loading: activityLoading } =
@@ -222,6 +228,20 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
           : 0) * 100,
       ),
     [effectiveStepIndex, visibleSteps.length],
+  );
+
+  const jumpToStep = useCallback(
+    (i: number) => {
+      if (visibleSteps.length === 0) return;
+      playWizardNav();
+      setStepIndex(Math.max(0, Math.min(visibleSteps.length - 1, i)));
+      requestAnimationFrame(() => {
+        document
+          .getElementById("kyb-wizard-card")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    },
+    [visibleSteps.length],
   );
 
   const docCompletenessCtx = useMemo<KybDocCompletenessContext>(
@@ -589,17 +609,6 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     });
   };
 
-  const pingApi = async () => {
-    const base = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
-    try {
-      const r = await fetch(`${base}/health`);
-      const j = await r.json();
-      setApiStatus(`API: ${j.status ?? "ok"}`);
-    } catch {
-      setApiStatus("API no disponible (¿iniciaste uvicorn en :8000?)");
-    }
-  };
-
   const submitDraft = async () => {
     const base = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
     try {
@@ -610,9 +619,9 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       });
       const j = await r.json();
       clearDraft();
-      setApiStatus(`Borrador enviado: ${JSON.stringify(j)}`);
+      setDraftServerFeedback(`Borrador enviado: ${JSON.stringify(j)}`);
     } catch (e) {
-      setApiStatus(`Error al enviar: ${String(e)}`);
+      setDraftServerFeedback(`Error al enviar: ${String(e)}`);
     }
   };
 
@@ -1271,13 +1280,21 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   }
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <motion.div
-        className="overflow-hidden rounded-2xl border border-white/70 bg-white/75 shadow-[0_8px_40px_-12px_rgba(71,73,182,0.18),0_0_0_1px_rgba(15,23,42,0.05)] backdrop-blur-xl"
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-      >
+    <div className="mx-auto w-full max-w-6xl">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:gap-8">
+        <div className="min-w-0 flex-1 space-y-5">
+          <KybStepSectionsNavMobile
+            steps={visibleSteps}
+            activeIndex={effectiveStepIndex}
+            onSelectStep={jumpToStep}
+          />
+          <motion.div
+            id="kyb-wizard-card"
+            className="overflow-hidden rounded-2xl border border-white/70 bg-white/75 shadow-[0_8px_40px_-12px_rgba(71,73,182,0.18),0_0_0_1px_rgba(15,23,42,0.05)] backdrop-blur-xl"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+          >
         <div className="border-b border-slate-100/90 bg-gradient-to-br from-[#4749B6]/[0.1] via-white/90 to-white/70 px-5 py-6 sm:px-8 sm:py-8">
           <motion.p
             className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#4749B6]"
@@ -1640,29 +1657,26 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                     </motion.button>
                   )}
                 </div>
+                {draftServerFeedback ? (
+                  <p
+                    className="mt-4 w-full text-xs text-slate-600"
+                    role="status"
+                  >
+                    {draftServerFeedback}
+                  </p>
+                ) : null}
               </div>
             </motion.div>
           </AnimatePresence>
         </section>
       </motion.div>
-
-      <motion.p
-        className="mt-6 text-center text-xs text-slate-500"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.6 }}
-      >
-        <button
-          type="button"
-          className="font-medium text-[#4749B6] underline-offset-2 transition hover:underline"
-          onClick={pingApi}
-        >
-          Probar conexión con API
-        </button>
-        {apiStatus ? (
-          <span className="ml-2 text-slate-600">{apiStatus}</span>
-        ) : null}
-      </motion.p>
+        </div>
+        <KybStepSectionsNavSidebar
+          steps={visibleSteps}
+          activeIndex={effectiveStepIndex}
+          onSelectStep={jumpToStep}
+        />
+      </div>
     </div>
   );
 }
