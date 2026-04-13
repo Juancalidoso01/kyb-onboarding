@@ -62,10 +62,13 @@ export function juntaFieldMemberSlot(fieldId: string): number | null {
 /** Claves de valor por fila de junta (para vaciar al eliminar último miembro). */
 export const JUNTA_MEMBER_FIELD_SUFFIXES = [
   "cargo",
-  "nombre",
-  "apellidos",
+  "tipo_persona",
+  "fecha_nacimiento",
+  "nombre_completo",
+  "cedula_pasaporte",
+  "razon_social",
+  "ruc",
   "nacionalidad",
-  "identificacion",
   "direccion",
 ] as const;
 
@@ -395,7 +398,7 @@ export const KYB_STEPS: KybStep[] = [
     title:
       "GOBIERNO CORPORATIVO / JUNTA DIRECTIVA / CONSEJO FUNDACIONAL",
     description:
-      "Indique al menos un miembro (cargo, nombre, apellidos, nacionalidad, No. de identificación y dirección). Puede añadir filas con + Agregar miembro o quitar la última con Eliminar último miembro si se equivocó.",
+      "Indique al menos un miembro: cargo y si es persona natural o jurídica. Según el caso verá fecha de nacimiento y documento, o razón social y RUC; luego nacionalidad y dirección. Puede añadir filas con + Agregar miembro o quitar la última con Eliminar último miembro si se equivocó.",
     pdfPage: "Pág. 1–2",
     fields: [
       ...[1, 2, 3, 4, 5].flatMap(
@@ -421,13 +424,38 @@ export const KYB_STEPS: KybStep[] = [
               ],
             },
             {
-              id: `junta_${n}_nombre`,
-              label: "Nombre",
+              id: `junta_${n}_tipo_persona`,
+              label: "Persona natural o jurídica",
+              type: "select" as const,
+              options: [
+                { value: "", label: "Seleccionar…" },
+                { value: "N", label: "Persona natural" },
+                { value: "J", label: "Persona jurídica" },
+              ],
+            },
+            {
+              id: `junta_${n}_fecha_nacimiento`,
+              label: "Fecha de nacimiento",
+              type: "date" as const,
+            },
+            {
+              id: `junta_${n}_nombre_completo`,
+              label: "Nombre completo",
               type: "text" as const,
             },
             {
-              id: `junta_${n}_apellidos`,
-              label: "Apellidos",
+              id: `junta_${n}_cedula_pasaporte`,
+              label: "Cédula o pasaporte",
+              type: "text" as const,
+            },
+            {
+              id: `junta_${n}_razon_social`,
+              label: "Razón social",
+              type: "text" as const,
+            },
+            {
+              id: `junta_${n}_ruc`,
+              label: "RUC",
               type: "text" as const,
             },
             {
@@ -435,11 +463,6 @@ export const KYB_STEPS: KybStep[] = [
               label: "Nacionalidad",
               type: "country" as const,
               placeholder: "Buscar país…",
-            },
-            {
-              id: `junta_${n}_identificacion`,
-              label: "No. De identificación",
-              type: "text" as const,
             },
             {
               id: `junta_${n}_direccion`,

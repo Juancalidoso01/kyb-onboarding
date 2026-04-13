@@ -287,6 +287,24 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       if (id === "persona_contacto_cargo" && v !== "otro_cargo") {
         next.persona_contacto_cargo_especifique = "";
       }
+      const tipoJunta = id.match(/^junta_(\d+)_tipo_persona$/);
+      if (tipoJunta) {
+        const sn = tipoJunta[1];
+        if (v === "N") {
+          next[`junta_${sn}_razon_social`] = "";
+          next[`junta_${sn}_ruc`] = "";
+        } else if (v === "J") {
+          next[`junta_${sn}_fecha_nacimiento`] = "";
+          next[`junta_${sn}_nombre_completo`] = "";
+          next[`junta_${sn}_cedula_pasaporte`] = "";
+        } else if (v === "") {
+          next[`junta_${sn}_fecha_nacimiento`] = "";
+          next[`junta_${sn}_nombre_completo`] = "";
+          next[`junta_${sn}_cedula_pasaporte`] = "";
+          next[`junta_${sn}_razon_social`] = "";
+          next[`junta_${sn}_ruc`] = "";
+        }
+      }
       return next;
     });
   };
@@ -862,6 +880,23 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                     if (step.id === JUNTA_DIRECTIVA_STEP_ID) {
                       const slot = juntaFieldMemberSlot(f.id);
                       if (slot !== null && slot > juntaMemberSlots) return false;
+                      const suffix = f.id.match(/^junta_\d+_(.+)$/)?.[1];
+                      if (
+                        suffix === "fecha_nacimiento" ||
+                        suffix === "nombre_completo" ||
+                        suffix === "cedula_pasaporte"
+                      ) {
+                        const tipo = (
+                          values[`junta_${slot}_tipo_persona`] ?? ""
+                        ).trim();
+                        if (tipo !== "N") return false;
+                      }
+                      if (suffix === "razon_social" || suffix === "ruc") {
+                        const tipo = (
+                          values[`junta_${slot}_tipo_persona`] ?? ""
+                        ).trim();
+                        if (tipo !== "J") return false;
+                      }
                     }
                     if (step.id === BENEFICIARIOS_FINALES_STEP_ID) {
                       const slot = bfFieldMemberSlot(f.id);

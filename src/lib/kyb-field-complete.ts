@@ -14,6 +14,27 @@ export type FormState = Record<string, string>;
 export function isFieldComplete(field: KybField, values: FormState): boolean {
   const v = values[field.id] ?? "";
 
+  const juntaTipo = field.id.match(/^junta_(\d+)_tipo_persona$/);
+  if (juntaTipo) {
+    return v === "N" || v === "J";
+  }
+
+  const juntaNaturalOnly = field.id.match(
+    /^junta_(\d+)_(fecha_nacimiento|nombre_completo|cedula_pasaporte)$/,
+  );
+  if (juntaNaturalOnly) {
+    const slot = juntaNaturalOnly[1];
+    const tipo = values[`junta_${slot}_tipo_persona`] ?? "";
+    if (tipo !== "N") return true;
+  }
+
+  const juntaJurOnly = field.id.match(/^junta_(\d+)_(razon_social|ruc)$/);
+  if (juntaJurOnly) {
+    const slot = juntaJurOnly[1];
+    const tipo = values[`junta_${slot}_tipo_persona`] ?? "";
+    if (tipo !== "J") return true;
+  }
+
   if (field.id === "tipo_sociedad") {
     const ts = values.tipo_sociedad ?? "";
     if (!ts) return false;
