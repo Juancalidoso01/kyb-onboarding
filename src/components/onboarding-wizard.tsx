@@ -34,8 +34,12 @@ import {
   saveDraft,
 } from "@/lib/kyb-local-draft";
 import {
+  formKeysForBfMemberSlot,
   formKeysForJuntaMemberSlot,
   isRenderableValueField,
+  BENEFICIARIOS_FINALES_STEP_ID,
+  BF_MEMBER_SLOTS_MAX,
+  bfFieldMemberSlot,
   JUNTA_DIRECTIVA_STEP_ID,
   JUNTA_MEMBER_SLOTS_MAX,
   juntaFieldMemberSlot,
@@ -144,6 +148,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   const [stepIndex, setStepIndex] = useState(0);
   const [values, setValues] = useState<FormState>(() => buildEmptyFormState(steps));
   const [juntaMemberSlots, setJuntaMemberSlots] = useState(1);
+  const [bfMemberSlots, setBfMemberSlots] = useState(1);
   const [landingDraftAt, setLandingDraftAt] = useState<number | null>(null);
   const [apiStatus, setApiStatus] = useState<string | null>(null);
   const { options: activityOptions, loading: activityLoading } =
@@ -174,14 +179,15 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   useEffect(() => {
     if (!started) return;
     const t = window.setTimeout(() => {
-      saveDraft({ stepIndex, values, juntaMemberSlots });
+      saveDraft({ stepIndex, values, juntaMemberSlots, bfMemberSlots });
     }, 500);
     return () => window.clearTimeout(t);
-  }, [started, stepIndex, values, juntaMemberSlots]);
+  }, [started, stepIndex, values, juntaMemberSlots, bfMemberSlots]);
 
   useEffect(() => {
     if (!started) return;
-    const flush = () => saveDraft({ stepIndex, values, juntaMemberSlots });
+    const flush = () =>
+      saveDraft({ stepIndex, values, juntaMemberSlots, bfMemberSlots });
     const onVis = () => {
       if (document.visibilityState === "hidden") flush();
     };
@@ -191,7 +197,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       window.removeEventListener("beforeunload", flush);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [started, stepIndex, values, juntaMemberSlots]);
+  }, [started, stepIndex, values, juntaMemberSlots, bfMemberSlots]);
 
   useEffect(() => {
     if (!started) return;
@@ -326,10 +332,12 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       setValues(d.values);
       setStepIndex(d.stepIndex);
       setJuntaMemberSlots(d.juntaMemberSlots ?? 1);
+      setBfMemberSlots(d.bfMemberSlots ?? 1);
     } else {
       setValues(buildEmptyFormState(steps));
       setStepIndex(0);
       setJuntaMemberSlots(1);
+      setBfMemberSlots(1);
     }
     setStarted(true);
   };
@@ -339,6 +347,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     setValues(buildEmptyFormState(steps));
     setStepIndex(0);
     setJuntaMemberSlots(1);
+    setBfMemberSlots(1);
     setLandingDraftAt(null);
     unlockAudio();
     setStarted(true);
@@ -349,6 +358,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     setValues(buildEmptyFormState(steps));
     setStepIndex(0);
     setJuntaMemberSlots(1);
+    setBfMemberSlots(1);
     setLandingDraftAt(null);
   };
 
@@ -687,7 +697,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
         <span
           className={`mb-1.5 block font-medium text-[#0B0B13] ${
             field.type === "yesno" && field.label.length > 160
-              ? "text-xs leading-snug sm:text-sm"
+              ? "text-justify text-xs leading-snug sm:text-sm"
               : "text-sm"
           }`}
         >
@@ -853,6 +863,10 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                       const slot = juntaFieldMemberSlot(f.id);
                       if (slot !== null && slot > juntaMemberSlots) return false;
                     }
+                    if (step.id === BENEFICIARIOS_FINALES_STEP_ID) {
+                      const slot = bfFieldMemberSlot(f.id);
+                      if (slot !== null && slot > bfMemberSlots) return false;
+                    }
                     if (f.id === "tipo_sociedad_otros_especifique") {
                       return values.tipo_sociedad === "__otro__";
                     }
@@ -935,6 +949,53 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                     ) : null}
                   </motion.div>
                 ) : null}
+                {step.id === BENEFICIARIOS_FINALES_STEP_ID &&
+                (bfMemberSlots < BF_MEMBER_SLOTS_MAX || bfMemberSlots > 1) ? (
+                  <motion.div
+                    initial={reduce ? false : { opacity: 0, y: 8 }}
+                    animate={reduce ? false : { opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                    className="flex flex-wrap items-center justify-center gap-3 pt-2"
+                  >
+                    {bfMemberSlots < BF_MEMBER_SLOTS_MAX ? (
+                      <button
+                        type="button"
+                        className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border-2 border-dashed border-[#4749B6]/35 bg-[#4749B6]/[0.04] px-4 py-2.5 text-sm font-semibold text-[#4749B6] shadow-sm transition hover:border-[#4749B6]/55 hover:bg-[#4749B6]/[0.08]"
+                        aria-label="Agregar otra fila de beneficiario final o accionista"
+                        onClick={() =>
+                          setBfMemberSlots((n) =>
+                            Math.min(BF_MEMBER_SLOTS_MAX, n + 1),
+                          )
+                        }
+                      >
+                        <span className="text-lg leading-none" aria-hidden>
+                          +
+                        </span>
+                        <span className="ml-2">Agregar persona</span>
+                      </button>
+                    ) : null}
+                    {bfMemberSlots > 1 ? (
+                      <button
+                        type="button"
+                        className="rounded-xl border border-red-200/90 bg-red-50/80 px-4 py-2.5 text-sm font-semibold text-red-800 shadow-sm transition hover:border-red-300 hover:bg-red-50"
+                        aria-label="Eliminar la última fila añadida y borrar sus datos"
+                        onClick={() => {
+                          const slot = bfMemberSlots;
+                          setValues((prev) => {
+                            const next = { ...prev };
+                            for (const id of formKeysForBfMemberSlot(slot)) {
+                              next[id] = "";
+                            }
+                            return next;
+                          });
+                          setBfMemberSlots((n) => Math.max(1, n - 1));
+                        }}
+                      >
+                        Eliminar última fila
+                      </button>
+                    ) : null}
+                  </motion.div>
+                ) : null}
               </div>
 
               <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100/90 pt-8">
@@ -954,7 +1015,12 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                       type="button"
                       className="text-sm font-medium text-slate-500 underline-offset-2 transition hover:text-[#4749B6] hover:underline"
                       onClick={() => {
-                        saveDraft({ stepIndex, values, juntaMemberSlots });
+                        saveDraft({
+                          stepIndex,
+                          values,
+                          juntaMemberSlots,
+                          bfMemberSlots,
+                        });
                         setStarted(false);
                         setStepIndex(0);
                         const d = readDraft(steps);

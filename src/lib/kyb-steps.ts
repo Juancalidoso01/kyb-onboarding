@@ -73,6 +73,34 @@ export function formKeysForJuntaMemberSlot(slot: number): string[] {
   return JUNTA_MEMBER_FIELD_SUFFIXES.map((s) => `junta_${slot}_${s}`);
 }
 
+/** Beneficiarios finales: máximo 3 filas en PDF; la UI muestra 1 al inicio y “+” para el resto. */
+export const BENEFICIARIOS_FINALES_STEP_ID = "beneficiarios_finales" as const;
+export const BF_MEMBER_SLOTS_MAX = 3;
+
+export function bfFieldMemberSlot(fieldId: string): number | null {
+  const h = fieldId.match(/^__h_bf_(\d+)$/);
+  if (h) return parseInt(h[1], 10);
+  const j = fieldId.match(/^bf_(\d+)_/);
+  if (j) return parseInt(j[1], 10);
+  return null;
+}
+
+const BF_MEMBER_FIELD_SUFFIXES = [
+  "tipo_persona",
+  "fecha_nac_const",
+  "nombre_razon",
+  "cedula_ruc",
+  "nacionalidad",
+  "pais_nacimiento",
+  "fecha_condicion_bf",
+  "pct_participacion",
+  "direccion",
+] as const;
+
+export function formKeysForBfMemberSlot(slot: number): string[] {
+  return BF_MEMBER_FIELD_SUFFIXES.map((s) => `bf_${slot}_${s}`);
+}
+
 export const KYB_STEPS: KybStep[] = [
   {
     id: "intro_formulario",
@@ -500,7 +528,7 @@ export const KYB_STEPS: KybStep[] = [
     id: "beneficiarios_finales",
     title: "ACCIONISTAS O BENEFICIARIO FINAL",
     description:
-      "ACCIONISTAS, DUEÑOS, SOCIOS O ASOCIADOS — hasta tres filas.",
+      "Indique al menos un beneficiario final o accionista. Puede añadir hasta tres filas con + Agregar persona o quitar la última con Eliminar última fila.",
     pdfPage: "Pág. 2",
     fields: [
       {
