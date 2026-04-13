@@ -21,9 +21,8 @@ function includeFieldInSummaryTable(f: KybField): boolean {
   if (f.type === "static" || f.type === "heading") return false;
   if (
     f.type === "declaracion_resumen" ||
-    f.type === "firma_paquete_ui" ||
-    f.type === "representante_firma_kyc" ||
-    f.type === "kyb_export_pdf"
+    f.type === "representante_enlace_qr" ||
+    f.type === "representante_firma_kyc"
   ) {
     return false;
   }

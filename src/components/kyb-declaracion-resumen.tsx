@@ -28,9 +28,8 @@ function includeFieldInSummaryTable(f: KybField): boolean {
   if (f.type === "static" || f.type === "heading") return false;
   if (
     f.type === "declaracion_resumen" ||
-    f.type === "firma_paquete_ui" ||
-    f.type === "representante_firma_kyc" ||
-    f.type === "kyb_export_pdf"
+    f.type === "representante_enlace_qr" ||
+    f.type === "representante_firma_kyc"
   )
     return false;
   if (
@@ -54,12 +53,6 @@ export function KybDeclaracionResumen({ steps, values, visibility }: Props) {
           Revise los datos antes de la declaración. Sirve como guía de lo
           registrado en este navegador (borrador local).
         </p>
-        <a
-          href="#kyb-bloque-firma-representante"
-          className="mt-4 inline-flex w-full min-h-[48px] items-center justify-center rounded-2xl bg-gradient-to-r from-[#4749B6] to-[#3B3DA6] px-5 py-3 text-center text-sm font-bold text-white shadow-lg shadow-[#4749B6]/25 transition hover:opacity-95"
-        >
-          Proceder a firmar y validar identidad (Representante legal).
-        </a>
       </div>
       {steps.map((st) => (
         <section

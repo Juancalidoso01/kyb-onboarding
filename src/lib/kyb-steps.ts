@@ -34,12 +34,10 @@ export type KybFieldType =
   | "punto_pago_metricas_por_servicio"
   /** Resumen de respuestas antes de declaración (solo UI). */
   | "declaracion_resumen"
-  /** Descarga JSON y enlace a página de firma del director (solo UI). */
-  | "firma_paquete_ui"
+  /** Código QR y sincronización móvil para representante (solo UI). */
+  | "representante_enlace_qr"
   /** MetaMap KYC + firma digital en canvas (representante; solo UI). */
-  | "representante_firma_kyc"
-  /** Descarga PDF del borrador tras KYC + firma (solo UI). */
-  | "kyb_export_pdf";
+  | "representante_firma_kyc";
 
 export type KybField = {
   id: string;
@@ -1142,7 +1140,7 @@ export const KYB_STEPS: KybStep[] = [
     id: "declaracion",
     title: "FIRMA Y DECLARACIÓN DEL CLIENTE",
     description:
-      "Revise primero el resumen de lo diligenciado. La declaración debe suscribirla un director u oficial autorizado de la empresa. Si quien llena el formulario no es esa persona, use el paquete JSON y la página de firma del director.",
+      "Revise el resumen, genere el código QR para que el representante complete MetaMap y la firma en su celular (o use el bloque inferior en este mismo equipo), y complete nombre y fecha. El PDF se descargará solo al finalizar.",
     pdfPage: "Pág. 4",
     fields: [
       {
@@ -1160,15 +1158,15 @@ export const KYB_STEPS: KybStep[] = [
         type: "declaracion_resumen",
       },
       {
+        id: "decl_enlace_representante_ui",
+        label: "",
+        type: "representante_enlace_qr",
+      },
+      {
         id: "static_declaracion",
         label: "",
         type: "static",
         hint: "Declaro de manera voluntaria, libre de cualquier error, fuerza o dolo que todas las afirmaciones y respuestas que he manifestado en este documento son correctas, veraces, completas y autorizo al GRUPO PUNTO PAGO a verificar toda la información detallada. Además, me obligo a informar al GRUPO PUNTO PAGO de cualquier cambio o actualización de información que pueda afectar las afirmaciones y respuestas anotadas en este formulario, en un término no mayor a 30 días.",
-      },
-      {
-        id: "decl_paquete_ui",
-        label: "",
-        type: "firma_paquete_ui",
       },
       {
         id: "decl_rep_verificacion_ui",
@@ -1205,11 +1203,6 @@ export const KYB_STEPS: KybStep[] = [
         label: "Fecha de la declaración",
         type: "date",
       },
-      {
-        id: "decl_export_pdf_ui",
-        label: "",
-        type: "kyb_export_pdf",
-      },
     ],
   },
 ];
@@ -1223,9 +1216,8 @@ export function isRenderableValueField(f: KybField): boolean {
     f.type !== "punto_pago_servicios_multi" &&
     f.type !== "punto_pago_metricas_por_servicio" &&
     f.type !== "declaracion_resumen" &&
-    f.type !== "firma_paquete_ui" &&
-    f.type !== "representante_firma_kyc" &&
-    f.type !== "kyb_export_pdf"
+    f.type !== "representante_enlace_qr" &&
+    f.type !== "representante_firma_kyc"
   );
 }
 

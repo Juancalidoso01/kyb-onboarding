@@ -49,12 +49,12 @@ import {
   PEP_STEP_ID,
 } from "@/lib/kyb-pep-content";
 import { type KybDocCompletenessContext } from "@/lib/kyb-documentacion";
+import { KybDeclaracionFinalSuccess } from "@/components/kyb-declaracion-estado";
 import { KybDeclaracionResumen } from "@/components/kyb-declaracion-resumen";
 import { KybDocumentacionPersonas } from "@/components/kyb-documentacion-personas";
 import { KybFileRow } from "@/components/kyb-file-row";
-import { KybFirmaPaquetePanel } from "@/components/kyb-firma-paquete-panel";
 import { KybRepresentanteFirmaKyc } from "@/components/kyb-representante-firma-kyc";
-import { KybExportPdfPanel } from "@/components/kyb-export-pdf-panel";
+import { KybRepresentanteRemotoPanel } from "@/components/kyb-representante-remoto-panel";
 import { KybPuntoPagoServiciosMulti } from "@/components/kyb-punto-pago-servicios-multi";
 import { KybPuntoPagoMetricasPorServicio } from "@/components/kyb-punto-pago-metricas-por-servicio";
 import {
@@ -71,6 +71,8 @@ import {
   NOMBRE_DILIGENCIA_FIELD_ID,
   PP_SV_METRICA_PAIRS,
 } from "@/lib/kyb-steps";
+import { isValidPanamaDate } from "@/lib/kyb-date";
+import { buildAndDownloadKybPdf } from "@/lib/kyb-export-pdf";
 import { isKybStepFieldVisible } from "@/lib/kyb-step-field-visibility";
 import {
   playChoiceTick,
@@ -184,6 +186,9 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   const [pepMemberSlots, setPepMemberSlots] = useState(1);
   const [landingDraftAt, setLandingDraftAt] = useState<number | null>(null);
   const [apiStatus, setApiStatus] = useState<string | null>(null);
+  const [showDeclaracionFinalSuccess, setShowDeclaracionFinalSuccess] =
+    useState(false);
+  const pdfAutoDoneRef = useRef(false);
   const { options: activityOptions, loading: activityLoading } =
     useActivityOptions();
   const { options: professionOptions, loading: professionLoading } =
@@ -252,6 +257,94 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       values.cotiza_bolsa,
     ],
   );
+
+  const flushDraftNow = useCallback(() => {
+    if (!started) return;
+    saveDraft({
+      stepIndex,
+      values,
+      juntaMemberSlots,
+      bfMemberSlots,
+      pepMemberSlots,
+    });
+  }, [started, stepIndex, values, juntaMemberSlots, bfMemberSlots, pepMemberSlots]);
+
+  const mergeRemoteRepresentantePatch = useCallback(
+    (patch: Partial<FormState>) => {
+      setValues((prev) => {
+        const next: FormState = { ...prev };
+        for (const [k, v] of Object.entries(patch)) {
+          if (v !== undefined) next[k] = v;
+        }
+        return next;
+      });
+    },
+    [],
+  );
+
+  const declarationPdfReady = useMemo(() => {
+    const vid = (values.decl_metamap_verification_id ?? "").trim();
+    const sig = (values.decl_firma_canvas_data_url ?? "").trim();
+    const nom = (values.decl_director_nombre ?? "").trim();
+    const f = values.decl_fecha ?? "";
+    return Boolean(vid && sig && nom) && isValidPanamaDate(f);
+  }, [
+    values.decl_metamap_verification_id,
+    values.decl_firma_canvas_data_url,
+    values.decl_director_nombre,
+    values.decl_fecha,
+  ]);
+
+  useEffect(() => {
+    if (!started) return;
+    if (visibleSteps[effectiveStepIndex]?.id !== DECLARACION_STEP_ID) return;
+    saveDraft({
+      stepIndex,
+      values,
+      juntaMemberSlots,
+      bfMemberSlots,
+      pepMemberSlots,
+    });
+  }, [
+    started,
+    values,
+    effectiveStepIndex,
+    visibleSteps,
+    stepIndex,
+    juntaMemberSlots,
+    bfMemberSlots,
+    pepMemberSlots,
+  ]);
+
+  useEffect(() => {
+    if (!started) return;
+    if (visibleSteps[effectiveStepIndex]?.id !== DECLARACION_STEP_ID) return;
+    if (!declarationPdfReady || pdfAutoDoneRef.current) return;
+    pdfAutoDoneRef.current = true;
+    const summaryStepsForPdf = visibleSteps.filter(
+      (s) => s.id !== DECLARACION_STEP_ID,
+    );
+    buildAndDownloadKybPdf(values, summaryStepsForPdf, fieldVisibilityCtx);
+    setShowDeclaracionFinalSuccess(true);
+    saveDraft({
+      stepIndex,
+      values,
+      juntaMemberSlots,
+      bfMemberSlots,
+      pepMemberSlots,
+    });
+  }, [
+    started,
+    effectiveStepIndex,
+    visibleSteps,
+    declarationPdfReady,
+    values,
+    fieldVisibilityCtx,
+    stepIndex,
+    juntaMemberSlots,
+    bfMemberSlots,
+    pepMemberSlots,
+  ]);
 
   const nombreDiligencia = (values[NOMBRE_DILIGENCIA_FIELD_ID] ?? "").trim();
   const canLeaveIntro = nombreDiligencia.length > 0;
@@ -542,6 +635,8 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     setBfMemberSlots(1);
     setPepMemberSlots(1);
     setLandingDraftAt(null);
+    pdfAutoDoneRef.current = false;
+    setShowDeclaracionFinalSuccess(false);
     unlockAudio();
     setStarted(true);
   };
@@ -554,6 +649,8 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     setBfMemberSlots(1);
     setPepMemberSlots(1);
     setLandingDraftAt(null);
+    pdfAutoDoneRef.current = false;
+    setShowDeclaracionFinalSuccess(false);
   };
 
   const inputClass =
@@ -565,7 +662,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       field.type === "static" ||
       field.type === "documentacion_personas" ||
       field.type === "declaracion_resumen" ||
-      field.type === "firma_paquete_ui"
+      field.type === "representante_enlace_qr"
     ) {
       return inner;
     }
@@ -671,13 +768,15 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       );
     }
 
-    if (field.type === "firma_paquete_ui") {
+    if (field.type === "representante_enlace_qr") {
       return wrapField(
         field,
-        <KybFirmaPaquetePanel
+        <KybRepresentanteRemotoPanel
           key={field.id}
           values={values}
           meta={firmaPaqueteMeta}
+          onRemotePatch={mergeRemoteRepresentantePatch}
+          onFlushDraft={flushDraftNow}
         />,
       );
     }
@@ -689,22 +788,6 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
           key={field.id}
           values={values}
           setField={setField}
-        />,
-      );
-    }
-
-    if (field.type === "kyb_export_pdf") {
-      const summaryStepsForPdf = visibleSteps.filter(
-        (s) => s.id !== DECLARACION_STEP_ID,
-      );
-      return wrapField(
-        field,
-        <KybExportPdfPanel
-          key={field.id}
-          values={values}
-          summarySteps={summaryStepsForPdf}
-          visibility={fieldVisibilityCtx}
-          canDownload={isFieldComplete(field, values, docCompletenessCtx)}
         />,
       );
     }
@@ -1442,6 +1525,18 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                         Eliminar última persona
                       </button>
                     ) : null}
+                  </motion.div>
+                ) : null}
+                {step.id === DECLARACION_STEP_ID ? (
+                  <motion.div
+                    initial={reduce ? false : { opacity: 0, y: 8 }}
+                    animate={reduce ? false : { opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                    className="pt-2"
+                  >
+                    <KybDeclaracionFinalSuccess
+                      open={showDeclaracionFinalSuccess}
+                    />
                   </motion.div>
                 ) : null}
               </div>

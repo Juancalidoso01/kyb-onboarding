@@ -53,7 +53,10 @@ export function isFieldComplete(
 ): boolean {
   const v = values[field.id] ?? "";
 
-  if (field.type === "declaracion_resumen" || field.type === "firma_paquete_ui") {
+  if (
+    field.type === "declaracion_resumen" ||
+    field.type === "representante_enlace_qr"
+  ) {
     return true;
   }
 
@@ -62,15 +65,6 @@ export function isFieldComplete(
     const firmaOk =
       (values.decl_firma_canvas_data_url ?? "").trim().length > 0;
     return vidOk && firmaOk;
-  }
-
-  if (field.type === "kyb_export_pdf") {
-    const rep =
-      (values.decl_metamap_verification_id ?? "").trim().length > 0 &&
-      (values.decl_firma_canvas_data_url ?? "").trim().length > 0;
-    if (!rep) return false;
-    if ((values.decl_director_nombre ?? "").trim().length === 0) return false;
-    return isValidPanamaDate(values.decl_fecha ?? "");
   }
 
   if (field.id === "decl_metamap_identity_id") {

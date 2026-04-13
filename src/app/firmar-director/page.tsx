@@ -54,10 +54,11 @@ export default function FirmarDirectorPage() {
           Revisión y firma del director
         </h1>
         <p className={KYB_FIELD_HINT_CLASS + " mt-2"}>
-          Esta página está pensada para quien <strong>debe validar</strong> el
-          borrador (director u oficial facultado), normalmente en otro equipo.
-          Cargue el archivo <code className="rounded bg-slate-100 px-1 text-xs">.json</code>{" "}
-          que le enviaron desde el formulario de onboarding.
+          El flujo principal del formulario KYB usa el{" "}
+          <strong>código QR</strong> en el paso de declaración (página{" "}
+          <code className="rounded bg-slate-100 px-1 text-xs">/verificar-representante</code>
+          ). Esta pantalla queda solo como respaldo si aún le envían un archivo{" "}
+          <code className="rounded bg-slate-100 px-1 text-xs">.json</code> antiguo.
         </p>
 
         <div className="mt-6 rounded-xl border border-slate-200/95 bg-white/90 p-4 shadow-sm">
