@@ -3,6 +3,7 @@
 import type { FormEvent, KeyboardEvent } from "react";
 import { useMemo } from "react";
 import { normalizePhoneDigits } from "@/lib/kyb-format-validation";
+import { KYB_FIELD_HINT_CLASS } from "@/lib/kyb-prose-classes";
 
 type Props = {
   label: string;
@@ -84,7 +85,7 @@ export function KybPhoneField({
           aria-invalid={invalid || undefined}
         />
         {hint ? (
-          <span className="mt-1.5 block text-xs text-slate-500">{hint}</span>
+          <span className={KYB_FIELD_HINT_CLASS}>{hint}</span>
         ) : null}
         {formatErr ? (
           <span
@@ -143,7 +144,7 @@ export function KybPhoneField({
         />
       </div>
       {hint ? (
-        <span className="mt-1.5 block text-xs text-slate-500">{hint}</span>
+        <span className={KYB_FIELD_HINT_CLASS}>{hint}</span>
       ) : null}
       {formatErr ? (
         <span

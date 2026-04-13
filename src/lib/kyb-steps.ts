@@ -1,5 +1,5 @@
 import { SOCIEDAD_COMBO_OPTIONS } from "@/data/sociedad-tipos";
-import { KYB_TEXT_PEP_BLOQUE_ANTES_PREGUNTA } from "@/lib/kyb-pep-content";
+import { KYB_TEXT_PEP_STATIC_PARAGRAPHS } from "@/lib/kyb-pep-content";
 
 /**
  * Formulario «Perfil del Cliente PJ» — Punto Pago Panamá V2-2026 (PDF V002-2026).
@@ -896,10 +896,10 @@ export const KYB_STEPS: KybStep[] = [
         type: "select",
         options: [
           { value: "", label: "Seleccionar…" },
-          { value: "menos_1000", label: "Menos de $1.000" },
-          { value: "1000_5000", label: "$1.000 a $5.000" },
-          { value: "5000_10000", label: "$5.000 a $10.000" },
-          { value: "10000_15000", label: "$10.000 a $15.000" },
+          { value: "menos_100k", label: "Menos de US$ 100.000" },
+          { value: "100k_500k", label: "US$ 100.000 a US$ 500.000" },
+          { value: "501k_1m", label: "US$ 501.000 a US$ 1.000.000" },
+          { value: "1m_5m", label: "US$ 1.000.000 a US$ 5.000.000" },
           { value: "otros", label: "Otros" },
         ],
       },
@@ -915,38 +915,46 @@ export const KYB_STEPS: KybStep[] = [
     id: "referencias",
     title: "REFERENCIAS",
     description:
-      "Tipo de referencia, datos de contacto y declaración sobre investigaciones. Después de este paso continuará la sección PEP.",
+      "Seleccione primero el tipo de referencia: las etiquetas de los campos siguientes se adaptan (bancaria, comercial, personal u otra). Si elige «Otra», deberá describir de qué tipo de referencia se trata. Luego complete los datos y la declaración sobre investigaciones. Después continuará la sección PEP.",
     pdfPage: "Pág. 3",
     fields: [
       {
         id: "ref_tipo",
-        label: "Tipo de Referencia",
+        label: "Tipo de referencia",
         type: "select",
         options: [
           { value: "", label: "Seleccionar…" },
           { value: "bancaria", label: "Bancaria" },
           { value: "comercial", label: "Comercial" },
           { value: "personal", label: "Personal" },
+          { value: "otro", label: "Otra" },
         ],
       },
       {
+        id: "ref_tipo_otro_descripcion",
+        label:
+          "Describa qué tipo de referencia es y en qué consiste (p. ej. profesional, sectorial, carta de recomendación, etc.)",
+        type: "textarea",
+        hint: "Obligatorio cuando el tipo es «Otra». Sea breve y concreto para que el evaluador entienda el origen de la referencia.",
+      },
+      {
         id: "ref_nombre_entidad",
-        label: "Nombre de la Persona/Empresa/Banco",
+        label: "Nombre de la persona, empresa o institución de referencia",
         type: "text",
       },
       {
         id: "ref_contacto_entidad",
-        label: "Nombre de la Persona de Contacto (para Empresas/Banco)",
+        label: "Persona de contacto o vínculo con la referencia",
         type: "text",
       },
       {
         id: "ref_fecha",
-        label: "Fecha de la Referencia",
+        label: "Fecha de la referencia o del documento",
         type: "date",
       },
       {
         id: "ref_anios_relacion",
-        label: "Años de relación",
+        label: "Años de relación o antigüedad",
         type: "text",
       },
       {
@@ -976,25 +984,26 @@ export const KYB_STEPS: KybStep[] = [
     id: "pep",
     title: "Persona expuesta políticamente (PEP)",
     description:
-      "Lea la definición y responda la pregunta. Si aplica, complete los datos del PEP o familiar/estrecho colaborador.",
+      "Lea el resumen sobre PEP y responda la pregunta. Si ninguna persona en el formulario encaja en la definición, responda «No» y podrá continuar sin completar datos adicionales. Si responde «Sí», complete el bloque de datos del PEP, familiar o estrecho colaborador según corresponda.",
     pdfPage: "Pág. 3",
     fields: [
       {
         id: "static_pep_definicion",
         label: "",
         type: "static",
-        hint: KYB_TEXT_PEP_BLOQUE_ANTES_PREGUNTA,
+        staticParagraphs: KYB_TEXT_PEP_STATIC_PARAGRAPHS,
       },
       {
         id: "pep_alguno_catalogado",
         label:
           "¿Alguna de las personas naturales incluidas en el presente formulario (dignatarios, directores, representante legal, apoderado y/o beneficiario(s) final(es)) desempeña o ha desempeñado en los últimos dos (2) años un cargo público que le catalogue como PEP, o es familiar cercano (cónyuge o pareja, padres, hermanos e hijos) o estrecho colaborador de una persona PEP, conforme a la Ley 23 de 2015 (artículo 4, numeral 18) y normativa aplicable?",
         type: "yesno",
+        hint: "Si su respuesta es «No», no es necesario completar el apartado de datos que aparece a continuación.",
       },
       {
         id: "__h_pep_datos",
         label:
-          "DATOS GENERALES DEL PEP O DEL FAMILIAR/ESTRECHO COLABORADOR (Solo si respondió SI)",
+          "DATOS DEL PEP, FAMILIAR CERCANO O ESTRECHO COLABORADOR",
         type: "heading",
       },
       {

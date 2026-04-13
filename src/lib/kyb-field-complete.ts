@@ -16,6 +16,7 @@ import {
   PP_SV_PERFIL_PAIRS,
 } from "@/lib/kyb-steps";
 import { isValidPanamaDate } from "@/lib/kyb-date";
+import { PEP_DETAIL_FIELD_IDS } from "@/lib/kyb-pep-content";
 
 export type FormState = Record<string, string>;
 
@@ -63,6 +64,15 @@ export function isFieldComplete(field: KybField, values: FormState): boolean {
     if (!c) return false;
     if (c.endsWith(".")) return false;
     return isValidUsdCanonical(c);
+  }
+
+  if (field.id === "ref_tipo_otro_descripcion") {
+    if (values.ref_tipo !== "otro") return true;
+    return v.trim().length > 0;
+  }
+
+  if ((PEP_DETAIL_FIELD_IDS as readonly string[]).includes(field.id)) {
+    if (values.pep_alguno_catalogado !== "si") return true;
   }
 
   if (field.numberFormat === "usd") {

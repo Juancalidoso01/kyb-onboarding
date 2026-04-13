@@ -35,6 +35,19 @@ import {
   saveDraft,
 } from "@/lib/kyb-local-draft";
 import {
+  KYB_FIELD_HINT_CLASS,
+  KYB_STEP_DESCRIPTION_CLASS,
+} from "@/lib/kyb-prose-classes";
+import {
+  getReferenciasFieldLabel,
+  REFERENCIAS_STEP_ID,
+} from "@/lib/kyb-referencias-labels";
+import {
+  PEP_DETAIL_FIELD_IDS,
+  PEP_HEADING_FIELD_ID,
+  PEP_STEP_ID,
+} from "@/lib/kyb-pep-content";
+import {
   formKeysForBfMemberSlot,
   formKeysForJuntaMemberSlot,
   isRenderableValueField,
@@ -342,6 +355,14 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       if (id === "volumen_operaciones_anual" && v !== "otros") {
         next.volumen_operaciones_otros = "";
       }
+      if (id === "ref_tipo" && v !== "otro") {
+        next.ref_tipo_otro_descripcion = "";
+      }
+      if (id === "pep_alguno_catalogado" && v !== "si") {
+        for (const fid of PEP_DETAIL_FIELD_IDS) {
+          next[fid] = "";
+        }
+      }
       const tipoBf = id.match(/^bf_(\d+)_tipo_persona$/);
       if (tipoBf) {
         const sn = tipoBf[1];
@@ -525,6 +546,12 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       );
     }
 
+    const displayLabel =
+      step?.id === REFERENCIAS_STEP_ID
+        ? (getReferenciasFieldLabel(field.id, values.ref_tipo ?? "") ??
+          field.label)
+        : field.label;
+
     if (field.type === "checkbox") {
       const inner = (
         <label
@@ -540,7 +567,9 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
               toggleCheckbox(field.id);
             }}
           />
-          <span className="text-sm font-medium text-slate-800">{field.label}</span>
+          <span className="text-sm font-medium text-slate-800">
+            {displayLabel}
+          </span>
         </label>
       );
       return wrapField(field, inner);
@@ -551,10 +580,12 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
         <label key={field.id} className="block">
           <span
             className={`mb-1.5 block font-medium text-[#0B0B13] ${
-              field.label.length > 120 ? "text-xs leading-snug sm:text-sm" : "text-sm"
+              displayLabel.length > 120
+                ? "text-xs leading-snug sm:text-sm"
+                : "text-sm"
             }`}
           >
-            {field.label}
+            {displayLabel}
           </span>
           <KybDateField
             value={values[field.id] ?? ""}
@@ -564,7 +595,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
             onInput={inputTypingFeedback}
           />
           {field.hint ? (
-            <span className="mt-1.5 block text-xs text-slate-500">{field.hint}</span>
+            <span className={KYB_FIELD_HINT_CLASS}>{field.hint}</span>
           ) : null}
         </label>
       );
@@ -575,7 +606,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       const inner = (
         <div key={field.id} className="block">
           <span className="mb-1.5 block text-sm font-medium text-[#0B0B13]">
-            {field.label}
+            {displayLabel}
           </span>
           <KybCombobox
             options={field.options ?? []}
@@ -589,7 +620,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
             onPick={playChoiceTick}
           />
           {field.hint ? (
-            <span className="mt-1.5 block text-xs text-slate-500">{field.hint}</span>
+            <span className={KYB_FIELD_HINT_CLASS}>{field.hint}</span>
           ) : null}
         </div>
       );
@@ -598,7 +629,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
 
     if (field.type === "country") {
       const bfPaisNac = field.id.match(/^bf_(\d+)_pais_nacimiento$/);
-      let countryLabel = field.label;
+      let countryLabel = displayLabel;
       if (bfPaisNac) {
         const sn = bfPaisNac[1];
         const tipo = (values[`bf_${sn}_tipo_persona`] ?? "").trim();
@@ -624,7 +655,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
             onPick={playChoiceTick}
           />
           {field.hint ? (
-            <span className="mt-1.5 block text-xs text-slate-500">{field.hint}</span>
+            <span className={KYB_FIELD_HINT_CLASS}>{field.hint}</span>
           ) : null}
         </div>
       );
@@ -635,7 +666,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       const inner = (
         <div key={field.id} className="block">
           <span className="mb-1.5 block text-sm font-medium text-[#0B0B13]">
-            {field.label}
+            {displayLabel}
           </span>
           <KybCombobox
             options={activityOptions}
@@ -654,7 +685,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
             disabled={activityLoading}
           />
           {field.hint ? (
-            <span className="mt-1.5 block text-xs text-slate-500">{field.hint}</span>
+            <span className={KYB_FIELD_HINT_CLASS}>{field.hint}</span>
           ) : null}
         </div>
       );
@@ -665,7 +696,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       const inner = (
         <div key={field.id} className="block">
           <span className="mb-1.5 block text-sm font-medium text-[#0B0B13]">
-            {field.label}
+            {displayLabel}
           </span>
           <KybCombobox
             options={professionOptions}
@@ -684,7 +715,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
             disabled={professionLoading}
           />
           {field.hint ? (
-            <span className="mt-1.5 block text-xs text-slate-500">{field.hint}</span>
+            <span className={KYB_FIELD_HINT_CLASS}>{field.hint}</span>
           ) : null}
         </div>
       );
@@ -701,7 +732,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       const inner = (
         <label key={field.id} className="block">
           <span className="mb-1.5 block text-sm font-medium text-[#0B0B13]">
-            {field.label}
+            {displayLabel}
           </span>
           <div className="relative">
             <input
@@ -731,7 +762,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
             </span>
           </div>
           {field.hint ? (
-            <span className="mt-1.5 block text-xs text-slate-500">{field.hint}</span>
+            <span className={KYB_FIELD_HINT_CLASS}>{field.hint}</span>
           ) : null}
           {formatErr ? (
             <span className="mt-1.5 block text-xs font-medium text-red-600" role="alert">
@@ -754,7 +785,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       const inner = (
         <div key={field.id} className="block">
           <KybPhoneField
-            label={field.label}
+            label={displayLabel}
             value={values[field.id] ?? ""}
             onChange={(v) => setField(field.id, v)}
             dialDigits={dial}
@@ -786,7 +817,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
         <div key={field.id} className="block">
           <KybAddressPaField
             variant={addressVariant}
-            label={field.label}
+            label={displayLabel}
             hint={field.hint}
             value={values[field.id] ?? ""}
             onChange={(v) => setField(field.id, v)}
@@ -808,7 +839,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       const inner = (
         <div key={field.id} className="block">
           <KybAddressPaField
-            label={field.label}
+            label={displayLabel}
             hint={field.hint}
             value={values[field.id] ?? ""}
             onChange={(v) => setField(field.id, v)}
@@ -843,12 +874,12 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       <label key={field.id} className="block">
         <span
           className={`mb-1.5 block font-medium text-[#0B0B13] ${
-            field.type === "yesno" && field.label.length > 160
+            field.type === "yesno" && displayLabel.length > 160
               ? "text-justify text-xs leading-snug sm:text-sm"
               : "text-sm"
           }`}
         >
-          {field.label}
+          {displayLabel}
         </span>
         {field.type === "textarea" ? (
           <textarea
@@ -915,7 +946,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
           />
         )}
         {field.hint ? (
-          <span className="mt-1.5 block text-xs text-slate-500">{field.hint}</span>
+          <span className={KYB_FIELD_HINT_CLASS}>{field.hint}</span>
         ) : null}
         {formatErr ? (
           <span className="mt-1.5 block text-xs font-medium text-red-600" role="alert">
@@ -1023,9 +1054,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                 {step.title}
               </h2>
               {step.description.trim() ? (
-                <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                  {step.description}
-                </p>
+                <p className={KYB_STEP_DESCRIPTION_CLASS}>{step.description}</p>
               ) : null}
 
               <div
@@ -1100,6 +1129,19 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                     }
                     if (f.id === "volumen_operaciones_otros") {
                       return values.volumen_operaciones_anual === "otros";
+                    }
+                    if (f.id === "ref_tipo_otro_descripcion") {
+                      return values.ref_tipo === "otro";
+                    }
+                    if (step.id === PEP_STEP_ID) {
+                      if (
+                        f.id === PEP_HEADING_FIELD_ID ||
+                        (PEP_DETAIL_FIELD_IDS as readonly string[]).includes(
+                          f.id,
+                        )
+                      ) {
+                        return values.pep_alguno_catalogado === "si";
+                      }
                     }
                     return true;
                   })

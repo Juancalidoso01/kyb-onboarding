@@ -15,6 +15,7 @@ import {
   geoapifyParsedSummary,
   type GeoapifyAddressItem,
 } from "@/lib/geoapify-address";
+import { KYB_FIELD_HINT_CLASS } from "@/lib/kyb-prose-classes";
 
 /** Arranque inicial del campo: breve, sin bloquear tanto la escritura. */
 const MIN_BOOT_MS = 450;
@@ -422,7 +423,7 @@ export function KybAddressPaField({
             <p className="mt-2 text-xs text-slate-600">{parsedHint}</p>
           ) : null}
           {hint ? (
-            <span className="mt-1.5 block text-xs text-slate-500">{hint}</span>
+            <span className={KYB_FIELD_HINT_CLASS}>{hint}</span>
           ) : null}
         </div>
       </div>

@@ -3,6 +3,7 @@
 import type { FormEvent, KeyboardEvent } from "react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { isValidPanamaDate } from "@/lib/kyb-date";
+import { KYB_FIELD_HINT_CLASS } from "@/lib/kyb-prose-classes";
 
 type Props = {
   value: string;
@@ -194,7 +195,7 @@ export function KybDateField({
         </button>
       </div>
 
-      <p id={`${uid}-hint`} className="text-xs text-slate-500">
+      <p id={`${uid}-hint`} className={KYB_FIELD_HINT_CLASS}>
         Escriba la fecha o use el calendario. Mes y año se eligen en listas para ir rápido a fechas
         antiguas.
       </p>
