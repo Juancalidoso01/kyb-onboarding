@@ -46,6 +46,7 @@ import {
   juntaFieldMemberSlot,
   KYB_STEPS,
   NOMBRE_DILIGENCIA_FIELD_ID,
+  PP_SV_PERFIL_PAIRS,
 } from "@/lib/kyb-steps";
 import {
   playChoiceTick,
@@ -370,6 +371,10 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       };
       if (id === "pp_sv_otros" && next[id] !== "true") {
         next.pp_sv_otros_especifique = "";
+      }
+      const perfilMap = PP_SV_PERFIL_PAIRS.find((p) => p.serviceId === id);
+      if (perfilMap && next[id] !== "true") {
+        next[perfilMap.perfilId] = "";
       }
       return next;
     });
@@ -1061,6 +1066,21 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                     }
                     if (f.id === "pp_sv_otros_especifique") {
                       return values.pp_sv_otros === "true";
+                    }
+                    if (f.id === "static_perfil_ref" || f.id === "__h_pp_perfil") {
+                      return PP_SV_PERFIL_PAIRS.some(
+                        (p) => values[p.serviceId] === "true",
+                      );
+                    }
+                    if (
+                      PP_SV_PERFIL_PAIRS.some((p) => p.perfilId === f.id)
+                    ) {
+                      const perfilPair = PP_SV_PERFIL_PAIRS.find(
+                        (p) => p.perfilId === f.id,
+                      );
+                      if (perfilPair) {
+                        return values[perfilPair.serviceId] === "true";
+                      }
                     }
                     if (f.id === "operaciones_frecuencia_otro") {
                       return values.operaciones_frecuencia === "otro";

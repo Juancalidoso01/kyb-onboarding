@@ -118,6 +118,21 @@ export const PP_SERVICIOS_CHECKBOX_IDS = [
   "pp_sv_otros",
 ] as const;
 
+/** Servicio marcado → campo de perfil operativo esperado (textarea). Excluye «Otros». */
+export const PP_SV_PERFIL_PAIRS = [
+  { serviceId: "pp_sv_recaudacion", perfilId: "pp_perfil_recaudacion" },
+  { serviceId: "pp_sv_hub_pagos", perfilId: "pp_perfil_hub_pagos" },
+  { serviceId: "pp_sv_dispersion_fondos", perfilId: "pp_perfil_dispersion_fondos" },
+  { serviceId: "pp_sv_agente_subagente", perfilId: "pp_perfil_agente_subagente" },
+  { serviceId: "pp_sv_remesas", perfilId: "pp_perfil_remesas" },
+  {
+    serviceId: "pp_sv_prestamos_financieras",
+    perfilId: "pp_perfil_prestamos_financieras",
+  },
+  { serviceId: "pp_sv_emision_tarjetas", perfilId: "pp_perfil_emision_tarjetas" },
+  { serviceId: "pp_sv_reventa", perfilId: "pp_perfil_reventa" },
+] as const;
+
 /** Si cotiza en bolsa, el paso de accionistas/beneficiario final no aplica (datos públicos). */
 export function filterStepsByCotizaBolsa(
   allSteps: KybStep[],
@@ -702,7 +717,7 @@ export const KYB_STEPS: KybStep[] = [
     id: "servicios_punto_pago",
     title: "SERVICIOS DE INTERÉS CON PUNTO PAGO",
     description:
-      "Persona jurídica: indique qué líneas de negocio o servicios de Grupo Punto Pago pretende utilizar. Marque al menos una opción. Luego indique la frecuencia operativa esperada.",
+      "Persona jurídica: marque los servicios de interés. Para cada uno (salvo «Otros»), describa el comportamiento esperado como referencia de perfil; luego indique la frecuencia operativa global.",
     pdfPage: "Pág. 3",
     fields: [
       {
@@ -711,7 +726,7 @@ export const KYB_STEPS: KybStep[] = [
         type: "static",
         staticParagraphs: [
           "Este conocimiento del cliente (KYB) cubre a personas jurídicas que desean operar con los servicios de Grupo Punto Pago.",
-          "Seleccione los servicios aplicables. Si elige «Otros», explique brevemente en el campo indicado.",
+          "Seleccione los servicios aplicables. Para cada servicio marcado se solicitará un perfil operativo esperado; si elige «Otros», descríbalo en el campo correspondiente.",
         ],
       },
       {
@@ -760,8 +775,83 @@ export const KYB_STEPS: KybStep[] = [
         type: "checkbox",
       },
       {
+        id: "static_perfil_ref",
+        label: "",
+        type: "static",
+        hint: "Perfil de referencia: indique para cada servicio marcado (excepto «Otros») el comportamiento que la empresa espera — por ejemplo volumen mensual aproximado en USD o volumen de operaciones, número de transacciones o cobros, picos o estacionalidad prevista y cualquier detalle relevante. Esta información permite contrastar en el futuro el uso habitual: si de forma sostenida supera lo aquí declarado, Grupo Punto Pago podrá solicitar aclaraciones o confirmación con el cliente.",
+      },
+      {
+        id: "__h_pp_perfil",
+        label: "Comportamiento esperado — detalle por servicio marcado",
+        type: "heading",
+      },
+      {
+        id: "pp_perfil_recaudacion",
+        label: "Recaudación de pagos",
+        type: "textarea",
+        placeholder:
+          "Volumen u operaciones mensuales estimadas, picos, observaciones…",
+        hint: "Sirve como línea base del perfil para seguimiento.",
+      },
+      {
+        id: "pp_perfil_hub_pagos",
+        label: "Hub de pagos",
+        type: "textarea",
+        placeholder:
+          "Flujos, conexiones o volumetría esperada; picos o estacionalidad…",
+        hint: "Sirve como línea base del perfil para seguimiento.",
+      },
+      {
+        id: "pp_perfil_dispersion_fondos",
+        label: "Dispersión de fondos",
+        type: "textarea",
+        placeholder:
+          "Montos o pagos dispersados al mes, frecuencia, destinatarios típicos…",
+        hint: "Sirve como línea base del perfil para seguimiento.",
+      },
+      {
+        id: "pp_perfil_agente_subagente",
+        label: "Agente o subagente de Punto Pago",
+        type: "textarea",
+        placeholder:
+          "Red, territorio, transacciones o comisiones esperadas, observaciones…",
+        hint: "Sirve como línea base del perfil para seguimiento.",
+      },
+      {
+        id: "pp_perfil_remesas",
+        label: "Servicios relacionados a remesas",
+        type: "textarea",
+        placeholder:
+          "Montos, número de envíos o recepciones mensuales, corredores u orígenes…",
+        hint: "Sirve como línea base del perfil para seguimiento.",
+      },
+      {
+        id: "pp_perfil_prestamos_financieras",
+        label: "Servicios relacionados a préstamos o financieras",
+        type: "textarea",
+        placeholder:
+          "Producto o alcance esperado, volumen o ticket medio, observaciones…",
+        hint: "Sirve como línea base del perfil para seguimiento.",
+      },
+      {
+        id: "pp_perfil_emision_tarjetas",
+        label: "Servicios relacionados a emisión de tarjetas",
+        type: "textarea",
+        placeholder:
+          "Tarjetas o cuentas previstas al mes/año, segmento, montos asociados…",
+        hint: "Sirve como línea base del perfil para seguimiento.",
+      },
+      {
+        id: "pp_perfil_reventa",
+        label: "Reventa de servicios de Punto Pago",
+        type: "textarea",
+        placeholder:
+          "Canales, clientes finales previstos, volumen estimado de reventa…",
+        hint: "Sirve como línea base del perfil para seguimiento.",
+      },
+      {
         id: "pp_sv_otros_especifique",
-        label: "Si eligió «Otros», explique",
+        label: "Si eligió «Otros», explique el servicio o negocio",
         type: "textarea",
       },
       {

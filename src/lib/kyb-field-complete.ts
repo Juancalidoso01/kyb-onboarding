@@ -6,7 +6,11 @@ import {
   PHONE_TEXT_FIELD_IDS,
   validatePhoneValue,
 } from "@/lib/kyb-format-validation";
-import { type KybField, PP_SERVICIOS_CHECKBOX_IDS } from "@/lib/kyb-steps";
+import {
+  type KybField,
+  PP_SERVICIOS_CHECKBOX_IDS,
+  PP_SV_PERFIL_PAIRS,
+} from "@/lib/kyb-steps";
 import { isValidPanamaDate } from "@/lib/kyb-date";
 
 export type FormState = Record<string, string>;
@@ -15,7 +19,13 @@ function puntoPagoServiciosComplete(values: FormState): boolean {
   const any = PP_SERVICIOS_CHECKBOX_IDS.some((id) => values[id] === "true");
   if (!any) return false;
   if (values.pp_sv_otros === "true") {
-    return (values.pp_sv_otros_especifique ?? "").trim().length > 0;
+    if ((values.pp_sv_otros_especifique ?? "").trim().length === 0)
+      return false;
+  }
+  for (const { serviceId, perfilId } of PP_SV_PERFIL_PAIRS) {
+    if (values[serviceId] === "true") {
+      if ((values[perfilId] ?? "").trim().length === 0) return false;
+    }
   }
   return true;
 }
@@ -29,6 +39,12 @@ export function isFieldComplete(field: KybField, values: FormState): boolean {
 
   if (field.id === "pp_sv_otros_especifique") {
     if (values.pp_sv_otros !== "true") return true;
+    return v.trim().length > 0;
+  }
+
+  const perfilPair = PP_SV_PERFIL_PAIRS.find((p) => p.perfilId === field.id);
+  if (perfilPair) {
+    if (values[perfilPair.serviceId] !== "true") return true;
     return v.trim().length > 0;
   }
 
