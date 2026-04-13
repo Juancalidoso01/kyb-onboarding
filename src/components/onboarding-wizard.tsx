@@ -328,7 +328,21 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       mergeRemoteRepresentantePatch(patch);
       const r = await fetch("/api/kyb/form-reference", { method: "POST" });
       const j = (await r.json()) as { ref?: string };
-      return j.ref ?? `PP-KYB-${Date.now()}`;
+      const ref = j.ref ?? `PP-KYB-${Date.now()}`;
+      const mergedConRef: FormState = { ...merged, decl_formulario_ref: ref };
+      const slots = fieldVisibilityCtxRef.current;
+      void fetch("/api/kyb/google/submission", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          formRef: ref,
+          values: mergedConRef,
+          juntaMemberSlots: slots.juntaMemberSlots,
+          bfMemberSlots: slots.bfMemberSlots,
+          pepMemberSlots: slots.pepMemberSlots,
+        }),
+      }).catch(() => {});
+      return ref;
     },
     [mergeRemoteRepresentantePatch],
   );

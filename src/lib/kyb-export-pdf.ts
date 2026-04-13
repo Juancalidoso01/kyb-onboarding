@@ -261,15 +261,11 @@ function applyFooters(doc: jsPDF, formRef: string, version: string) {
   }
 }
 
-/**
- * Genera un PDF con el resumen de respuestas, referencias de verificación de identidad,
- * e imagen de la firma digital si existe.
- */
-export function buildAndDownloadKybPdf(
+function renderKybPdfToDoc(
   values: FormState,
   summarySteps: KybStep[],
   visibility: KybFieldVisibilityContext,
-): void {
+): InstanceType<typeof jsPDF> {
   const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -449,6 +445,28 @@ export function buildAndDownloadKybPdf(
 
   const footerRef = formRef || "Borrador sin número asignado";
   applyFooters(doc, footerRef, KYB_PDF_FORM_VERSION);
+  return doc;
+}
 
+/** Genera el PDF en memoria (servidor: subida a Drive, etc.). */
+export function buildKybPdfBuffer(
+  values: FormState,
+  summarySteps: KybStep[],
+  visibility: KybFieldVisibilityContext,
+): Buffer {
+  const doc = renderKybPdfToDoc(values, summarySteps, visibility);
+  return Buffer.from(doc.output("arraybuffer") as ArrayBuffer);
+}
+
+/**
+ * Genera un PDF con el resumen de respuestas, referencias de verificación de identidad,
+ * e imagen de la firma digital si existe y lo descarga en el navegador.
+ */
+export function buildAndDownloadKybPdf(
+  values: FormState,
+  summarySteps: KybStep[],
+  visibility: KybFieldVisibilityContext,
+): void {
+  const doc = renderKybPdfToDoc(values, summarySteps, visibility);
   doc.save(kybPdfFilename(values));
 }
