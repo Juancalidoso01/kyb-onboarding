@@ -28,7 +28,7 @@ export async function POST(req: Request) {
   if (!o.meta || typeof o.meta !== "object") return bad("missing_meta");
   const meta = o.meta as RepresentantePairMeta;
   const values = o.values as FormState;
-  const code = createRepresentantePair(values, meta);
+  const code = await createRepresentantePair(values, meta);
   return NextResponse.json({ code });
 }
 
@@ -37,7 +37,7 @@ export async function GET(req: Request) {
   const code = searchParams.get("code");
   const role = searchParams.get("role") ?? "desktop";
   if (!code?.trim()) return bad("missing_code");
-  const entry = getRepresentantePair(code.trim());
+  const entry = await getRepresentantePair(code.trim());
   if (!entry) return bad("not_found", 404);
   if (role === "desktop") {
     const p = entry.patch ?? {};
@@ -76,7 +76,7 @@ export async function PATCH(req: Request) {
   if (!code) return bad("missing_code");
   const rest: Partial<FormState> = { ...o };
   delete (rest as { code?: string }).code;
-  const ok = applyRepresentantePatch(code, rest);
+  const ok = await applyRepresentantePatch(code, rest);
   if (!ok) return bad("not_found", 404);
   return NextResponse.json({ ok: true });
 }
