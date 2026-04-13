@@ -305,6 +305,24 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
           next[`junta_${sn}_ruc`] = "";
         }
       }
+      const tipoBf = id.match(/^bf_(\d+)_tipo_persona$/);
+      if (tipoBf) {
+        const sn = tipoBf[1];
+        if (v === "N") {
+          next[`bf_${sn}_razon_social`] = "";
+          next[`bf_${sn}_ruc`] = "";
+        } else if (v === "J") {
+          next[`bf_${sn}_fecha_nacimiento`] = "";
+          next[`bf_${sn}_nombre_completo`] = "";
+          next[`bf_${sn}_cedula_pasaporte`] = "";
+        } else if (v === "") {
+          next[`bf_${sn}_fecha_nacimiento`] = "";
+          next[`bf_${sn}_nombre_completo`] = "";
+          next[`bf_${sn}_cedula_pasaporte`] = "";
+          next[`bf_${sn}_razon_social`] = "";
+          next[`bf_${sn}_ruc`] = "";
+        }
+      }
       return next;
     });
   };
@@ -651,7 +669,8 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
 
     if (
       field.type === "textarea" &&
-      /^junta_\d+_direccion$/.test(field.id)
+      (/^junta_\d+_direccion$/.test(field.id) ||
+        /^bf_\d+_direccion$/.test(field.id))
     ) {
       const inner = (
         <div key={field.id} className="block">
@@ -901,6 +920,23 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                     if (step.id === BENEFICIARIOS_FINALES_STEP_ID) {
                       const slot = bfFieldMemberSlot(f.id);
                       if (slot !== null && slot > bfMemberSlots) return false;
+                      const bfSuffix = f.id.match(/^bf_\d+_(.+)$/)?.[1];
+                      if (
+                        bfSuffix === "fecha_nacimiento" ||
+                        bfSuffix === "nombre_completo" ||
+                        bfSuffix === "cedula_pasaporte"
+                      ) {
+                        const tipo = (
+                          values[`bf_${slot}_tipo_persona`] ?? ""
+                        ).trim();
+                        if (tipo !== "N") return false;
+                      }
+                      if (bfSuffix === "razon_social" || bfSuffix === "ruc") {
+                        const tipo = (
+                          values[`bf_${slot}_tipo_persona`] ?? ""
+                        ).trim();
+                        if (tipo !== "J") return false;
+                      }
                     }
                     if (f.id === "tipo_sociedad_otros_especifique") {
                       return values.tipo_sociedad === "__otro__";

@@ -90,9 +90,11 @@ export function bfFieldMemberSlot(fieldId: string): number | null {
 
 const BF_MEMBER_FIELD_SUFFIXES = [
   "tipo_persona",
-  "fecha_nac_const",
-  "nombre_razon",
-  "cedula_ruc",
+  "fecha_nacimiento",
+  "nombre_completo",
+  "cedula_pasaporte",
+  "razon_social",
+  "ruc",
   "nacionalidad",
   "pais_nacimiento",
   "fecha_condicion_bf",
@@ -551,7 +553,7 @@ export const KYB_STEPS: KybStep[] = [
     id: "beneficiarios_finales",
     title: "ACCIONISTAS O BENEFICIARIO FINAL",
     description:
-      "Indique al menos un beneficiario final o accionista. Puede añadir hasta tres filas con + Agregar persona o quitar la última con Eliminar última fila.",
+      "Indique al menos un beneficiario final o accionista: persona natural o jurídica, y según el caso los datos solicitados (como en Gobierno / junta). Puede añadir hasta tres filas con + Agregar persona o quitar la última con Eliminar última fila.",
     pdfPage: "Pág. 2",
     fields: [
       {
@@ -570,27 +572,37 @@ export const KYB_STEPS: KybStep[] = [
             },
             {
               id: `bf_${n}_tipo_persona`,
-              label: "Tipo de Persona (N / J)",
+              label: "Persona natural o jurídica",
               type: "select" as const,
               options: [
                 { value: "", label: "Seleccionar…" },
-                { value: "N", label: "Natural (N)" },
-                { value: "J", label: "Jurídica (J)" },
+                { value: "N", label: "Persona natural" },
+                { value: "J", label: "Persona jurídica" },
               ],
             },
             {
-              id: `bf_${n}_fecha_nac_const`,
-              label: "Fecha de Nacimiento/constitución",
+              id: `bf_${n}_fecha_nacimiento`,
+              label: "Fecha de nacimiento",
               type: "date" as const,
             },
             {
-              id: `bf_${n}_nombre_razon`,
-              label: "Nombre Completo / Razón Social",
+              id: `bf_${n}_nombre_completo`,
+              label: "Nombre completo",
               type: "text" as const,
             },
             {
-              id: `bf_${n}_cedula_ruc`,
-              label: "Cédula o RUC",
+              id: `bf_${n}_cedula_pasaporte`,
+              label: "Cédula o pasaporte",
+              type: "text" as const,
+            },
+            {
+              id: `bf_${n}_razon_social`,
+              label: "Razón social",
+              type: "text" as const,
+            },
+            {
+              id: `bf_${n}_ruc`,
+              label: "RUC",
               type: "text" as const,
             },
             {
@@ -601,7 +613,7 @@ export const KYB_STEPS: KybStep[] = [
             },
             {
               id: `bf_${n}_pais_nacimiento`,
-              label: "País de Nacimiento",
+              label: "País de nacimiento o de constitución",
               type: "country" as const,
             },
             {

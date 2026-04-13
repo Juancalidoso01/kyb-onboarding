@@ -35,6 +35,27 @@ export function isFieldComplete(field: KybField, values: FormState): boolean {
     if (tipo !== "J") return true;
   }
 
+  const bfTipo = field.id.match(/^bf_(\d+)_tipo_persona$/);
+  if (bfTipo) {
+    return v === "N" || v === "J";
+  }
+
+  const bfNaturalOnly = field.id.match(
+    /^bf_(\d+)_(fecha_nacimiento|nombre_completo|cedula_pasaporte)$/,
+  );
+  if (bfNaturalOnly) {
+    const slot = bfNaturalOnly[1];
+    const tipo = values[`bf_${slot}_tipo_persona`] ?? "";
+    if (tipo !== "N") return true;
+  }
+
+  const bfJurOnly = field.id.match(/^bf_(\d+)_(razon_social|ruc)$/);
+  if (bfJurOnly) {
+    const slot = bfJurOnly[1];
+    const tipo = values[`bf_${slot}_tipo_persona`] ?? "";
+    if (tipo !== "J") return true;
+  }
+
   if (field.id === "tipo_sociedad") {
     const ts = values.tipo_sociedad ?? "";
     if (!ts) return false;
