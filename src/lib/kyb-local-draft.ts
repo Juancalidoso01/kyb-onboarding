@@ -17,7 +17,7 @@ export type KybLocalDraft = {
   savedAt: number;
   /** Cuántas filas de junta/consejo estaban visibles (1–5). */
   juntaMemberSlots?: number;
-  /** Cuántas filas de beneficiario final estaban visibles (1–3). */
+  /** Cuántas filas de beneficiario final estaban visibles (1–20). */
   bfMemberSlots?: number;
 };
 

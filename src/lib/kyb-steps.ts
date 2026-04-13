@@ -32,6 +32,8 @@ export type KybField = {
   options?: { value: string; label: string; disabled?: boolean }[];
   /** Texto de ayuda bajo el campo */
   hint?: string;
+  /** Bloques de texto para `type: "static"` (p. ej. intro con varios párrafos justificados). */
+  staticParagraphs?: string[];
   /** Valor en estado/API pero sin control visible (sincronizado por lógica). */
   hidden?: boolean;
 };
@@ -59,15 +61,12 @@ export function juntaFieldMemberSlot(fieldId: string): number | null {
   return null;
 }
 
-/** Claves de valor por fila de junta (para vaciar al eliminar último miembro). */
+/** Claves de valor por fila de junta (para vaciar al eliminar último miembro). Solo persona natural. */
 export const JUNTA_MEMBER_FIELD_SUFFIXES = [
   "cargo",
-  "tipo_persona",
   "fecha_nacimiento",
   "nombre_completo",
   "cedula_pasaporte",
-  "razon_social",
-  "ruc",
   "nacionalidad",
   "direccion",
 ] as const;
@@ -76,9 +75,9 @@ export function formKeysForJuntaMemberSlot(slot: number): string[] {
   return JUNTA_MEMBER_FIELD_SUFFIXES.map((s) => `junta_${slot}_${s}`);
 }
 
-/** Beneficiarios finales: máximo 3 filas en PDF; la UI muestra 1 al inicio y “+” para el resto. */
+/** Beneficiarios finales: hasta 20 filas en la web (PDF impreso puede tener menos líneas). */
 export const BENEFICIARIOS_FINALES_STEP_ID = "beneficiarios_finales" as const;
-export const BF_MEMBER_SLOTS_MAX = 3;
+export const BF_MEMBER_SLOTS_MAX = 20;
 
 export function bfFieldMemberSlot(fieldId: string): number | null {
   const h = fieldId.match(/^__h_bf_(\d+)$/);
@@ -104,6 +103,17 @@ const BF_MEMBER_FIELD_SUFFIXES = [
 
 export function formKeysForBfMemberSlot(slot: number): string[] {
   return BF_MEMBER_FIELD_SUFFIXES.map((s) => `bf_${slot}_${s}`);
+}
+
+/** Si cotiza en bolsa, el paso de accionistas/beneficiario final no aplica (datos públicos). */
+export function filterStepsByCotizaBolsa(
+  allSteps: KybStep[],
+  cotizaBolsa: string | undefined,
+): KybStep[] {
+  if ((cotizaBolsa ?? "").trim() === "si") {
+    return allSteps.filter((s) => s.id !== BENEFICIARIOS_FINALES_STEP_ID);
+  }
+  return allSteps;
 }
 
 export const KYB_STEPS: KybStep[] = [
@@ -230,6 +240,7 @@ export const KYB_STEPS: KybStep[] = [
         id: "cotiza_bolsa",
         label: "Esta Compañía cotiza en la bolsa",
         type: "yesno",
+        hint: "Si responde «Sí», no se mostrará el paso «Accionistas o beneficiario final» (información pública).",
       },
       {
         id: "forma_capital",
@@ -400,7 +411,7 @@ export const KYB_STEPS: KybStep[] = [
     title:
       "GOBIERNO CORPORATIVO / JUNTA DIRECTIVA / CONSEJO FUNDACIONAL",
     description:
-      "Indique al menos un miembro: cargo y si es persona natural o jurídica. Según el caso verá fecha de nacimiento y documento, o razón social y RUC; luego nacionalidad y dirección. Puede añadir filas con + Agregar miembro o quitar la última con Eliminar último miembro si se equivocó.",
+      "Indique al menos un miembro de la junta o consejo como persona natural: cargo, fecha de nacimiento, nombre completo, documento, nacionalidad y dirección. La opción persona natural o jurídica aplica solo en el paso de accionistas o beneficiario final. Puede añadir filas con + Agregar miembro o quitar la última con Eliminar último miembro si se equivocó.",
     pdfPage: "Pág. 1–2",
     fields: [
       ...[1, 2, 3, 4, 5].flatMap(
@@ -426,16 +437,6 @@ export const KYB_STEPS: KybStep[] = [
               ],
             },
             {
-              id: `junta_${n}_tipo_persona`,
-              label: "Persona natural o jurídica",
-              type: "select" as const,
-              options: [
-                { value: "", label: "Seleccionar…" },
-                { value: "N", label: "Persona natural" },
-                { value: "J", label: "Persona jurídica" },
-              ],
-            },
-            {
               id: `junta_${n}_fecha_nacimiento`,
               label: "Fecha de nacimiento",
               type: "date" as const,
@@ -448,16 +449,6 @@ export const KYB_STEPS: KybStep[] = [
             {
               id: `junta_${n}_cedula_pasaporte`,
               label: "Cédula o pasaporte",
-              type: "text" as const,
-            },
-            {
-              id: `junta_${n}_razon_social`,
-              label: "Razón social",
-              type: "text" as const,
-            },
-            {
-              id: `junta_${n}_ruc`,
-              label: "RUC",
               type: "text" as const,
             },
             {
@@ -552,17 +543,20 @@ export const KYB_STEPS: KybStep[] = [
   {
     id: "beneficiarios_finales",
     title: "ACCIONISTAS O BENEFICIARIO FINAL",
-    description:
-      "Indique al menos un beneficiario final o accionista: persona natural o jurídica, y según el caso los datos solicitados (como en Gobierno / junta). Puede añadir hasta tres filas con + Agregar persona o quitar la última con Eliminar última fila.",
+    description: "",
     pdfPage: "Pág. 2",
     fields: [
       {
         id: "static_bf_definicion",
         label: "",
         type: "static",
-        hint: "Persona o personas naturales que, directa o indirectamente, poseen, controlan y/o ejercen influencia significativa sobre la relación de cuenta, relación contractual y/o de negocios o la persona natural en cuyo nombre o beneficio se realiza una transacción, lo cual incluye también a las personas naturales que ejercen control final sobre una persona jurídica.",
+        staticParagraphs: [
+          "Indique al menos un beneficiario final o accionista, ya sea persona natural o jurídica, completando los datos solicitados (similar a la sección de Gobierno / Junta). Puede agregar hasta 20 registros con el botón «+ Agregar persona» o eliminar el último con «Eliminar última fila».",
+          "Se debe procurar identificar que al menos un 10% o más de la participación o control corresponda a personas naturales. El objetivo es identificar a las personas naturales que, directa o indirectamente, poseen, controlan o ejercen influencia significativa, incluso cuando existan personas jurídicas en la estructura.",
+          "Se consideran beneficiarios finales las personas naturales que ejercen el control final o en cuyo nombre o beneficio se realiza una transacción.",
+        ],
       },
-      ...[1, 2, 3].flatMap(
+      ...Array.from({ length: BF_MEMBER_SLOTS_MAX }, (_, i) => i + 1).flatMap(
         (n) =>
           [
             {

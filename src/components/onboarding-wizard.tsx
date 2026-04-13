@@ -40,6 +40,7 @@ import {
   BENEFICIARIOS_FINALES_STEP_ID,
   BF_MEMBER_SLOTS_MAX,
   bfFieldMemberSlot,
+  filterStepsByCotizaBolsa,
   JUNTA_DIRECTIVA_STEP_ID,
   JUNTA_MEMBER_SLOTS_MAX,
   juntaFieldMemberSlot,
@@ -156,13 +157,35 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   const { options: professionOptions, loading: professionLoading } =
     useProfessionOptions();
 
-  const step = steps[stepIndex];
-  const isFirst = stepIndex === 0;
-  const isLast = stepIndex === steps.length - 1;
+  const visibleSteps = useMemo(
+    () => filterStepsByCotizaBolsa(steps, values.cotiza_bolsa),
+    [steps, values.cotiza_bolsa],
+  );
+
+  useEffect(() => {
+    if (!started) return;
+    if (visibleSteps.length === 0) return;
+    if (stepIndex >= visibleSteps.length) {
+      setStepIndex(visibleSteps.length - 1);
+    }
+  }, [started, visibleSteps, stepIndex]);
+
+  const effectiveStepIndex =
+    visibleSteps.length > 0
+      ? Math.min(stepIndex, visibleSteps.length - 1)
+      : 0;
+  const step = visibleSteps[effectiveStepIndex];
+  const isFirst = effectiveStepIndex === 0;
+  const isLast = effectiveStepIndex === visibleSteps.length - 1;
 
   const progress = useMemo(
-    () => Math.round(((stepIndex + 1) / steps.length) * 100),
-    [stepIndex, steps.length],
+    () =>
+      Math.round(
+        (visibleSteps.length > 0
+          ? (effectiveStepIndex + 1) / visibleSteps.length
+          : 0) * 100,
+      ),
+    [effectiveStepIndex, visibleSteps.length],
   );
 
   const nombreDiligencia = (values[NOMBRE_DILIGENCIA_FIELD_ID] ?? "").trim();
@@ -225,7 +248,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
 
   useEffect(() => {
     if (!started) return;
-    for (const st of steps) {
+    for (const st of visibleSteps) {
       for (const f of st.fields) {
         if (!isRenderableValueField(f) || f.hidden) continue;
         const c = isFieldComplete(f, values);
@@ -236,7 +259,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
         prevCompleteRef.current[f.id] = c;
       }
     }
-  }, [values, started, steps]);
+  }, [values, started, visibleSteps]);
 
   /**
    * keydown se mantiene por compatibilidad con componentes; el sonido por
@@ -286,24 +309,6 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       }
       if (id === "persona_contacto_cargo" && v !== "otro_cargo") {
         next.persona_contacto_cargo_especifique = "";
-      }
-      const tipoJunta = id.match(/^junta_(\d+)_tipo_persona$/);
-      if (tipoJunta) {
-        const sn = tipoJunta[1];
-        if (v === "N") {
-          next[`junta_${sn}_razon_social`] = "";
-          next[`junta_${sn}_ruc`] = "";
-        } else if (v === "J") {
-          next[`junta_${sn}_fecha_nacimiento`] = "";
-          next[`junta_${sn}_nombre_completo`] = "";
-          next[`junta_${sn}_cedula_pasaporte`] = "";
-        } else if (v === "") {
-          next[`junta_${sn}_fecha_nacimiento`] = "";
-          next[`junta_${sn}_nombre_completo`] = "";
-          next[`junta_${sn}_cedula_pasaporte`] = "";
-          next[`junta_${sn}_razon_social`] = "";
-          next[`junta_${sn}_ruc`] = "";
-        }
       }
       const tipoBf = id.match(/^bf_(\d+)_tipo_persona$/);
       if (tipoBf) {
@@ -427,12 +432,53 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     }
 
     if (field.type === "static") {
+      const paras =
+        field.staticParagraphs && field.staticParagraphs.length > 0
+          ? field.staticParagraphs
+          : field.hint
+            ? [field.hint]
+            : [];
+
+      if (field.staticParagraphs && field.staticParagraphs.length > 0) {
+        return (
+          <motion.div
+            key={field.id}
+            className="rounded-xl border border-slate-200/90 border-l-[3px] border-l-[#4749B6] bg-gradient-to-br from-[#4749B6]/[0.06] via-white/95 to-slate-50/40 p-4 shadow-sm sm:p-5"
+            initial={reduce ? false : { opacity: 0, y: 16 }}
+            animate={reduce ? false : { opacity: 1, y: 0 }}
+            transition={{ duration: 0.48, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <div className="space-y-4">
+              {field.staticParagraphs.map((text, pi) => (
+                <motion.p
+                  key={pi}
+                  className="text-justify text-sm leading-[1.65] text-slate-700 hyphens-auto [text-align-last:left] sm:text-[0.9375rem]"
+                  initial={reduce ? false : { opacity: 0, y: 12 }}
+                  animate={reduce ? false : { opacity: 1, y: 0 }}
+                  transition={{
+                    delay: reduce ? 0 : 0.08 + pi * 0.12,
+                    duration: 0.44,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                >
+                  {text}
+                </motion.p>
+              ))}
+            </div>
+          </motion.div>
+        );
+      }
+
+      if (!paras.length) return null;
+
       return (
         <div
           key={field.id}
           className="rounded-xl border border-slate-200/90 border-l-[3px] border-l-[#4749B6] bg-white/90 p-4 text-xs leading-relaxed text-slate-700 shadow-sm"
         >
-          {field.hint ? <p className="whitespace-pre-wrap">{field.hint}</p> : null}
+          <p className="whitespace-pre-wrap text-justify [text-align-last:left]">
+            {paras[0]}
+          </p>
         </div>
       );
     }
@@ -834,7 +880,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
           >
             Formulario KYB
           </motion.h1>
-          {nombreDiligencia && stepIndex > 0 ? (
+          {nombreDiligencia && effectiveStepIndex > 0 ? (
             <motion.p
               className="mt-3 rounded-xl border border-[#4749B6]/20 bg-[#4749B6]/[0.06] px-3 py-2 text-sm text-slate-700"
               initial={{ opacity: 0, y: 6 }}
@@ -860,8 +906,14 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
               />
             </div>
             <p className="mt-2 text-xs text-slate-500">
-              Paso <span className="font-medium text-slate-700">{stepIndex + 1}</span>{" "}
-              de <span className="font-medium text-slate-700">{steps.length}</span>
+              Paso{" "}
+              <span className="font-medium text-slate-700">
+                {effectiveStepIndex + 1}
+              </span>{" "}
+              de{" "}
+              <span className="font-medium text-slate-700">
+                {visibleSteps.length}
+              </span>
             </p>
             <p className="mt-2 text-[11px] leading-snug text-slate-400">
               Avance guardado en este navegador.{" "}
@@ -888,34 +940,21 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
               <h2 className="text-base font-bold leading-snug text-[#0B0B13] sm:text-lg">
                 {step.title}
               </h2>
-              <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                {step.description}
-              </p>
+              {step.description.trim() ? (
+                <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                  {step.description}
+                </p>
+              ) : null}
 
-              <div className="mt-7 space-y-4">
+              <div
+                className={`space-y-4 ${step.description.trim() ? "mt-7" : "mt-5"}`}
+              >
                 {step.fields
                   .filter((f) => {
                     if (f.hidden) return false;
                     if (step.id === JUNTA_DIRECTIVA_STEP_ID) {
                       const slot = juntaFieldMemberSlot(f.id);
                       if (slot !== null && slot > juntaMemberSlots) return false;
-                      const suffix = f.id.match(/^junta_\d+_(.+)$/)?.[1];
-                      if (
-                        suffix === "fecha_nacimiento" ||
-                        suffix === "nombre_completo" ||
-                        suffix === "cedula_pasaporte"
-                      ) {
-                        const tipo = (
-                          values[`junta_${slot}_tipo_persona`] ?? ""
-                        ).trim();
-                        if (tipo !== "N") return false;
-                      }
-                      if (suffix === "razon_social" || suffix === "ruc") {
-                        const tipo = (
-                          values[`junta_${slot}_tipo_persona`] ?? ""
-                        ).trim();
-                        if (tipo !== "J") return false;
-                      }
                     }
                     if (step.id === BENEFICIARIOS_FINALES_STEP_ID) {
                       const slot = bfFieldMemberSlot(f.id);
@@ -1109,7 +1148,9 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                       className="rounded-xl bg-gradient-to-b from-[#4749B6] to-[#3B3DA6] px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#4749B6]/30 disabled:cursor-not-allowed disabled:opacity-50"
                       disabled={step.id === "intro_formulario" && !canLeaveIntro}
                       onClick={() =>
-                        setStepIndex((j) => Math.min(steps.length - 1, j + 1))
+                        setStepIndex((j) =>
+                          Math.min(visibleSteps.length - 1, j + 1),
+                        )
                       }
                       whileHover={{
                         scale: step.id === "intro_formulario" && !canLeaveIntro ? 1 : 1.03,
