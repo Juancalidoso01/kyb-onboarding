@@ -84,6 +84,7 @@ import {
   playWizardNav,
   unlockAudio,
 } from "@/lib/kyb-sounds";
+import { useKybPersonalizationOptional } from "@/context/kyb-personalization";
 
 function stepVariantsFor(reduce: boolean) {
   if (reduce) {
@@ -376,6 +377,10 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
 
   const nombreDiligencia = (values[NOMBRE_DILIGENCIA_FIELD_ID] ?? "").trim();
   const canLeaveIntro = nombreDiligencia.length > 0;
+  const personalization = useKybPersonalizationOptional();
+  useEffect(() => {
+    personalization?.setLiveDiligenciaNombre(nombreDiligencia);
+  }, [nombreDiligencia, personalization]);
 
   const prevCompleteRef = useRef<Record<string, boolean>>({});
   /** Evita una ráfaga de «campo completo» al entrar: antes se sembraba prev vacío. */
@@ -1283,11 +1288,13 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     <div className="mx-auto w-full max-w-6xl">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:gap-8">
         <div className="min-w-0 flex-1 space-y-5">
-          <KybStepSectionsNavMobile
-            steps={visibleSteps}
-            activeIndex={effectiveStepIndex}
-            onSelectStep={jumpToStep}
-          />
+          {canLeaveIntro ? (
+            <KybStepSectionsNavMobile
+              steps={visibleSteps}
+              activeIndex={effectiveStepIndex}
+              onSelectStep={jumpToStep}
+            />
+          ) : null}
           <motion.div
             id="kyb-wizard-card"
             className="overflow-hidden rounded-2xl border border-white/70 bg-white/75 shadow-[0_8px_40px_-12px_rgba(71,73,182,0.18),0_0_0_1px_rgba(15,23,42,0.05)] backdrop-blur-xl"
@@ -1312,16 +1319,6 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
           >
             Formulario KYB
           </motion.h1>
-          {nombreDiligencia && effectiveStepIndex > 0 ? (
-            <motion.p
-              className="mt-3 rounded-xl border border-[#4749B6]/20 bg-[#4749B6]/[0.06] px-3 py-2 text-sm text-slate-700"
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <span className="font-semibold text-[#4749B6]">{nombreDiligencia}</span>, sigamos
-              con la siguiente información.
-            </motion.p>
-          ) : null}
           <div className="mt-5">
             <div className="flex items-center justify-between gap-3 text-xs text-slate-500">
               <span>Progreso</span>
@@ -1671,11 +1668,13 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
         </section>
       </motion.div>
         </div>
-        <KybStepSectionsNavSidebar
-          steps={visibleSteps}
-          activeIndex={effectiveStepIndex}
-          onSelectStep={jumpToStep}
-        />
+        {canLeaveIntro ? (
+          <KybStepSectionsNavSidebar
+            steps={visibleSteps}
+            activeIndex={effectiveStepIndex}
+            onSelectStep={jumpToStep}
+          />
+        ) : null}
       </div>
     </div>
   );

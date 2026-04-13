@@ -8,92 +8,132 @@ type Props = {
   onSelectStep: (index: number) => void;
 };
 
-function stepButtonClass(active: boolean): string {
-  const base =
-    "flex w-full items-start gap-2.5 rounded-xl px-3 py-2.5 text-left text-xs leading-snug transition duration-200";
-  if (active) {
-    return `${base} bg-[#4749B6]/12 font-semibold text-[#4749B6] ring-1 ring-[#4749B6]/25 shadow-sm`;
+type KybStepPairNavItem = {
+  key: string;
+  startIndex: number;
+  endIndex: number;
+  rangeLabel: string;
+  titleLine: string;
+};
+
+function buildStepPairs(steps: KybStep[]): KybStepPairNavItem[] {
+  const out: KybStepPairNavItem[] = [];
+  for (let i = 0; i < steps.length; i += 2) {
+    const a = steps[i];
+    const b = steps[i + 1];
+    const endIndex = b ? i + 1 : i;
+    const n1 = i + 1;
+    const n2 = endIndex + 1;
+    const rangeLabel = b ? `Pasos ${n1}–${n2}` : `Paso ${n1}`;
+    const titleLine = b ? `${a.title} · ${b.title}` : a.title;
+    out.push({
+      key: `${a.id}${b ? `__${b.id}` : ""}`,
+      startIndex: i,
+      endIndex,
+      rangeLabel,
+      titleLine,
+    });
   }
-  return `${base} text-slate-600 hover:bg-slate-100/90 hover:text-[#0B0B13]`;
+  return out;
 }
 
-/** Carrusel horizontal arriba del formulario (móvil / tablet). */
+function pairIsActive(pair: KybStepPairNavItem, activeIndex: number): boolean {
+  return activeIndex >= pair.startIndex && activeIndex <= pair.endIndex;
+}
+
+function pairButtonClass(active: boolean): string {
+  const base =
+    "w-full rounded-2xl border px-4 py-3.5 text-left transition duration-200";
+  if (active) {
+    return `${base} border-[#4749B6]/45 bg-[#4749B6]/[0.11] shadow-sm ring-1 ring-[#4749B6]/20`;
+  }
+  return `${base} border-slate-200/90 bg-white/90 text-slate-800 shadow-sm hover:border-[#4749B6]/35 hover:bg-white`;
+}
+
+/** Resumen en pares (2 secciones), sin scroll interno; se envuelve en varias líneas. */
 export function KybStepSectionsNavMobile({
   steps,
   activeIndex,
   onSelectStep,
 }: Props) {
+  const pairs = buildStepPairs(steps);
   return (
     <div className="lg:hidden">
-      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+      <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
         Ir a sección
       </p>
       <nav
-        className="-mx-1 flex gap-2 overflow-x-auto pb-2 pt-0.5 [scrollbar-color:rgba(71,73,182,0.35)_transparent]"
+        className="flex flex-wrap gap-3"
         aria-label="Saltar entre secciones del formulario"
       >
-        {steps.map((st, i) => (
-          <button
-            key={st.id}
-            type="button"
-            onClick={() => onSelectStep(i)}
-            className={`max-w-[min(220px,72vw)] shrink-0 rounded-xl border px-3 py-2 text-left text-xs font-medium leading-snug transition ${
-              i === activeIndex
-                ? "border-[#4749B6]/40 bg-[#4749B6]/10 text-[#4749B6]"
-                : "border-slate-200/90 bg-white/90 text-slate-700 shadow-sm hover:border-[#4749B6]/30"
-            }`}
-          >
-            <span className="tabular-nums text-[10px] font-bold text-slate-400">
-              {i + 1}/{steps.length}
-            </span>
-            <span className="mt-0.5 line-clamp-2 block">{st.title}</span>
-          </button>
-        ))}
+        {pairs.map((pair) => {
+          const active = pairIsActive(pair, activeIndex);
+          return (
+            <button
+              key={pair.key}
+              type="button"
+              onClick={() => onSelectStep(pair.startIndex)}
+              className={`${pairButtonClass(active)} min-w-0 flex-[1_1_calc(50%-0.375rem)] sm:flex-[1_1_calc(33.333%-0.5rem)]`}
+            >
+              <span
+                className={`block text-[11px] font-bold uppercase tracking-wide ${active ? "text-[#4749B6]" : "text-slate-500"}`}
+              >
+                {pair.rangeLabel}
+              </span>
+              <span
+                className={`mt-1 block text-sm font-semibold leading-snug ${active ? "text-[#0B0B13]" : "text-slate-800"}`}
+              >
+                {pair.titleLine}
+              </span>
+            </button>
+          );
+        })}
       </nav>
     </div>
   );
 }
 
-/** Leyenda fija a la derecha del formulario (escritorio). */
 export function KybStepSectionsNavSidebar({
   steps,
   activeIndex,
   onSelectStep,
 }: Props) {
+  const pairs = buildStepPairs(steps);
   return (
-    <aside className="hidden w-56 shrink-0 lg:block">
-      <div className="sticky top-24 rounded-2xl border border-slate-200/80 bg-white/80 p-3 shadow-sm backdrop-blur-sm">
-        <p className="border-b border-slate-100 pb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+    <aside className="hidden w-[min(100%,20rem)] shrink-0 lg:block">
+      <div className="sticky top-24 rounded-2xl border border-slate-200/80 bg-white/85 p-4 shadow-sm backdrop-blur-sm">
+        <p className="border-b border-slate-100 pb-3 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
           Secciones
         </p>
-        <p className="mt-2 text-[10px] leading-relaxed text-slate-400">
-          Pulse para ir directamente a un paso.
+        <p className="mt-3 text-xs leading-relaxed text-slate-500">
+          Cada bloque agrupa dos pasos. Pulse para ir al inicio de ese bloque.
         </p>
         <nav
-          className="mt-3 max-h-[min(70vh,36rem)] space-y-0.5 overflow-y-auto pr-1 [scrollbar-color:rgba(148,163,184,0.5)_transparent]"
+          className="mt-4 flex flex-col gap-2.5"
           aria-label="Saltar entre secciones del formulario"
         >
-          {steps.map((st, i) => (
-            <button
-              key={st.id}
-              type="button"
-              onClick={() => onSelectStep(i)}
-              className={stepButtonClass(i === activeIndex)}
-            >
-              <span
-                className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[10px] font-bold tabular-nums ${
-                  i === activeIndex
-                    ? "bg-[#4749B6] text-white"
-                    : "bg-slate-200/80 text-slate-600"
-                }`}
+          {pairs.map((pair) => {
+            const active = pairIsActive(pair, activeIndex);
+            return (
+              <button
+                key={pair.key}
+                type="button"
+                onClick={() => onSelectStep(pair.startIndex)}
+                className={pairButtonClass(active)}
               >
-                {i + 1}
-              </span>
-              <span className="min-w-0 flex-1 hyphens-auto [overflow-wrap:anywhere]">
-                {st.title}
-              </span>
-            </button>
-          ))}
+                <span
+                  className={`block text-[11px] font-bold uppercase tracking-wide ${active ? "text-[#4749B6]" : "text-slate-500"}`}
+                >
+                  {pair.rangeLabel}
+                </span>
+                <span
+                  className={`mt-1.5 block text-sm font-semibold leading-snug ${active ? "text-[#0B0B13]" : "text-slate-800"}`}
+                >
+                  {pair.titleLine}
+                </span>
+              </button>
+            );
+          })}
         </nav>
       </div>
     </aside>

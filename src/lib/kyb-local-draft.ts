@@ -9,6 +9,7 @@ import {
   BF_MEMBER_SLOTS_MAX,
   JUNTA_MEMBER_SLOTS_MAX,
   KYB_PDF_FORM_VERSION,
+  NOMBRE_DILIGENCIA_FIELD_ID,
   PP_SERVICIOS_CHECKBOX_IDS,
 } from "@/lib/kyb-steps";
 import type { KybStep } from "@/lib/kyb-steps";
@@ -148,6 +149,11 @@ export function readDraft(steps: KybStep[]): KybLocalDraft | null {
   } catch {
     return null;
   }
+}
+
+export function readDiligenciaNombreFromDraft(steps: KybStep[]): string {
+  const d = readDraft(steps);
+  return (d?.values?.[NOMBRE_DILIGENCIA_FIELD_ID] ?? "").trim();
 }
 
 export function saveDraft(
