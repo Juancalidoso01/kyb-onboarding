@@ -1,7 +1,8 @@
 "use client";
 
 import QRCode from "qrcode";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { KybRepresentanteExitoPanel } from "@/components/kyb-representante-exito-panel";
 import type { FormState } from "@/lib/kyb-field-complete";
 import type { KybFirmaPaquetePayload } from "@/lib/kyb-firma-paquete";
 
@@ -54,6 +55,24 @@ export function KybRepresentanteCierrePaso({
   const publicUrl = code
     ? `${typeof window !== "undefined" ? window.location.origin : ""}/verificar-representante?c=${encodeURIComponent(code)}`
     : "";
+
+  const patchFromValues = useMemo(
+    () => ({
+      decl_metamap_verification_id:
+        values.decl_metamap_verification_id ?? "",
+      decl_metamap_identity_id: values.decl_metamap_identity_id ?? "",
+      decl_firma_canvas_data_url: values.decl_firma_canvas_data_url ?? "",
+    }),
+    [
+      values.decl_metamap_verification_id,
+      values.decl_metamap_identity_id,
+      values.decl_firma_canvas_data_url,
+    ],
+  );
+
+  const datosRepresentanteListos =
+    (patchFromValues.decl_metamap_verification_id ?? "").trim() !== "" &&
+    (patchFromValues.decl_firma_canvas_data_url ?? "").trim() !== "";
 
   const copyPublicUrl = useCallback(async (): Promise<boolean> => {
     if (!publicUrl) return false;
@@ -152,6 +171,30 @@ export function KybRepresentanteCierrePaso({
     }
   }, [onFlushDraft]);
 
+  const finalizeWithPatch = useCallback(
+    async (patch: Partial<FormState>) => {
+      if (finalizarEnCursoRef.current) return;
+      finalizarEnCursoRef.current = true;
+      setFase("finalizando");
+      setErr(null);
+      try {
+        const ref = await onFinalizar(patch);
+        setField("decl_formulario_ref", ref);
+        setNumeroFormulario(ref);
+        setFase("listo");
+        onTerminado();
+        onFlushDraft();
+      } catch {
+        finalizarEnCursoRef.current = false;
+        setFase("qr");
+        setErr(
+          "No se pudo generar el PDF o el número de formulario. Recargue la página o pulse Reintentar finalizar.",
+        );
+      }
+    },
+    [onFinalizar, setField, onTerminado, onFlushDraft],
+  );
+
   useEffect(() => {
     if (refGuardado || sesionIniciadaRef.current) return;
     sesionIniciadaRef.current = true;
@@ -181,22 +224,9 @@ export function KybRepresentanteCierrePaso({
           onFlushDraft();
         }
         if (st === "complete" && !finalizarEnCursoRef.current) {
-          finalizarEnCursoRef.current = true;
-          setFase("finalizando");
-          try {
-            const ref = await onFinalizar(patch);
-            setField("decl_formulario_ref", ref);
-            setNumeroFormulario(ref);
-            setFase("listo");
-            onTerminado();
-            onFlushDraft();
-          } catch {
-            finalizarEnCursoRef.current = false;
-            setFase("qr");
-            setErr(
-              "No se pudo generar el PDF o el número de formulario. Recargue la página o pulse Reintentar.",
-            );
-          }
+          const patchToUse =
+            Object.keys(patch).length > 0 ? patch : patchFromValues;
+          void finalizeWithPatch(patchToUse);
         }
       } catch {
         /* ignore */
@@ -208,37 +238,21 @@ export function KybRepresentanteCierrePaso({
       cancelled = true;
       window.clearInterval(id);
     };
-  }, [code, refGuardado, onRemotePatch, onFlushDraft, onFinalizar, setField, onTerminado]);
+  }, [
+    code,
+    refGuardado,
+    onRemotePatch,
+    onFlushDraft,
+    finalizeWithPatch,
+    patchFromValues,
+  ]);
 
   if (fase === "listo" && numeroFormulario) {
     return (
-      <div className="space-y-5 rounded-2xl border border-emerald-200/90 bg-gradient-to-br from-emerald-50/95 via-white to-[#4749B6]/[0.06] p-6 shadow-sm sm:p-8">
-        <div className="text-center">
-          <p className="text-sm font-semibold uppercase tracking-wide text-emerald-800">
-            Gracias por completar el proceso
-          </p>
-          <h3 className="mt-2 text-xl font-bold text-[#0B0B13]">
-            Formulario enviado correctamente
-          </h3>
-          <p className="mt-3 text-sm leading-relaxed text-slate-700">
-            La verificación de identidad (MetaMap) y la firma digital quedaron
-            registradas. Se descargó el PDF con el resumen; consérvelo para sus
-            registros y compártalo con su asesor de Punto Pago.
-          </p>
-          <div className="mt-6 rounded-xl border border-slate-200/90 bg-white px-4 py-4 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-              Número de formulario
-            </p>
-            <p className="mt-1 font-mono text-lg font-bold text-[#4749B6]">
-              {numeroFormulario}
-            </p>
-            <p className="mt-2 text-xs text-slate-600">
-              Use este número como referencia ante Punto Pago o en cualquier
-              seguimiento.
-            </p>
-          </div>
-        </div>
-      </div>
+      <KybRepresentanteExitoPanel
+        variant="desktop"
+        numeroFormulario={numeroFormulario}
+      />
     );
   }
 
@@ -363,6 +377,25 @@ export function KybRepresentanteCierrePaso({
               dispositivo móvil.
             </p>
           )}
+        </div>
+      ) : null}
+
+      {datosRepresentanteListos && !refGuardado && fase === "qr" ? (
+        <div className="rounded-2xl border border-emerald-200/90 bg-emerald-50/70 p-5 shadow-sm">
+          <p className="text-sm font-medium text-emerald-950">
+            Verificación y firma ya figuran en el formulario.
+          </p>
+          <p className="mt-2 text-xs leading-relaxed text-emerald-900/90">
+            Si esta pantalla no pasó sola al mensaje de finalizado, pulse el
+            botón para generar el PDF y el número de formulario en este equipo.
+          </p>
+          <button
+            type="button"
+            className="mt-4 w-full rounded-xl bg-gradient-to-b from-emerald-600 to-emerald-700 px-5 py-3 text-sm font-semibold text-white shadow-md shadow-emerald-600/25 transition hover:opacity-[0.97] sm:w-auto"
+            onClick={() => void finalizeWithPatch(patchFromValues)}
+          >
+            Finalizar formulario y descargar PDF
+          </button>
         </div>
       ) : null}
     </div>

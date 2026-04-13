@@ -1155,7 +1155,7 @@ export const KYB_STEPS: KybStep[] = [
     title: "FIRMA Y DECLARACIÓN DEL CLIENTE",
     navLabel: "Declaración",
     description:
-      "Revise el resumen y el texto de la declaración. Indique el nombre y la fecha de quien suscribe; luego use el único botón inferior para pasar al paso en que el representante escaneará el QR y completará MetaMap y la firma en su celular.",
+      "Revise el resumen y el texto de la declaración. Indique el nombre y la fecha de quien suscribe; luego use el único botón inferior para pasar al paso en que el representante escaneará el QR y completará la verificación de identidad y la firma en su celular.",
     pdfPage: "Pág. 4",
     fields: [
       {
@@ -1180,13 +1180,13 @@ export const KYB_STEPS: KybStep[] = [
       },
       {
         id: "decl_metamap_verification_id",
-        label: "MetaMap verificationId (interno)",
+        label: "Ref. verificación de identidad (interno)",
         type: "text",
         hidden: true,
       },
       {
         id: "decl_metamap_identity_id",
-        label: "MetaMap identityId (interno)",
+        label: "Ref. identidad (interno)",
         type: "text",
         hidden: true,
       },

@@ -102,15 +102,15 @@ export default function FirmarDirectorPage() {
             {(payload.values.decl_metamap_verification_id ?? "").trim() ? (
               <div className="rounded-xl border border-slate-200/90 bg-white p-4 text-sm shadow-sm">
                 <p className="font-semibold text-[#0B0B13]">
-                  Verificación MetaMap (referencia)
+                  Verificación de identidad (referencia)
                 </p>
                 <p className="mt-1 font-mono text-xs text-slate-700">
-                  verificationId:{" "}
+                  Ref. verificación:{" "}
                   {(payload.values.decl_metamap_verification_id ?? "").trim()}
                 </p>
                 {(payload.values.decl_metamap_identity_id ?? "").trim() ? (
                   <p className="mt-1 font-mono text-xs text-slate-600">
-                    identityId:{" "}
+                    Ref. identidad:{" "}
                     {(payload.values.decl_metamap_identity_id ?? "").trim()}
                   </p>
                 ) : null}

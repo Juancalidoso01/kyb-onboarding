@@ -5,8 +5,13 @@ import { useSearchParams } from "next/navigation";
 import { KybChrome } from "@/components/kyb-chrome";
 import { KybFirmaDigitalPanel } from "@/components/kyb-firma-digital-panel";
 import { KybMetamapDirectorKyc } from "@/components/kyb-metamap-director-kyc";
+import { KybRepresentanteExitoPanel } from "@/components/kyb-representante-exito-panel";
 import { KYB_FIELD_HINT_CLASS } from "@/lib/kyb-prose-classes";
 import type { FormState } from "@/lib/kyb-field-complete";
+import {
+  isVerificarRepresentanteCompleto,
+  markVerificarRepresentanteCompleto,
+} from "@/lib/kyb-verificar-representante-storage";
 import type { KybFirmaPaquetePayload } from "@/lib/kyb-firma-paquete";
 
 function emptyPatch(): Pick<
@@ -42,6 +47,13 @@ function VerificarRepresentanteInner() {
     if (!code) {
       setLoading(false);
       setErr("Falta el código en el enlace. Vuelva a escanear el QR desde el formulario KYB.");
+      return;
+    }
+    if (isVerificarRepresentanteCompleto(code)) {
+      setSent(true);
+      setValues(null);
+      setLoading(false);
+      setErr(null);
       return;
     }
     let cancelled = false;
@@ -105,6 +117,7 @@ function VerificarRepresentanteInner() {
         });
         if (r.ok) {
           lastSentFp.current = fp;
+          markVerificarRepresentanteCompleto(code);
           setSent(true);
         }
       } catch {
@@ -125,11 +138,13 @@ function VerificarRepresentanteInner() {
         <h1 className="text-xl font-bold text-[#0B0B13]">
           Verificación del representante
         </h1>
-        <p className={KYB_FIELD_HINT_CLASS + " mt-2"}>
-          Complete la verificación de identidad y luego la firma digital. Al
-          finalizar ambos pasos, podrá finalizar el formulario en el equipo donde
-          inició el proceso.
-        </p>
+        {!sent ? (
+          <p className={KYB_FIELD_HINT_CLASS + " mt-2"}>
+            Complete la verificación de identidad y luego la firma digital. Al
+            finalizar ambos pasos, podrá finalizar el formulario en el equipo donde
+            inició el proceso.
+          </p>
+        ) : null}
 
         {loading ? (
           <p className="mt-6 text-sm text-slate-600">Cargando…</p>
@@ -141,18 +156,17 @@ function VerificarRepresentanteInner() {
           </p>
         ) : null}
 
-        {values && !err ? (
+        {sent && !err ? (
+          <div className="mt-8">
+            <KybRepresentanteExitoPanel variant="mobile" />
+          </div>
+        ) : null}
+        {values && !err && !sent ? (
           <div className="mt-8 space-y-10">
             <KybMetamapDirectorKyc values={values} setField={setField} />
             <div className="border-t border-slate-200/90 pt-8">
               <KybFirmaDigitalPanel values={values} setField={setField} />
             </div>
-            {sent ? (
-              <div className="rounded-xl border border-emerald-200/90 bg-emerald-50/90 p-4 text-sm font-medium text-emerald-950">
-                Listo. Los datos se sincronizaron con el formulario principal.
-                Puede cerrar esta página.
-              </div>
-            ) : null}
           </div>
         ) : null}
       </div>

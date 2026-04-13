@@ -333,6 +333,15 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     [mergeRemoteRepresentantePatch],
   );
 
+  const redownloadKybPdf = useCallback(() => {
+    const summarySteps = visibleSteps.filter(
+      (s) =>
+        s.id !== DECLARACION_STEP_ID &&
+        s.id !== REPRESENTANTE_CIERRE_STEP_ID,
+    );
+    buildAndDownloadKybPdf(values, summarySteps, fieldVisibilityCtx);
+  }, [values, visibleSteps, fieldVisibilityCtx]);
+
   const puedeContinuarDeclaracion = useMemo(() => {
     const nom = (values.decl_director_nombre ?? "").trim();
     const f = values.decl_fecha ?? "";
@@ -1630,15 +1639,22 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                         type="button"
                         className="rounded-xl border border-slate-200/95 bg-white/95 px-6 py-2.5 text-sm font-semibold text-slate-700 shadow-sm"
                         onClick={() => {
-                          playWizardNav();
-                          void submitDraft();
+                          redownloadKybPdf();
                         }}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
-                        Enviar borrador al servidor (opcional)
+                        Descargar PDF
                       </motion.button>
-                    ) : null
+                    ) : (
+                      <p className="max-w-[14rem] text-right text-xs leading-snug text-slate-500 sm:max-w-xs">
+                        Cuando el representante termine en el celular, use{" "}
+                        <span className="font-medium text-slate-600">
+                          Finalizar formulario y descargar PDF
+                        </span>{" "}
+                        arriba o espere a que avance solo.
+                      </p>
+                    )
                   ) : (
                     <motion.button
                       type="button"

@@ -81,7 +81,10 @@ export function KybMetamapDirectorKyc({ values, setField }: Props) {
     btn.setAttribute("metadata", metadataJson);
     btn.className =
       "absolute inset-0 z-20 min-h-[52px] min-w-[200px] block cursor-pointer opacity-0";
-    btn.setAttribute("aria-label", "Iniciar verificación de identidad MetaMap");
+    btn.setAttribute(
+      "aria-label",
+      "Iniciar verificación de identidad del representante",
+    );
     host.appendChild(btn);
     const detach = attachListeners(btn);
     return () => {
@@ -102,12 +105,13 @@ export function KybMetamapDirectorKyc({ values, setField }: Props) {
       />
       <div>
         <h3 className="text-sm font-semibold text-[#0B0B13]">
-          Verificación de identidad del director o representante (MetaMap)
+          Verificación de identidad del director o representante
         </h3>
         <p className={KYB_FIELD_HINT_CLASS}>
           El director o representante legal debe validar identidad con documento
-          vigente y selfie. Los metadatos envían razón social y correo del
-          representante ya diligenciados para correlación en Metamap.
+          vigente y selfie. Se utilizan la razón social y el correo del
+          representante ya indicados en el formulario para correlacionar la
+          verificación.
         </p>
       </div>
 
@@ -117,11 +121,11 @@ export function KybMetamapDirectorKyc({ values, setField }: Props) {
             Verificación registrada
           </p>
           <p className="mt-1 font-mono text-xs text-emerald-800">
-            verificationId: {vid}
+            Ref. verificación: {vid}
           </p>
           {(values.decl_metamap_identity_id ?? "").trim() ? (
             <p className="mt-1 font-mono text-xs text-emerald-700">
-              identityId: {(values.decl_metamap_identity_id ?? "").trim()}
+              Ref. identidad: {(values.decl_metamap_identity_id ?? "").trim()}
             </p>
           ) : null}
           <button
