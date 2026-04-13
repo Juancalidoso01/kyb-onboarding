@@ -7,6 +7,7 @@ import { KybCombobox } from "@/components/kyb-combobox";
 import { KybDateField } from "@/components/kyb-date-field";
 import { KybLanding } from "@/components/kyb-landing";
 import { KybAddressPaField } from "@/components/kyb-address-pa-field";
+import { KybFormattedNumberField } from "@/components/kyb-formatted-number-field";
 import { KybPhoneField } from "@/components/kyb-phone-field";
 import { PAIS_OPTIONS } from "@/data/paises";
 import { KYB_ACTIVITY_NOT_LISTED_VALUE } from "@/lib/kyb-activity-extra-option";
@@ -888,6 +889,18 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
             <option value="si">Sí</option>
             <option value="no">No</option>
           </select>
+        ) : field.numberFormat ? (
+          <KybFormattedNumberField
+            id={field.id}
+            value={values[field.id] ?? ""}
+            onChange={(canon) => setField(field.id, canon)}
+            variant={field.numberFormat}
+            inputClass={inputClass}
+            placeholder={field.placeholder}
+            invalid={formatErr !== null}
+            onTypingKey={typingKey}
+            onInputFeedback={inputTypingFeedback}
+          />
         ) : (
           <input
             type={field.type === "email" ? "email" : "text"}

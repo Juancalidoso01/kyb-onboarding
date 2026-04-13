@@ -1,6 +1,10 @@
 import type { FormState } from "@/lib/kyb-field-complete";
 import { PAIS_PANAMA } from "@/data/paises";
 import { showPanamaAddressLookup } from "@/lib/kyb-panama-address-eligibility";
+import {
+  isValidQuantityCanonical,
+  isValidUsdCanonical,
+} from "@/lib/kyb-number-input-format";
 import type { KybField } from "@/lib/kyb-steps";
 
 /** Subconjunto práctico de correo con @, dominio y TLD con punto. */
@@ -132,9 +136,36 @@ export function getPercentFormatError(
   return null;
 }
 
+export function getNumericFormatError(
+  field: KybField,
+  values: FormState,
+): string | null {
+  if (!field.numberFormat) return null;
+  const raw = (values[field.id] ?? "").trim();
+  if (!raw) return null;
+  if (field.numberFormat === "usd") {
+    if (raw.endsWith(".")) return null;
+    if (!isValidUsdCanonical(raw)) {
+      return "Indique un monto válido en US$ (números y, si aplica, hasta dos decimales).";
+    }
+    return null;
+  }
+  if (field.numberFormat === "quantity") {
+    if (!isValidQuantityCanonical(raw)) {
+      return "Indique solo la cantidad (número entero).";
+    }
+    return null;
+  }
+  return null;
+}
+
 export function getFormatErrorForField(
   field: KybField,
   values: FormState,
 ): string | null {
-  return getContactFormatError(field, values) ?? getPercentFormatError(field, values);
+  return (
+    getContactFormatError(field, values) ??
+    getPercentFormatError(field, values) ??
+    getNumericFormatError(field, values)
+  );
 }

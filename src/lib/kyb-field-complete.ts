@@ -7,6 +7,10 @@ import {
   validatePhoneValue,
 } from "@/lib/kyb-format-validation";
 import {
+  isValidQuantityCanonical,
+  isValidUsdCanonical,
+} from "@/lib/kyb-number-input-format";
+import {
   type KybField,
   PP_SERVICIOS_CHECKBOX_IDS,
   PP_SV_PERFIL_PAIRS,
@@ -55,7 +59,22 @@ export function isFieldComplete(field: KybField, values: FormState): boolean {
 
   if (field.id === "volumen_operaciones_otros") {
     if (values.volumen_operaciones_anual !== "otros") return true;
-    return v.trim().length > 0;
+    const c = v.trim();
+    if (!c) return false;
+    if (c.endsWith(".")) return false;
+    return isValidUsdCanonical(c);
+  }
+
+  if (field.numberFormat === "usd") {
+    const c = v.trim();
+    if (!c) return false;
+    if (c.endsWith(".")) return false;
+    return isValidUsdCanonical(c);
+  }
+  if (field.numberFormat === "quantity") {
+    const c = v.trim();
+    if (!c) return false;
+    return isValidQuantityCanonical(c);
   }
 
   const bfTipo = field.id.match(/^bf_(\d+)_tipo_persona$/);

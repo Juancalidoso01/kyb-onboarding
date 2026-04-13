@@ -36,6 +36,10 @@ export type KybField = {
   staticParagraphs?: string[];
   /** Valor en estado/API pero sin control visible (sincronizado por lógica). */
   hidden?: boolean;
+  /**
+   * Montos en USD o cantidades: separadores de miles al escribir; el estado guarda valor «canónico» (solo dígitos; USD admite hasta 2 decimales).
+   */
+  numberFormat?: "usd" | "quantity";
 };
 
 export type KybStep = {
@@ -676,11 +680,13 @@ export const KYB_STEPS: KybStep[] = [
         id: "ingresos_mensuales_usd",
         label: "Ingresos mensuales aproximados son de: (USD)",
         type: "text",
+        numberFormat: "usd",
       },
       {
         id: "ingresos_anuales_usd",
         label: "Ingresos anuales aproximados son de: (USD)",
         type: "text",
+        numberFormat: "usd",
       },
     ],
   },
@@ -899,6 +905,7 @@ export const KYB_STEPS: KybStep[] = [
         id: "volumen_operaciones_otros",
         label: "Si «Otros», especifique el volumen o monto",
         type: "text",
+        numberFormat: "usd",
       },
     ],
   },
