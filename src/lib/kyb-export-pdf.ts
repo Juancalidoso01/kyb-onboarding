@@ -21,8 +21,7 @@ function includeFieldInSummaryTable(f: KybField): boolean {
   if (f.type === "static" || f.type === "heading") return false;
   if (
     f.type === "declaracion_resumen" ||
-    f.type === "representante_enlace_qr" ||
-    f.type === "representante_firma_kyc"
+    f.type === "representante_cierre_flow"
   ) {
     return false;
   }
@@ -174,6 +173,11 @@ export function buildAndDownloadKybPdf(
     `Nombre quien suscribe la declaración: ${dn || "—"}\nFecha declaración: ${df || "—"}\nMetaMap verificationId: ${vid || "—"}${iid ? `\nMetaMap identityId: ${iid}` : ""}`,
     9,
   );
+
+  const formRef = (values.decl_formulario_ref ?? "").trim();
+  if (formRef) {
+    addParagraphs(`Número de formulario: ${formRef}`, 9);
+  }
 
   const sig = (values.decl_firma_canvas_data_url ?? "").trim();
   if (sig.startsWith("data:image")) {

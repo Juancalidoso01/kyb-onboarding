@@ -34,10 +34,8 @@ export type KybFieldType =
   | "punto_pago_metricas_por_servicio"
   /** Resumen de respuestas antes de declaración (solo UI). */
   | "declaracion_resumen"
-  /** Código QR y sincronización móvil para representante (solo UI). */
-  | "representante_enlace_qr"
-  /** MetaMap KYC + firma digital en canvas (representante; solo UI). */
-  | "representante_firma_kyc";
+  /** Paso final: QR + sincronización MetaMap y firma (solo UI). */
+  | "representante_cierre_flow";
 
 export type KybField = {
   id: string;
@@ -1140,7 +1138,7 @@ export const KYB_STEPS: KybStep[] = [
     id: "declaracion",
     title: "FIRMA Y DECLARACIÓN DEL CLIENTE",
     description:
-      "Revise el resumen, genere el código QR para que el representante complete MetaMap y la firma en su celular (o use el bloque inferior en este mismo equipo), y complete nombre y fecha. El PDF se descargará solo al finalizar.",
+      "Revise el resumen y el texto de la declaración. Indique el nombre y la fecha de quien suscribe; luego use el único botón inferior para pasar al paso en que el representante escaneará el QR y completará MetaMap y la firma en su celular.",
     pdfPage: "Pág. 4",
     fields: [
       {
@@ -1158,20 +1156,10 @@ export const KYB_STEPS: KybStep[] = [
         type: "declaracion_resumen",
       },
       {
-        id: "decl_enlace_representante_ui",
-        label: "",
-        type: "representante_enlace_qr",
-      },
-      {
         id: "static_declaracion",
         label: "",
         type: "static",
         hint: "Declaro de manera voluntaria, libre de cualquier error, fuerza o dolo que todas las afirmaciones y respuestas que he manifestado en este documento son correctas, veraces, completas y autorizo al GRUPO PUNTO PAGO a verificar toda la información detallada. Además, me obligo a informar al GRUPO PUNTO PAGO de cualquier cambio o actualización de información que pueda afectar las afirmaciones y respuestas anotadas en este formulario, en un término no mayor a 30 días.",
-      },
-      {
-        id: "decl_rep_verificacion_ui",
-        label: "",
-        type: "representante_firma_kyc",
       },
       {
         id: "decl_metamap_verification_id",
@@ -1203,6 +1191,26 @@ export const KYB_STEPS: KybStep[] = [
         label: "Fecha de la declaración",
         type: "date",
       },
+      {
+        id: "decl_formulario_ref",
+        label: "Número de formulario (interno)",
+        type: "text",
+        hidden: true,
+      },
+    ],
+  },
+  {
+    id: "representante_cierre",
+    title: "FIRMA Y VERIFICACIÓN DEL REPRESENTANTE",
+    description:
+      "El director o representante legal debe escanear el código con su celular y completar en el mismo flujo la verificación MetaMap y la firma digital. Espere en esta pantalla hasta ver la confirmación y el número de formulario.",
+    pdfPage: "Pág. 4",
+    fields: [
+      {
+        id: "decl_cierre_representante_ui",
+        label: "",
+        type: "representante_cierre_flow",
+      },
     ],
   },
 ];
@@ -1216,8 +1224,7 @@ export function isRenderableValueField(f: KybField): boolean {
     f.type !== "punto_pago_servicios_multi" &&
     f.type !== "punto_pago_metricas_por_servicio" &&
     f.type !== "declaracion_resumen" &&
-    f.type !== "representante_enlace_qr" &&
-    f.type !== "representante_firma_kyc"
+    f.type !== "representante_cierre_flow"
   );
 }
 
@@ -1225,3 +1232,5 @@ export function isRenderableValueField(f: KybField): boolean {
 export const NOMBRE_DILIGENCIA_FIELD_ID = "nombre_diligencia" as const;
 
 export const DECLARACION_STEP_ID = "declaracion" as const;
+
+export const REPRESENTANTE_CIERRE_STEP_ID = "representante_cierre" as const;

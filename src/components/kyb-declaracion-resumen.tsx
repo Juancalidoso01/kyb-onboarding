@@ -26,11 +26,7 @@ type Props = {
 function includeFieldInSummaryTable(f: KybField): boolean {
   if (f.hidden) return false;
   if (f.type === "static" || f.type === "heading") return false;
-  if (
-    f.type === "declaracion_resumen" ||
-    f.type === "representante_enlace_qr" ||
-    f.type === "representante_firma_kyc"
-  )
+  if (f.type === "declaracion_resumen" || f.type === "representante_cierre_flow")
     return false;
   if (
     f.type === "punto_pago_servicios_multi" ||

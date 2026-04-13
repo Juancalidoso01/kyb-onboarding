@@ -49,12 +49,10 @@ import {
   PEP_STEP_ID,
 } from "@/lib/kyb-pep-content";
 import { type KybDocCompletenessContext } from "@/lib/kyb-documentacion";
-import { KybDeclaracionFinalSuccess } from "@/components/kyb-declaracion-estado";
 import { KybDeclaracionResumen } from "@/components/kyb-declaracion-resumen";
 import { KybDocumentacionPersonas } from "@/components/kyb-documentacion-personas";
 import { KybFileRow } from "@/components/kyb-file-row";
-import { KybRepresentanteFirmaKyc } from "@/components/kyb-representante-firma-kyc";
-import { KybRepresentanteRemotoPanel } from "@/components/kyb-representante-remoto-panel";
+import { KybRepresentanteCierrePaso } from "@/components/kyb-representante-cierre-paso";
 import { KybPuntoPagoServiciosMulti } from "@/components/kyb-punto-pago-servicios-multi";
 import { KybPuntoPagoMetricasPorServicio } from "@/components/kyb-punto-pago-metricas-por-servicio";
 import {
@@ -64,6 +62,7 @@ import {
   BENEFICIARIOS_FINALES_STEP_ID,
   BF_MEMBER_SLOTS_MAX,
   DECLARACION_STEP_ID,
+  REPRESENTANTE_CIERRE_STEP_ID,
   filterStepsByCotizaBolsa,
   JUNTA_DIRECTIVA_STEP_ID,
   JUNTA_MEMBER_SLOTS_MAX,
@@ -186,9 +185,8 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   const [pepMemberSlots, setPepMemberSlots] = useState(1);
   const [landingDraftAt, setLandingDraftAt] = useState<number | null>(null);
   const [apiStatus, setApiStatus] = useState<string | null>(null);
-  const [showDeclaracionFinalSuccess, setShowDeclaracionFinalSuccess] =
+  const [cierreRepresentanteListo, setCierreRepresentanteListo] =
     useState(false);
-  const pdfAutoDoneRef = useRef(false);
   const { options: activityOptions, loading: activityLoading } =
     useActivityOptions();
   const { options: professionOptions, loading: professionLoading } =
@@ -214,6 +212,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   const step = visibleSteps[effectiveStepIndex];
   const isFirst = effectiveStepIndex === 0;
   const isLast = effectiveStepIndex === visibleSteps.length - 1;
+  const esPasoCierre = step?.id === REPRESENTANTE_CIERRE_STEP_ID;
 
   const progress = useMemo(
     () =>
@@ -242,6 +241,13 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     }),
     [juntaMemberSlots, bfMemberSlots, pepMemberSlots],
   );
+
+  const valuesRef = useRef(values);
+  valuesRef.current = values;
+  const visibleStepsRef = useRef(visibleSteps);
+  visibleStepsRef.current = visibleSteps;
+  const fieldVisibilityCtxRef = useRef(fieldVisibilityCtx);
+  fieldVisibilityCtxRef.current = fieldVisibilityCtx;
 
   const firmaPaqueteMeta = useMemo(
     () => ({
@@ -282,22 +288,41 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     [],
   );
 
-  const declarationPdfReady = useMemo(() => {
-    const vid = (values.decl_metamap_verification_id ?? "").trim();
-    const sig = (values.decl_firma_canvas_data_url ?? "").trim();
+  const onFinalizarCierre = useCallback(
+    async (patch: Partial<FormState>) => {
+      const merged: FormState = { ...valuesRef.current };
+      for (const [k, v] of Object.entries(patch)) {
+        if (v !== undefined) merged[k] = v;
+      }
+      const summarySteps = visibleStepsRef.current.filter(
+        (s) =>
+          s.id !== DECLARACION_STEP_ID &&
+          s.id !== REPRESENTANTE_CIERRE_STEP_ID,
+      );
+      buildAndDownloadKybPdf(
+        merged,
+        summarySteps,
+        fieldVisibilityCtxRef.current,
+      );
+      mergeRemoteRepresentantePatch(patch);
+      const r = await fetch("/api/kyb/form-reference", { method: "POST" });
+      const j = (await r.json()) as { ref?: string };
+      return j.ref ?? `PP-KYB-${Date.now()}`;
+    },
+    [mergeRemoteRepresentantePatch],
+  );
+
+  const puedeContinuarDeclaracion = useMemo(() => {
     const nom = (values.decl_director_nombre ?? "").trim();
     const f = values.decl_fecha ?? "";
-    return Boolean(vid && sig && nom) && isValidPanamaDate(f);
-  }, [
-    values.decl_metamap_verification_id,
-    values.decl_firma_canvas_data_url,
-    values.decl_director_nombre,
-    values.decl_fecha,
-  ]);
+    return nom.length > 0 && isValidPanamaDate(f);
+  }, [values.decl_director_nombre, values.decl_fecha]);
 
   useEffect(() => {
     if (!started) return;
-    if (visibleSteps[effectiveStepIndex]?.id !== DECLARACION_STEP_ID) return;
+    const sid = visibleSteps[effectiveStepIndex]?.id;
+    if (sid !== DECLARACION_STEP_ID && sid !== REPRESENTANTE_CIERRE_STEP_ID)
+      return;
     saveDraft({
       stepIndex,
       values,
@@ -317,33 +342,16 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   ]);
 
   useEffect(() => {
-    if (!started) return;
-    if (visibleSteps[effectiveStepIndex]?.id !== DECLARACION_STEP_ID) return;
-    if (!declarationPdfReady || pdfAutoDoneRef.current) return;
-    pdfAutoDoneRef.current = true;
-    const summaryStepsForPdf = visibleSteps.filter(
-      (s) => s.id !== DECLARACION_STEP_ID,
+    if (visibleSteps[effectiveStepIndex]?.id !== REPRESENTANTE_CIERRE_STEP_ID) {
+      return;
+    }
+    setCierreRepresentanteListo(
+      Boolean((values.decl_formulario_ref ?? "").trim()),
     );
-    buildAndDownloadKybPdf(values, summaryStepsForPdf, fieldVisibilityCtx);
-    setShowDeclaracionFinalSuccess(true);
-    saveDraft({
-      stepIndex,
-      values,
-      juntaMemberSlots,
-      bfMemberSlots,
-      pepMemberSlots,
-    });
   }, [
-    started,
-    effectiveStepIndex,
     visibleSteps,
-    declarationPdfReady,
-    values,
-    fieldVisibilityCtx,
-    stepIndex,
-    juntaMemberSlots,
-    bfMemberSlots,
-    pepMemberSlots,
+    effectiveStepIndex,
+    values.decl_formulario_ref,
   ]);
 
   const nombreDiligencia = (values[NOMBRE_DILIGENCIA_FIELD_ID] ?? "").trim();
@@ -635,8 +643,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     setBfMemberSlots(1);
     setPepMemberSlots(1);
     setLandingDraftAt(null);
-    pdfAutoDoneRef.current = false;
-    setShowDeclaracionFinalSuccess(false);
+    setCierreRepresentanteListo(false);
     unlockAudio();
     setStarted(true);
   };
@@ -649,8 +656,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     setBfMemberSlots(1);
     setPepMemberSlots(1);
     setLandingDraftAt(null);
-    pdfAutoDoneRef.current = false;
-    setShowDeclaracionFinalSuccess(false);
+    setCierreRepresentanteListo(false);
   };
 
   const inputClass =
@@ -662,7 +668,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       field.type === "static" ||
       field.type === "documentacion_personas" ||
       field.type === "declaracion_resumen" ||
-      field.type === "representante_enlace_qr"
+      field.type === "representante_cierre_flow"
     ) {
       return inner;
     }
@@ -768,26 +774,18 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       );
     }
 
-    if (field.type === "representante_enlace_qr") {
+    if (field.type === "representante_cierre_flow") {
       return wrapField(
         field,
-        <KybRepresentanteRemotoPanel
+        <KybRepresentanteCierrePaso
           key={field.id}
           values={values}
           meta={firmaPaqueteMeta}
           onRemotePatch={mergeRemoteRepresentantePatch}
           onFlushDraft={flushDraftNow}
-        />,
-      );
-    }
-
-    if (field.type === "representante_firma_kyc") {
-      return wrapField(
-        field,
-        <KybRepresentanteFirmaKyc
-          key={field.id}
-          values={values}
           setField={setField}
+          onFinalizar={onFinalizarCierre}
+          onTerminado={() => setCierreRepresentanteListo(true)}
         />,
       );
     }
@@ -1527,18 +1525,6 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                     ) : null}
                   </motion.div>
                 ) : null}
-                {step.id === DECLARACION_STEP_ID ? (
-                  <motion.div
-                    initial={reduce ? false : { opacity: 0, y: 8 }}
-                    animate={reduce ? false : { opacity: 1, y: 0 }}
-                    transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                    className="pt-2"
-                  >
-                    <KybDeclaracionFinalSuccess
-                      open={showDeclaracionFinalSuccess}
-                    />
-                  </motion.div>
-                ) : null}
               </div>
 
               <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100/90 pt-8">
@@ -1584,9 +1570,19 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                     <motion.button
                       type="button"
                       className="rounded-xl bg-gradient-to-b from-[#4749B6] to-[#3B3DA6] px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#4749B6]/30 disabled:cursor-not-allowed disabled:opacity-50"
-                      disabled={step.id === "intro_formulario" && !canLeaveIntro}
+                      disabled={
+                        (step.id === "intro_formulario" && !canLeaveIntro) ||
+                        (step.id === DECLARACION_STEP_ID &&
+                          !puedeContinuarDeclaracion)
+                      }
                       onClick={() => {
                         if (step.id === "intro_formulario" && !canLeaveIntro) {
+                          return;
+                        }
+                        if (
+                          step.id === DECLARACION_STEP_ID &&
+                          !puedeContinuarDeclaracion
+                        ) {
                           return;
                         }
                         playWizardNav();
@@ -1595,16 +1591,40 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                         );
                       }}
                       whileHover={{
-                        scale: step.id === "intro_formulario" && !canLeaveIntro ? 1 : 1.03,
+                        scale:
+                          (step.id === "intro_formulario" && !canLeaveIntro) ||
+                          (step.id === DECLARACION_STEP_ID &&
+                            !puedeContinuarDeclaracion)
+                            ? 1
+                            : 1.03,
                         boxShadow:
-                          step.id === "intro_formulario" && !canLeaveIntro
+                          (step.id === "intro_formulario" && !canLeaveIntro) ||
+                          (step.id === DECLARACION_STEP_ID &&
+                            !puedeContinuarDeclaracion)
                             ? undefined
                             : "0 12px 28px -6px rgba(71,73,182,0.45)",
                       }}
                       whileTap={{ scale: 0.97 }}
                     >
-                      Siguiente
+                      {step.id === DECLARACION_STEP_ID
+                        ? "Continuar a firma del representante"
+                        : "Siguiente"}
                     </motion.button>
+                  ) : esPasoCierre ? (
+                    cierreRepresentanteListo ? (
+                      <motion.button
+                        type="button"
+                        className="rounded-xl border border-slate-200/95 bg-white/95 px-6 py-2.5 text-sm font-semibold text-slate-700 shadow-sm"
+                        onClick={() => {
+                          playWizardNav();
+                          void submitDraft();
+                        }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        Enviar borrador al servidor (opcional)
+                      </motion.button>
+                    ) : null
                   ) : (
                     <motion.button
                       type="button"

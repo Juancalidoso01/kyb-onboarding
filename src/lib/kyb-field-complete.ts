@@ -55,16 +55,13 @@ export function isFieldComplete(
 
   if (
     field.type === "declaracion_resumen" ||
-    field.type === "representante_enlace_qr"
+    field.type === "representante_cierre_flow"
   ) {
     return true;
   }
 
-  if (field.type === "representante_firma_kyc") {
-    const vidOk = (values.decl_metamap_verification_id ?? "").trim().length > 0;
-    const firmaOk =
-      (values.decl_firma_canvas_data_url ?? "").trim().length > 0;
-    return vidOk && firmaOk;
+  if (field.id === "decl_formulario_ref") {
+    return true;
   }
 
   if (field.id === "decl_metamap_identity_id") {
