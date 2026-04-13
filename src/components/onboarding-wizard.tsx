@@ -334,6 +334,12 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       if (id === "persona_contacto_cargo" && v !== "otro_cargo") {
         next.persona_contacto_cargo_especifique = "";
       }
+      if (id === "operaciones_frecuencia" && v !== "otro") {
+        next.operaciones_frecuencia_otro = "";
+      }
+      if (id === "volumen_operaciones_anual" && v !== "otros") {
+        next.volumen_operaciones_otros = "";
+      }
       const tipoBf = id.match(/^bf_(\d+)_tipo_persona$/);
       if (tipoBf) {
         const sn = tipoBf[1];
@@ -357,10 +363,16 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   };
 
   const toggleCheckbox = (id: string) => {
-    setValues((prev) => ({
-      ...prev,
-      [id]: prev[id] === "true" ? "" : "true",
-    }));
+    setValues((prev) => {
+      const next: FormState = {
+        ...prev,
+        [id]: prev[id] === "true" ? "" : "true",
+      };
+      if (id === "pp_sv_otros" && next[id] !== "true") {
+        next.pp_sv_otros_especifique = "";
+      }
+      return next;
+    });
   };
 
   const pingApi = async () => {
@@ -1046,6 +1058,15 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                     }
                     if (f.id === "persona_contacto_cargo_especifique") {
                       return values.persona_contacto_cargo === "otro_cargo";
+                    }
+                    if (f.id === "pp_sv_otros_especifique") {
+                      return values.pp_sv_otros === "true";
+                    }
+                    if (f.id === "operaciones_frecuencia_otro") {
+                      return values.operaciones_frecuencia === "otro";
+                    }
+                    if (f.id === "volumen_operaciones_otros") {
+                      return values.volumen_operaciones_anual === "otros";
                     }
                     return true;
                   })

@@ -105,6 +105,19 @@ export function formKeysForBfMemberSlot(slot: number): string[] {
   return BF_MEMBER_FIELD_SUFFIXES.map((s) => `bf_${slot}_${s}`);
 }
 
+/** Servicios de interés con Punto Pago (checkboxes del paso `servicios_punto_pago`). */
+export const PP_SERVICIOS_CHECKBOX_IDS = [
+  "pp_sv_recaudacion",
+  "pp_sv_hub_pagos",
+  "pp_sv_dispersion_fondos",
+  "pp_sv_agente_subagente",
+  "pp_sv_remesas",
+  "pp_sv_prestamos_financieras",
+  "pp_sv_emision_tarjetas",
+  "pp_sv_reventa",
+  "pp_sv_otros",
+] as const;
+
 /** Si cotiza en bolsa, el paso de accionistas/beneficiario final no aplica (datos públicos). */
 export function filterStepsByCotizaBolsa(
   allSteps: KybStep[],
@@ -635,7 +648,7 @@ export const KYB_STEPS: KybStep[] = [
     id: "perfil_financiero",
     title: "PERFIL FINANCIERO",
     description:
-      "Declaración y montos en USD. A continuación indicará medios de pago y datos del préstamo, luego referencias comerciales o bancarias y, después, la sección PEP.",
+      "Declaración y montos en USD (persona jurídica). Luego indicará medios de pago, servicios de interés con Punto Pago, volumen de operaciones estimado, referencias y la sección PEP.",
     pdfPage: "Pág. 2",
     fields: [
       {
@@ -660,7 +673,7 @@ export const KYB_STEPS: KybStep[] = [
     id: "medios_pago",
     title: "MEDIOS DE PAGO",
     description:
-      "Indique los medios de pago que utiliza. En el siguiente paso podrá detallar motivo y frecuencia del préstamo.",
+      "Indique los medios de pago que utiliza la empresa. A continuación seleccionará los servicios de Punto Pago de su interés.",
     pdfPage: "Pág. 3",
     fields: [
       {
@@ -686,20 +699,74 @@ export const KYB_STEPS: KybStep[] = [
     ],
   },
   {
-    id: "prestamo_motivo_frecuencia",
-    title: "PRÉSTAMO — Motivo y frecuencia",
+    id: "servicios_punto_pago",
+    title: "SERVICIOS DE INTERÉS CON PUNTO PAGO",
     description:
-      "Explique el motivo del préstamo y la frecuencia esperada de pagos y otras transacciones.",
+      "Persona jurídica: indique qué líneas de negocio o servicios de Grupo Punto Pago pretende utilizar. Marque al menos una opción. Luego indique la frecuencia operativa esperada.",
     pdfPage: "Pág. 3",
     fields: [
       {
-        id: "prestamo_motivo",
-        label: "Motivo del Préstamo",
+        id: "static_servicios_pp",
+        label: "",
+        type: "static",
+        staticParagraphs: [
+          "Este conocimiento del cliente (KYB) cubre a personas jurídicas que desean operar con los servicios de Grupo Punto Pago.",
+          "Seleccione los servicios aplicables. Si elige «Otros», explique brevemente en el campo indicado.",
+        ],
+      },
+      {
+        id: "pp_sv_recaudacion",
+        label: "Recaudación de pagos",
+        type: "checkbox",
+      },
+      {
+        id: "pp_sv_hub_pagos",
+        label: "Hub de pagos",
+        type: "checkbox",
+      },
+      {
+        id: "pp_sv_dispersion_fondos",
+        label: "Dispersión de fondos",
+        type: "checkbox",
+      },
+      {
+        id: "pp_sv_agente_subagente",
+        label: "Agente o subagente de Punto Pago",
+        type: "checkbox",
+      },
+      {
+        id: "pp_sv_remesas",
+        label: "Servicios relacionados a remesas",
+        type: "checkbox",
+      },
+      {
+        id: "pp_sv_prestamos_financieras",
+        label: "Servicios relacionados a préstamos o financieras",
+        type: "checkbox",
+      },
+      {
+        id: "pp_sv_emision_tarjetas",
+        label: "Servicios relacionados a emisión de tarjetas",
+        type: "checkbox",
+      },
+      {
+        id: "pp_sv_reventa",
+        label: "Reventa de servicios de Punto Pago",
+        type: "checkbox",
+      },
+      {
+        id: "pp_sv_otros",
+        label: "Otros",
+        type: "checkbox",
+      },
+      {
+        id: "pp_sv_otros_especifique",
+        label: "Si eligió «Otros», explique",
         type: "textarea",
       },
       {
-        id: "prestamo_frecuencia",
-        label: "Frecuencia esperada o aproximada de pagos y otras transacciones",
+        id: "operaciones_frecuencia",
+        label: "Frecuencia esperada o aproximada de operaciones y transacciones",
         type: "select",
         options: [
           { value: "", label: "Seleccionar…" },
@@ -712,21 +779,22 @@ export const KYB_STEPS: KybStep[] = [
         ],
       },
       {
-        id: "prestamo_frecuencia_otro",
+        id: "operaciones_frecuencia_otro",
         label: "Si «Otro», especifique",
         type: "text",
       },
     ],
   },
   {
-    id: "prestamo_monto",
-    title: "MONTO ANUAL DEL PRÉSTAMO",
-    description: "Indique el rango del monto anual o especifique si eligió «Otros».",
+    id: "volumen_operaciones",
+    title: "VOLUMEN ANUAL DE OPERACIONES ESTIMADO (USD)",
+    description:
+      "Indique el orden de magnitud del volumen anual de operaciones que proyecta en relación con los servicios seleccionados. Si elige «Otros», especifique.",
     pdfPage: "Pág. 3",
     fields: [
       {
-        id: "prestamo_monto_anual",
-        label: "MONTO ANUAL DEL PRÉSTAMO",
+        id: "volumen_operaciones_anual",
+        label: "Rango de volumen anual estimado (USD)",
         type: "select",
         options: [
           { value: "", label: "Seleccionar…" },
@@ -738,30 +806,9 @@ export const KYB_STEPS: KybStep[] = [
         ],
       },
       {
-        id: "prestamo_monto_otros",
-        label: "Si «Otros» en monto, especifique",
+        id: "volumen_operaciones_otros",
+        label: "Si «Otros», especifique el volumen o monto",
         type: "text",
-      },
-    ],
-  },
-  {
-    id: "prestamo_tipo",
-    title: "TIPO DE PRÉSTAMO",
-    description: "Seleccione el tipo de préstamo que corresponda.",
-    pdfPage: "Pág. 3",
-    fields: [
-      {
-        id: "prestamo_tipo",
-        label: "TIPO DE PRÉSTAMO",
-        type: "select",
-        options: [
-          { value: "", label: "Seleccionar…" },
-          { value: "personal_proyectos", label: "Préstamo personal de proyectos" },
-          { value: "administrativo", label: "Préstamo administrativo" },
-          { value: "empresarial", label: "Préstamo empresarial" },
-          { value: "ejecutivo", label: "Préstamo a ejecutivo" },
-          { value: "contratista", label: "Préstamo a contratista" },
-        ],
       },
     ],
   },

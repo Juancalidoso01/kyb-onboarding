@@ -6,13 +6,41 @@ import {
   PHONE_TEXT_FIELD_IDS,
   validatePhoneValue,
 } from "@/lib/kyb-format-validation";
-import type { KybField } from "@/lib/kyb-steps";
+import { type KybField, PP_SERVICIOS_CHECKBOX_IDS } from "@/lib/kyb-steps";
 import { isValidPanamaDate } from "@/lib/kyb-date";
 
 export type FormState = Record<string, string>;
 
+function puntoPagoServiciosComplete(values: FormState): boolean {
+  const any = PP_SERVICIOS_CHECKBOX_IDS.some((id) => values[id] === "true");
+  if (!any) return false;
+  if (values.pp_sv_otros === "true") {
+    return (values.pp_sv_otros_especifique ?? "").trim().length > 0;
+  }
+  return true;
+}
+
 export function isFieldComplete(field: KybField, values: FormState): boolean {
   const v = values[field.id] ?? "";
+
+  if ((PP_SERVICIOS_CHECKBOX_IDS as readonly string[]).includes(field.id)) {
+    return puntoPagoServiciosComplete(values);
+  }
+
+  if (field.id === "pp_sv_otros_especifique") {
+    if (values.pp_sv_otros !== "true") return true;
+    return v.trim().length > 0;
+  }
+
+  if (field.id === "operaciones_frecuencia_otro") {
+    if (values.operaciones_frecuencia !== "otro") return true;
+    return v.trim().length > 0;
+  }
+
+  if (field.id === "volumen_operaciones_otros") {
+    if (values.volumen_operaciones_anual !== "otros") return true;
+    return v.trim().length > 0;
+  }
 
   const bfTipo = field.id.match(/^bf_(\d+)_tipo_persona$/);
   if (bfTipo) {
