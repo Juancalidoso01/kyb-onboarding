@@ -551,10 +551,20 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     }
 
     if (field.type === "country") {
+      const bfPaisNac = field.id.match(/^bf_(\d+)_pais_nacimiento$/);
+      let countryLabel = field.label;
+      if (bfPaisNac) {
+        const sn = bfPaisNac[1];
+        const tipo = (values[`bf_${sn}_tipo_persona`] ?? "").trim();
+        if (tipo === "N") countryLabel = "País de nacimiento";
+        else if (tipo === "J") countryLabel = "País de constitución";
+        else countryLabel = "País de nacimiento o de constitución";
+      }
+
       const inner = (
         <div key={field.id} className="block">
           <span className="mb-1.5 block text-sm font-medium text-[#0B0B13]">
-            {field.label}
+            {countryLabel}
           </span>
           <KybCombobox
             options={PAIS_OPTIONS}
