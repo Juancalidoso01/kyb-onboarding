@@ -635,7 +635,7 @@ export const KYB_STEPS: KybStep[] = [
     id: "perfil_financiero",
     title: "PERFIL FINANCIERO",
     description:
-      "Declaración y montos en USD. Indique medio de pago y datos del préstamo en el siguiente paso si aplica.",
+      "Declaración y montos en USD. A continuación indicará medios de pago y datos del préstamo, luego referencias comerciales o bancarias y, después, la sección PEP.",
     pdfPage: "Pág. 2",
     fields: [
       {
@@ -657,10 +657,119 @@ export const KYB_STEPS: KybStep[] = [
     ],
   },
   {
+    id: "medios_pago",
+    title: "MEDIOS DE PAGO",
+    description:
+      "Indique los medios de pago que utiliza. En el siguiente paso podrá detallar motivo y frecuencia del préstamo.",
+    pdfPage: "Pág. 3",
+    fields: [
+      {
+        id: "medio_descuento_directo",
+        label: "Descuento Directo",
+        type: "checkbox",
+      },
+      {
+        id: "medio_transferencia_ach",
+        label: "Transferencia ACH",
+        type: "checkbox",
+      },
+      {
+        id: "medio_internacional",
+        label: "Internacional",
+        type: "checkbox",
+      },
+      {
+        id: "medio_nacional",
+        label: "Nacional",
+        type: "checkbox",
+      },
+    ],
+  },
+  {
+    id: "prestamo_motivo_frecuencia",
+    title: "PRÉSTAMO — Motivo y frecuencia",
+    description:
+      "Explique el motivo del préstamo y la frecuencia esperada de pagos y otras transacciones.",
+    pdfPage: "Pág. 3",
+    fields: [
+      {
+        id: "prestamo_motivo",
+        label: "Motivo del Préstamo",
+        type: "textarea",
+      },
+      {
+        id: "prestamo_frecuencia",
+        label: "Frecuencia esperada o aproximada de pagos y otras transacciones",
+        type: "select",
+        options: [
+          { value: "", label: "Seleccionar…" },
+          { value: "diaria", label: "Diaria" },
+          { value: "semanal", label: "Semanal" },
+          { value: "quincenal", label: "Cada 15 días" },
+          { value: "mensual", label: "Mensual" },
+          { value: "trimestral", label: "Cada 3 meses" },
+          { value: "otro", label: "Otro" },
+        ],
+      },
+      {
+        id: "prestamo_frecuencia_otro",
+        label: "Si «Otro», especifique",
+        type: "text",
+      },
+    ],
+  },
+  {
+    id: "prestamo_monto",
+    title: "MONTO ANUAL DEL PRÉSTAMO",
+    description: "Indique el rango del monto anual o especifique si eligió «Otros».",
+    pdfPage: "Pág. 3",
+    fields: [
+      {
+        id: "prestamo_monto_anual",
+        label: "MONTO ANUAL DEL PRÉSTAMO",
+        type: "select",
+        options: [
+          { value: "", label: "Seleccionar…" },
+          { value: "menos_1000", label: "Menos de $1.000" },
+          { value: "1000_5000", label: "$1.000 a $5.000" },
+          { value: "5000_10000", label: "$5.000 a $10.000" },
+          { value: "10000_15000", label: "$10.000 a $15.000" },
+          { value: "otros", label: "Otros" },
+        ],
+      },
+      {
+        id: "prestamo_monto_otros",
+        label: "Si «Otros» en monto, especifique",
+        type: "text",
+      },
+    ],
+  },
+  {
+    id: "prestamo_tipo",
+    title: "TIPO DE PRÉSTAMO",
+    description: "Seleccione el tipo de préstamo que corresponda.",
+    pdfPage: "Pág. 3",
+    fields: [
+      {
+        id: "prestamo_tipo",
+        label: "TIPO DE PRÉSTAMO",
+        type: "select",
+        options: [
+          { value: "", label: "Seleccionar…" },
+          { value: "personal_proyectos", label: "Préstamo personal de proyectos" },
+          { value: "administrativo", label: "Préstamo administrativo" },
+          { value: "empresarial", label: "Préstamo empresarial" },
+          { value: "ejecutivo", label: "Préstamo a ejecutivo" },
+          { value: "contratista", label: "Préstamo a contratista" },
+        ],
+      },
+    ],
+  },
+  {
     id: "referencias",
     title: "REFERENCIAS",
     description:
-      "Tipo de referencia, datos de contacto y declaración sobre investigaciones.",
+      "Tipo de referencia, datos de contacto y declaración sobre investigaciones. Después de este paso continuará la sección PEP.",
     pdfPage: "Pág. 3",
     fields: [
       {
@@ -714,90 +823,6 @@ export const KYB_STEPS: KybStep[] = [
         id: "ref_investigacion_explicacion",
         label: "En caso afirmativo, explique",
         type: "textarea",
-      },
-    ],
-  },
-  {
-    id: "producto_medios_pago",
-    title: "DOCUMENTOS PARA ENTREGAR — Medio de pago y préstamo",
-    description:
-      "Medios de pago, motivo del préstamo, frecuencia, monto y tipo.",
-    pdfPage: "Pág. 3",
-    fields: [
-      {
-        id: "medio_descuento_directo",
-        label: "Descuento Directo",
-        type: "checkbox",
-      },
-      {
-        id: "medio_transferencia_ach",
-        label: "Transferencia ACH",
-        type: "checkbox",
-      },
-      {
-        id: "medio_internacional",
-        label: "Internacional",
-        type: "checkbox",
-      },
-      {
-        id: "medio_nacional",
-        label: "Nacional",
-        type: "checkbox",
-      },
-      {
-        id: "prestamo_motivo",
-        label: "Motivo del Préstamo",
-        type: "textarea",
-      },
-      {
-        id: "prestamo_frecuencia",
-        label: "Frecuencia esperada o aproximada de pagos y otras transacciones",
-        type: "select",
-        options: [
-          { value: "", label: "Seleccionar…" },
-          { value: "diaria", label: "Diaria" },
-          { value: "semanal", label: "Semanal" },
-          { value: "quincenal", label: "Cada 15 días" },
-          { value: "mensual", label: "Mensual" },
-          { value: "trimestral", label: "Cada 3 meses" },
-          { value: "otro", label: "Otro" },
-        ],
-      },
-      {
-        id: "prestamo_frecuencia_otro",
-        label: "Si «Otro», especifique",
-        type: "text",
-      },
-      {
-        id: "prestamo_monto_anual",
-        label: "MONTO ANUAL DEL PRÉSTAMO",
-        type: "select",
-        options: [
-          { value: "", label: "Seleccionar…" },
-          { value: "menos_1000", label: "Menos de $1.000" },
-          { value: "1000_5000", label: "$1.000 a $5.000" },
-          { value: "5000_10000", label: "$5.000 a $10.000" },
-          { value: "10000_15000", label: "$10.000 a $15.000" },
-          { value: "otros", label: "Otros" },
-        ],
-      },
-      {
-        id: "prestamo_monto_otros",
-        label: "Si «Otros» en monto, especifique",
-        type: "text",
-      },
-      {
-        id: "prestamo_tipo",
-        label: "TIPO DE PRÉSTAMO",
-        type: "select",
-        options: [
-          { value: "", label: "Seleccionar…" },
-          { value: "personal_proyectos", label: "Préstamo personal de proyectos" },
-          { value: "administrativo", label: "Préstamo administrativo" },
-          { value: "empresarial", label: "Préstamo empresarial" },
-          { value: "ejecutivo", label: "Préstamo a ejecutivo" },
-          { value: "contratista", label: "Préstamo a contratista" },
-        ],
       },
     ],
   },
