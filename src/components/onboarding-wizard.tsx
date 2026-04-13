@@ -48,6 +48,12 @@ import {
   PEP_STEP_ID,
 } from "@/lib/kyb-pep-content";
 import {
+  DOCUMENTACION_ENTREGAR_STEP_ID,
+  empresaOperaEnPanama,
+} from "@/lib/kyb-documentacion";
+import { KybDocumentacionPersonas } from "@/components/kyb-documentacion-personas";
+import { KybFileRow } from "@/components/kyb-file-row";
+import {
   formKeysForBfMemberSlot,
   formKeysForJuntaMemberSlot,
   isRenderableValueField,
@@ -470,7 +476,11 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     "w-full rounded-xl border border-slate-200/95 bg-white/95 px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition duration-200 placeholder:text-slate-400 focus:border-[#4749B6] focus:ring-2 focus:ring-[#4749B6]/20";
 
   const wrapField = (field: KybField, inner: ReactNode) => {
-    if (field.type === "heading" || field.type === "static") {
+    if (
+      field.type === "heading" ||
+      field.type === "static" ||
+      field.type === "documentacion_personas"
+    ) {
       return inner;
     }
     const complete = isFieldComplete(field, values);
@@ -546,31 +556,74 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       );
     }
 
+    if (field.type === "documentacion_personas") {
+      return wrapField(
+        field,
+        <KybDocumentacionPersonas
+          key={field.id}
+          values={values}
+          onFileName={setField}
+          juntaMemberSlots={juntaMemberSlots}
+          bfMemberSlots={bfMemberSlots}
+          omitirAccionistas={(values.cotiza_bolsa ?? "").trim() === "si"}
+        />,
+      );
+    }
+
     const displayLabel =
       step?.id === REFERENCIAS_STEP_ID
         ? (getReferenciasFieldLabel(field.id, values.ref_tipo ?? "") ??
           field.label)
         : field.label;
 
-    if (field.type === "checkbox") {
+    if (field.type === "file") {
       const inner = (
-        <label
-          key={field.id}
-          className="group flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200/90 bg-white/95 px-3.5 py-3 shadow-sm transition duration-200 hover:border-[#4749B6]/35 hover:shadow-md"
-        >
-          <input
-            type="checkbox"
-            className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#4749B6] transition focus:ring-[#4749B6]"
-            checked={values[field.id] === "true"}
-            onChange={() => {
-              playChoiceTick();
-              toggleCheckbox(field.id);
-            }}
-          />
-          <span className="text-sm font-medium text-slate-800">
+        <div key={field.id} className="block">
+          <span className="mb-1.5 block text-sm font-medium text-[#0B0B13]">
             {displayLabel}
           </span>
-        </label>
+          <KybFileRow
+            id={field.id}
+            fileName={values[field.id] ?? ""}
+            onChange={setField}
+            hint={field.hint}
+          />
+        </div>
+      );
+      return wrapField(field, inner);
+    }
+
+    if (field.type === "checkbox") {
+      const inner = (
+        <div key={field.id} className="space-y-3">
+          <label className="group flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200/90 bg-white/95 px-3.5 py-3 shadow-sm transition duration-200 hover:border-[#4749B6]/35 hover:shadow-md">
+            <input
+              type="checkbox"
+              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#4749B6] transition focus:ring-[#4749B6]"
+              checked={values[field.id] === "true"}
+              onChange={() => {
+                playChoiceTick();
+                toggleCheckbox(field.id);
+              }}
+            />
+            <span className="text-sm font-medium text-slate-800">
+              {displayLabel}
+            </span>
+          </label>
+          {field.fileAttachmentId ? (
+            <div className="rounded-xl border border-slate-200/80 bg-white/80 px-3.5 py-3 sm:pl-10">
+              <p className="mb-2 text-xs font-medium text-slate-600">
+                Adjunto del documento (opcional)
+              </p>
+              <KybFileRow
+                id={field.fileAttachmentId}
+                fileName={values[field.fileAttachmentId] ?? ""}
+                onChange={setField}
+                hint="PDF, imagen u otros formatos compatibles."
+              />
+            </div>
+          ) : null}
+        </div>
       );
       return wrapField(field, inner);
     }
@@ -1132,6 +1185,12 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                     }
                     if (f.id === "ref_tipo_otro_descripcion") {
                       return values.ref_tipo === "otro";
+                    }
+                    if (f.id === "doc_nac_nis_numero") {
+                      return (
+                        step.id === DOCUMENTACION_ENTREGAR_STEP_ID &&
+                        empresaOperaEnPanama(values)
+                      );
                     }
                     if (step.id === PEP_STEP_ID) {
                       if (

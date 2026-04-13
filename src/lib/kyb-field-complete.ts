@@ -15,6 +15,7 @@ import {
   PP_SERVICIOS_CHECKBOX_IDS,
   PP_SV_PERFIL_PAIRS,
 } from "@/lib/kyb-steps";
+import { PAIS_PANAMA } from "@/data/paises";
 import { isValidPanamaDate } from "@/lib/kyb-date";
 import { PEP_DETAIL_FIELD_IDS } from "@/lib/kyb-pep-content";
 
@@ -73,6 +74,15 @@ export function isFieldComplete(field: KybField, values: FormState): boolean {
 
   if ((PEP_DETAIL_FIELD_IDS as readonly string[]).includes(field.id)) {
     if (values.pep_alguno_catalogado !== "si") return true;
+  }
+
+  if (field.id === "doc_nac_nis_numero") {
+    if ((values.pais_opera ?? "").trim() !== PAIS_PANAMA) return true;
+    return v.trim().length > 0;
+  }
+
+  if (field.type === "documentacion_personas" || field.type === "file") {
+    return true;
   }
 
   if (field.numberFormat === "usd") {

@@ -1,4 +1,5 @@
 import type { FormState } from "@/lib/kyb-field-complete";
+import { allDocumentacionUploadKeys } from "@/lib/kyb-documentacion";
 import {
   BF_MEMBER_SLOTS_MAX,
   JUNTA_MEMBER_SLOTS_MAX,
@@ -28,6 +29,9 @@ export function buildEmptyFormState(steps: KybStep[]): FormState {
       if (!isRenderableValueField(f)) continue;
       s[f.id] = "";
     }
+  }
+  for (const k of allDocumentacionUploadKeys()) {
+    if (!(k in s)) s[k] = "";
   }
   return s;
 }

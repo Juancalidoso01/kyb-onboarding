@@ -1,4 +1,5 @@
 import { SOCIEDAD_COMBO_OPTIONS } from "@/data/sociedad-tipos";
+import { DOCUMENTACION_PERSONAS_FIELD_ID } from "@/lib/kyb-documentacion";
 import { KYB_TEXT_PEP_STATIC_PARAGRAPHS } from "@/lib/kyb-pep-content";
 
 /**
@@ -22,7 +23,11 @@ export type KybFieldType =
   | "country"
   | "activity_search"
   | "profession_search"
-  | "percent";
+  | "percent"
+  /** Listas de carga por junta / accionistas / representante (solo UI). */
+  | "documentacion_personas"
+  /** Adjunto de un archivo; el estado guarda el nombre del archivo mostrado. */
+  | "file";
 
 export type KybField = {
   id: string;
@@ -32,6 +37,11 @@ export type KybField = {
   options?: { value: string; label: string; disabled?: boolean }[];
   /** Texto de ayuda bajo el campo */
   hint?: string;
+  /**
+   * Con `type: checkbox`, muestra un segundo control con `input type=file`;
+   * el nombre del archivo se guarda en esta clave de estado.
+   */
+  fileAttachmentId?: string;
   /** Bloques de texto para `type: "static"` (p. ej. intro con varios párrafos justificados). */
   staticParagraphs?: string[];
   /** Valor en estado/API pero sin control visible (sincronizado por lógica). */
@@ -1063,40 +1073,62 @@ export const KYB_STEPS: KybStep[] = [
     id: "documentacion_entregar",
     title: "DOCUMENTOS PARA ENTREGAR — Documentación de soporte",
     description:
-      "Marque la documentación que entregará (cédulas, aviso de operaciones, pacto social, etc.) y añada observaciones si corresponde.",
+      "Adjunte archivos en formatos habituales (PDF, imágenes, hojas de cálculo, etc.). Indique NAC/NIS si la empresa opera en Panamá. Marque qué documentación entregará y, si ya la tiene, adjunte una copia. Añada observaciones si corresponde.",
     pdfPage: "Pág. 4",
     fields: [
       {
-        id: "doc_cedulas_dignatarios",
+        id: "doc_static_intro_adjuntos",
+        label: "",
+        type: "static",
+        staticParagraphs: [
+          "Use los adjuntos para cargar documentos. El sistema registra el nombre del archivo como referencia; el trámite definitivo de envío lo confirma su asesor según el canal acordado.",
+          "Más abajo aparecen los nombres ya indicados en Gobierno corporativo, accionistas o beneficiario final y en Representante legal, para que sepa exactamente qué cédulas o documentos de identidad cargar por persona.",
+        ],
+      },
+      {
+        id: DOCUMENTACION_PERSONAS_FIELD_ID,
+        label: "",
+        type: "documentacion_personas",
+      },
+      {
+        id: "doc_nac_nis_numero",
         label:
-          "Cédula o pasaporte de Dignatarios, Directores, Beneficiario Final, Representante Legal, Apoderado, Protector, Administrador o consejero.",
-        type: "checkbox",
+          "Número NAC o NIS de la sucursal principal de la empresa (solo si opera en Panamá)",
+        type: "text",
+        placeholder: "Ej. NAC o NIS según registro ante la SBP",
+        hint: "Indique el número de registro que corresponda a la sucursal principal en Panamá. Si la empresa no opera en Panamá, este campo no aplica y se oculta.",
+      },
+      {
+        id: "doc_upl_factura_servicios",
+        type: "file",
+        label:
+          "Factura de servicios públicos (luz, agua, teléfono u otro) o estado de cuenta",
+        hint: "Antigüedad recomendada no mayor a tres meses. Formatos: PDF, imagen u otros compatibles con su navegador.",
       },
       {
         id: "doc_aviso_operaciones",
         label: "Copia de certificado de aviso de operaciones o equivalente.",
         type: "checkbox",
+        fileAttachmentId: "doc_upl_aviso",
       },
       {
         id: "doc_pacto_social",
         label: "Copia de Pacto Social y sus adendas.",
         type: "checkbox",
+        fileAttachmentId: "doc_upl_pacto",
       },
       {
         id: "doc_origen_fondos",
-        label: "Origen de fondos (declaración de renta, estados financieros, etc.).",
+        label:
+          "Origen de fondos (declaración de renta, estados financieros, etc.).",
         type: "checkbox",
+        fileAttachmentId: "doc_upl_origen",
       },
       {
         id: "doc_referencias_bancarias",
         label: "Referencias bancarias",
         type: "checkbox",
-      },
-      {
-        id: "doc_factura_servicios",
-        label:
-          "Factura de Servicios Público (Estado de cuenta de luz, agua, teléfono, con una antigüedad no mayor a tres meses)",
-        type: "checkbox",
+        fileAttachmentId: "doc_upl_ref_banc",
       },
       {
         id: "observaciones",
@@ -1134,7 +1166,11 @@ export const KYB_STEPS: KybStep[] = [
 
 /** IDs que no se envían como valor de formulario (solo UI) */
 export function isRenderableValueField(f: KybField): boolean {
-  return f.type !== "heading" && f.type !== "static";
+  return (
+    f.type !== "heading" &&
+    f.type !== "static" &&
+    f.type !== "documentacion_personas"
+  );
 }
 
 /** Primer paso: nombre de quien diligencia (obligatorio para avanzar). */
