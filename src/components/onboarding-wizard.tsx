@@ -399,14 +399,9 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       if (id === "ref_tipo" && v !== "otro") {
         next.ref_tipo_otro_descripcion = "";
       }
-      const docUplToCheckbox: Record<string, string> = {
-        doc_upl_aviso: "doc_aviso_operaciones",
-        doc_upl_pacto: "doc_pacto_social",
-        doc_upl_origen: "doc_origen_fondos",
-        doc_upl_ref_banc: "doc_referencias_bancarias",
-      };
-      const pairChk = docUplToCheckbox[id];
-      if (pairChk) next[pairChk] = v.trim() ? "true" : "";
+      if (id === "doc_upl_factura_servicios" && !v.trim()) {
+        next.doc_nac_nis_numero = "";
+      }
       if (id === "pep_alguno_catalogado" && v !== "si") {
         for (const fid of allPepMemberFormKeys()) {
           next[fid] = "";
@@ -1260,7 +1255,8 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                     if (f.id === "doc_nac_nis_numero") {
                       return (
                         step.id === DOCUMENTACION_ENTREGAR_STEP_ID &&
-                        empresaOperaEnPanama(values)
+                        empresaOperaEnPanama(values) &&
+                        (values.doc_upl_factura_servicios ?? "").trim().length > 0
                       );
                     }
                     if (step.id === PEP_STEP_ID) {

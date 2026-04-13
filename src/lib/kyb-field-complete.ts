@@ -94,6 +94,7 @@ export function isFieldComplete(
 
   if (field.id === "doc_nac_nis_numero") {
     if ((values.pais_opera ?? "").trim() !== PAIS_PANAMA) return true;
+    if (!(values.doc_upl_factura_servicios ?? "").trim()) return true;
     return v.trim().length > 0;
   }
 

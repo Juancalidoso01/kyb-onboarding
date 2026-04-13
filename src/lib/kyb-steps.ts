@@ -1066,7 +1066,7 @@ export const KYB_STEPS: KybStep[] = [
     id: "documentacion_entregar",
     title: "DOCUMENTOS PARA ENTREGAR — Documentación de soporte",
     description:
-      "Debe cargar los archivos requeridos en cada apartado (PDF, imágenes, hojas de cálculo u otros formatos habituales). Indique NAC/NIS de la sucursal principal si la empresa opera en Panamá. Sin los adjuntos completos no se considera diligenciada esta sección.",
+      "Debe cargar los archivos requeridos en cada apartado. Si opera en Panamá, después de cargar la factura de servicios deberá indicar el NAC o NIS de la sucursal principal. Sin los adjuntos completos no se considera diligenciada esta sección.",
     pdfPage: "Pág. 4",
     fields: [
       {
@@ -1084,14 +1084,6 @@ export const KYB_STEPS: KybStep[] = [
         type: "documentacion_personas",
       },
       {
-        id: "doc_nac_nis_numero",
-        label:
-          "Número NAC o NIS de la sucursal principal de la empresa (solo si opera en Panamá)",
-        type: "text",
-        placeholder: "Ej. NAC o NIS según registro ante la SBP",
-        hint: "Sucursal principal en Panamá: número NAC o NIS según registro ante la SBP. Si no opera en Panamá, este campo no aplica (se oculta).",
-      },
-      {
         id: "doc_upl_factura_servicios",
         type: "file",
         label:
@@ -1099,29 +1091,37 @@ export const KYB_STEPS: KybStep[] = [
         hint: "Antigüedad del comprobante no mayor a tres meses. PDF, imagen u otros que acepte su navegador.",
       },
       {
-        id: "doc_aviso_operaciones",
-        label: "Copia de certificado de aviso de operaciones o equivalente.",
-        type: "checkbox",
-        fileAttachmentId: "doc_upl_aviso",
+        id: "doc_nac_nis_numero",
+        label: "Número NAC o NIS de la sucursal principal (sucursal en Panamá)",
+        type: "text",
+        placeholder: "Ej. según registro NAC o NIS ante la SBP",
+        hint: "Este campo aparece después de cargar la factura de servicios. Indique el número de la sucursal principal. Si no opera en Panamá, no verá este campo.",
       },
       {
-        id: "doc_pacto_social",
+        id: "doc_upl_aviso",
+        type: "file",
+        label:
+          "Copia de certificado de aviso de operaciones o equivalente.",
+        hint: "PDF, imagen u otros que acepte su navegador.",
+      },
+      {
+        id: "doc_upl_pacto",
+        type: "file",
         label: "Copia de Pacto Social y sus adendas.",
-        type: "checkbox",
-        fileAttachmentId: "doc_upl_pacto",
+        hint: "PDF, imagen u otros que acepte su navegador.",
       },
       {
-        id: "doc_origen_fondos",
+        id: "doc_upl_origen",
+        type: "file",
         label:
           "Origen de fondos (declaración de renta, estados financieros, etc.).",
-        type: "checkbox",
-        fileAttachmentId: "doc_upl_origen",
+        hint: "PDF, imagen u otros que acepte su navegador.",
       },
       {
-        id: "doc_referencias_bancarias",
+        id: "doc_upl_ref_banc",
+        type: "file",
         label: "Referencias bancarias",
-        type: "checkbox",
-        fileAttachmentId: "doc_upl_ref_banc",
+        hint: "PDF, imagen u otros que acepte su navegador.",
       },
       {
         id: "observaciones",
