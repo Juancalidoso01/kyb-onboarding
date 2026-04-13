@@ -1,9 +1,11 @@
 import type { FormState } from "@/lib/kyb-field-complete";
 import { allDocumentacionUploadKeys } from "@/lib/kyb-documentacion";
 import {
+  allPuntoPagoMetricFieldKeys,
   BF_MEMBER_SLOTS_MAX,
   JUNTA_MEMBER_SLOTS_MAX,
   KYB_PDF_FORM_VERSION,
+  PP_SERVICIOS_CHECKBOX_IDS,
 } from "@/lib/kyb-steps";
 import type { KybStep } from "@/lib/kyb-steps";
 import { isRenderableValueField } from "@/lib/kyb-steps";
@@ -31,6 +33,12 @@ export function buildEmptyFormState(steps: KybStep[]): FormState {
     }
   }
   for (const k of allDocumentacionUploadKeys()) {
+    if (!(k in s)) s[k] = "";
+  }
+  for (const id of PP_SERVICIOS_CHECKBOX_IDS) {
+    if (!(id in s)) s[id] = "";
+  }
+  for (const k of allPuntoPagoMetricFieldKeys()) {
     if (!(k in s)) s[k] = "";
   }
   return s;

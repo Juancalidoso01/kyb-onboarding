@@ -27,7 +27,11 @@ export type KybFieldType =
   /** Listas de carga por junta / accionistas / representante (solo UI). */
   | "documentacion_personas"
   /** Adjunto de un archivo; el estado guarda el nombre del archivo mostrado. */
-  | "file";
+  | "file"
+  /** Multiselect de servicios PP (sincroniza `pp_sv_*`). */
+  | "punto_pago_servicios_multi"
+  /** Monto mensual y transacciones solo para servicios seleccionados. */
+  | "punto_pago_metricas_por_servicio";
 
 export type KybField = {
   id: string;
@@ -132,20 +136,92 @@ export const PP_SERVICIOS_CHECKBOX_IDS = [
   "pp_sv_otros",
 ] as const;
 
-/** Servicio marcado → campo de perfil operativo esperado (textarea). Excluye «Otros». */
-export const PP_SV_PERFIL_PAIRS = [
-  { serviceId: "pp_sv_recaudacion", perfilId: "pp_perfil_recaudacion" },
-  { serviceId: "pp_sv_hub_pagos", perfilId: "pp_perfil_hub_pagos" },
-  { serviceId: "pp_sv_dispersion_fondos", perfilId: "pp_perfil_dispersion_fondos" },
-  { serviceId: "pp_sv_agente_subagente", perfilId: "pp_perfil_agente_subagente" },
-  { serviceId: "pp_sv_remesas", perfilId: "pp_perfil_remesas" },
+/** Etiquetas para la lista desplegable multiselect (mismo orden que `PP_SERVICIOS_CHECKBOX_IDS`). */
+export const PP_SERVICIOS_MULTI_OPTIONS: { id: (typeof PP_SERVICIOS_CHECKBOX_IDS)[number]; label: string }[] =
+  [
+    { id: "pp_sv_recaudacion", label: "Recaudación de pagos" },
+    { id: "pp_sv_hub_pagos", label: "Hub de pagos" },
+    { id: "pp_sv_dispersion_fondos", label: "Dispersión de fondos" },
+    { id: "pp_sv_agente_subagente", label: "Agente o subagente de Punto Pago" },
+    { id: "pp_sv_remesas", label: "Servicios relacionados a remesas" },
+    {
+      id: "pp_sv_prestamos_financieras",
+      label: "Servicios relacionados a préstamos o financieras",
+    },
+    {
+      id: "pp_sv_emision_tarjetas",
+      label: "Servicios relacionados a emisión de tarjetas",
+    },
+    { id: "pp_sv_reventa", label: "Reventa de servicios de Punto Pago" },
+    { id: "pp_sv_otros", label: "Otros" },
+  ];
+
+/**
+ * Por cada servicio marcado: monto mensual (USD) y número de transacciones mensuales.
+ * Incluye «Otros» (además de `pp_sv_otros_especifique`).
+ */
+export const PP_SV_METRICA_PAIRS = [
+  {
+    serviceId: "pp_sv_recaudacion",
+    montoId: "pp_mm_recaudacion",
+    txId: "pp_tx_mensual_recaudacion",
+  },
+  {
+    serviceId: "pp_sv_hub_pagos",
+    montoId: "pp_mm_hub_pagos",
+    txId: "pp_tx_mensual_hub_pagos",
+  },
+  {
+    serviceId: "pp_sv_dispersion_fondos",
+    montoId: "pp_mm_dispersion_fondos",
+    txId: "pp_tx_mensual_dispersion_fondos",
+  },
+  {
+    serviceId: "pp_sv_agente_subagente",
+    montoId: "pp_mm_agente_subagente",
+    txId: "pp_tx_mensual_agente_subagente",
+  },
+  {
+    serviceId: "pp_sv_remesas",
+    montoId: "pp_mm_remesas",
+    txId: "pp_tx_mensual_remesas",
+  },
   {
     serviceId: "pp_sv_prestamos_financieras",
-    perfilId: "pp_perfil_prestamos_financieras",
+    montoId: "pp_mm_prestamos_financieras",
+    txId: "pp_tx_mensual_prestamos_financieras",
   },
-  { serviceId: "pp_sv_emision_tarjetas", perfilId: "pp_perfil_emision_tarjetas" },
-  { serviceId: "pp_sv_reventa", perfilId: "pp_perfil_reventa" },
+  {
+    serviceId: "pp_sv_emision_tarjetas",
+    montoId: "pp_mm_emision_tarjetas",
+    txId: "pp_tx_mensual_emision_tarjetas",
+  },
+  {
+    serviceId: "pp_sv_reventa",
+    montoId: "pp_mm_reventa",
+    txId: "pp_tx_mensual_reventa",
+  },
+  {
+    serviceId: "pp_sv_otros",
+    montoId: "pp_mm_otros",
+    txId: "pp_tx_mensual_otros",
+  },
 ] as const;
+
+/** Claves de estado: montos y transacciones por servicio. */
+export function allPuntoPagoMetricFieldKeys(): string[] {
+  const keys: string[] = [];
+  for (const m of PP_SV_METRICA_PAIRS) {
+    keys.push(m.montoId, m.txId);
+  }
+  return keys;
+}
+
+export function algunaSeleccionServicioPuntoPago(
+  values: Record<string, string>,
+): boolean {
+  return PP_SERVICIOS_CHECKBOX_IDS.some((id) => values[id] === "true");
+}
 
 /** Si cotiza en bolsa, el paso de accionistas/beneficiario final no aplica (datos públicos). */
 export function filterStepsByCotizaBolsa(
@@ -677,7 +753,7 @@ export const KYB_STEPS: KybStep[] = [
     id: "perfil_financiero",
     title: "PERFIL FINANCIERO",
     description:
-      "Refleja el tamaño económico general de su organización (facturación o ingresos de la empresa en su conjunto), no el volumen ligado a los servicios de Punto Pago que detallará más adelante. Cuando ya exista documentación formal (por ejemplo, declaración de renta o estados financieros), los importes deben ser coherentes con ella. Si es un cliente nuevo, sin historial o aún sin saber cuánto facturará, puede indicar estimaciones o proyecciones razonables; no se le exige una cifra exacta ni documentos que aún no tenga. Ej.: una compañía puede facturar millones de USD al mes por su actividad principal. Después de este paso seguirán medios de pago, servicios de interés con Punto Pago, volumen estimado de operaciones con Punto Pago, referencias y PEP.",
+      "Refleja el tamaño económico general de su organización (facturación o ingresos de la empresa en su conjunto), no el volumen ligado a los servicios de Punto Pago que detallará más adelante. Cuando ya exista documentación formal (por ejemplo, declaración de renta o estados financieros), los importes deben ser coherentes con ella. Si es un cliente nuevo, sin historial o aún sin saber cuánto facturará, puede indicar estimaciones o proyecciones razonables; no se le exige una cifra exacta ni documentos que aún no tenga. Ej.: una compañía puede facturar millones de USD al mes por su actividad principal. Después de este paso seguirán cómo pagará a Grupo Punto Pago y objeto del servicio, servicios de interés con Punto Pago, volumen estimado de operaciones con Punto Pago, referencias y PEP.",
     pdfPage: "Pág. 2",
     fields: [
       {
@@ -704,14 +780,41 @@ export const KYB_STEPS: KybStep[] = [
   },
   {
     id: "medios_pago",
-    title: "MEDIOS DE PAGO",
+    title: "MEDIOS DE PAGO HACIA GRUPO PUNTO PAGO",
     description:
-      "Indique los medios de pago que utiliza la empresa. A continuación seleccionará los servicios de Punto Pago de su interés.",
+      "Indique el objeto de la relación con Punto Pago y cómo prevé cumplir los pagos hacia Grupo Punto Pago (comisiones, liquidaciones u otros flujos pactados). Las casillas siguientes son los mecanismos o canales por los que su empresa podría efectuar esos desembolsos; luego elegirá los servicios de interés.",
     pdfPage: "Pág. 3",
     fields: [
       {
+        id: "static_medios_pp_contexto",
+        label: "",
+        type: "static",
+        staticParagraphs: [
+          "Este bloque se enfoca en cómo su empresa pagará a Grupo Punto Pago en el marco del servicio: comisiones, tarifas, liquidaciones periódicas o cualquier flujo de dinero acordado desde el cliente hacia Grupo Punto Pago.",
+          "No confunda esto con el perfil financiero general de la empresa (facturación global) ni con el volumen operativo con Punto Pago que verá más adelante: aquí se declara el propósito comercial previsto y los medios o rutas con los que prevé cubrir lo que deba pagarse a Grupo Punto Pago.",
+        ],
+      },
+      {
+        id: "pp_objeto_servicio_cliente",
+        label:
+          "Objeto del servicio o alcance previsto con Grupo Punto Pago (síntesis)",
+        type: "textarea",
+        placeholder:
+          "Ej.: uso de plataforma de recaudación para cobros a clientes finales; distribución de comisiones por transacciones procesadas; relación de agente…",
+        hint: "Describa brevemente para qué contrata o usará los servicios y qué se espera de la relación comercial.",
+      },
+      {
+        id: "pp_forma_pago_hacia_punto_pago",
+        label:
+          "¿Cómo prevé pagar a Grupo Punto Pago? (comisiones, cargos y flujos hacia Punto Pago)",
+        type: "textarea",
+        placeholder:
+          "Ej.: liquidación mensual por transferencia ACH; descuento en origen sobre cobros; débito acordado; facturación y pago por factura…",
+        hint: "Indique la forma en que su empresa cubrirá comisiones u otros importes adeudados a Grupo Punto Pago, o el flujo de dinero cliente → Grupo Punto Pago que aplique.",
+      },
+      {
         id: "medio_descuento_directo",
-        label: "Descuento Directo",
+        label: "Descuento directo (aplicable a liquidaciones o cobros acordados)",
         type: "checkbox",
       },
       {
@@ -735,7 +838,7 @@ export const KYB_STEPS: KybStep[] = [
     id: "servicios_punto_pago",
     title: "SERVICIOS DE INTERÉS CON PUNTO PAGO",
     description:
-      "Persona jurídica: marque los servicios de interés. Para cada uno (salvo «Otros»), describa el comportamiento esperado como referencia de perfil; luego indique la frecuencia operativa global.",
+      "Seleccione los servicios de interés y, para cada uno elegido, indique el monto mensual estimado y la cantidad de transacciones mensuales previstas. Si elige «Otros», describa el alcance y complete también montos y volumen. Luego indique la frecuencia operativa global.",
     pdfPage: "Pág. 3",
     fields: [
       {
@@ -744,133 +847,26 @@ export const KYB_STEPS: KybStep[] = [
         type: "static",
         staticParagraphs: [
           "Este conocimiento del cliente (KYB) cubre a personas jurídicas que desean operar con los servicios de Grupo Punto Pago.",
-          "Seleccione los servicios aplicables. Para cada servicio marcado se solicitará un perfil operativo esperado; si elige «Otros», descríbalo en el campo correspondiente.",
+          "Use la lista desplegable para elegir uno o más servicios. Solo verá y deberá diligenciar el monto mensual (USD) y el número de transacciones mensuales para los servicios que haya marcado.",
         ],
       },
       {
-        id: "pp_sv_recaudacion",
-        label: "Recaudación de pagos",
-        type: "checkbox",
-      },
-      {
-        id: "pp_sv_hub_pagos",
-        label: "Hub de pagos",
-        type: "checkbox",
-      },
-      {
-        id: "pp_sv_dispersion_fondos",
-        label: "Dispersión de fondos",
-        type: "checkbox",
-      },
-      {
-        id: "pp_sv_agente_subagente",
-        label: "Agente o subagente de Punto Pago",
-        type: "checkbox",
-      },
-      {
-        id: "pp_sv_remesas",
-        label: "Servicios relacionados a remesas",
-        type: "checkbox",
-      },
-      {
-        id: "pp_sv_prestamos_financieras",
-        label: "Servicios relacionados a préstamos o financieras",
-        type: "checkbox",
-      },
-      {
-        id: "pp_sv_emision_tarjetas",
-        label: "Servicios relacionados a emisión de tarjetas",
-        type: "checkbox",
-      },
-      {
-        id: "pp_sv_reventa",
-        label: "Reventa de servicios de Punto Pago",
-        type: "checkbox",
-      },
-      {
-        id: "pp_sv_otros",
-        label: "Otros",
-        type: "checkbox",
+        id: "pp_servicios_interes_ui",
+        label: "Servicios de interés con Grupo Punto Pago",
+        type: "punto_pago_servicios_multi",
+        hint: "Abra el menú, marque todas las que apliquen y revise las etiquetas de su selección.",
       },
       {
         id: "static_perfil_ref",
         label: "",
         type: "static",
-        hint: "Perfil de referencia: indique para cada servicio marcado (excepto «Otros») el comportamiento que la empresa espera — por ejemplo volumen mensual aproximado en USD o volumen de operaciones, número de transacciones o cobros, picos o estacionalidad prevista y cualquier detalle relevante. Esta información permite contrastar en el futuro el uso habitual: si de forma sostenida supera lo aquí declarado, Grupo Punto Pago podrá solicitar aclaraciones o confirmación con el cliente.",
+        hint: "Para cada servicio elegido deberá indicar montos y volumen de transacciones mensuales estimados (línea base de referencia). Si el uso habitual supera con holgura lo aquí declarado, Grupo Punto Pago podrá solicitar aclaraciones.",
       },
       {
-        id: "__h_pp_perfil",
-        label: "Comportamiento esperado — detalle por servicio marcado",
-        type: "heading",
-      },
-      {
-        id: "pp_perfil_recaudacion",
-        label: "Recaudación de pagos",
-        type: "textarea",
-        placeholder:
-          "Volumen u operaciones mensuales estimadas, picos, observaciones…",
-        hint: "Sirve como línea base del perfil para seguimiento.",
-      },
-      {
-        id: "pp_perfil_hub_pagos",
-        label: "Hub de pagos",
-        type: "textarea",
-        placeholder:
-          "Flujos, conexiones o volumetría esperada; picos o estacionalidad…",
-        hint: "Sirve como línea base del perfil para seguimiento.",
-      },
-      {
-        id: "pp_perfil_dispersion_fondos",
-        label: "Dispersión de fondos",
-        type: "textarea",
-        placeholder:
-          "Montos o pagos dispersados al mes, frecuencia, destinatarios típicos…",
-        hint: "Sirve como línea base del perfil para seguimiento.",
-      },
-      {
-        id: "pp_perfil_agente_subagente",
-        label: "Agente o subagente de Punto Pago",
-        type: "textarea",
-        placeholder:
-          "Red, territorio, transacciones o comisiones esperadas, observaciones…",
-        hint: "Sirve como línea base del perfil para seguimiento.",
-      },
-      {
-        id: "pp_perfil_remesas",
-        label: "Servicios relacionados a remesas",
-        type: "textarea",
-        placeholder:
-          "Montos, número de envíos o recepciones mensuales, corredores u orígenes…",
-        hint: "Sirve como línea base del perfil para seguimiento.",
-      },
-      {
-        id: "pp_perfil_prestamos_financieras",
-        label: "Servicios relacionados a préstamos o financieras",
-        type: "textarea",
-        placeholder:
-          "Producto o alcance esperado, volumen o ticket medio, observaciones…",
-        hint: "Sirve como línea base del perfil para seguimiento.",
-      },
-      {
-        id: "pp_perfil_emision_tarjetas",
-        label: "Servicios relacionados a emisión de tarjetas",
-        type: "textarea",
-        placeholder:
-          "Tarjetas o cuentas previstas al mes/año, segmento, montos asociados…",
-        hint: "Sirve como línea base del perfil para seguimiento.",
-      },
-      {
-        id: "pp_perfil_reventa",
-        label: "Reventa de servicios de Punto Pago",
-        type: "textarea",
-        placeholder:
-          "Canales, clientes finales previstos, volumen estimado de reventa…",
-        hint: "Sirve como línea base del perfil para seguimiento.",
-      },
-      {
-        id: "pp_sv_otros_especifique",
-        label: "Si eligió «Otros», explique el servicio o negocio",
-        type: "textarea",
+        id: "pp_metricas_servicios_ui",
+        label: "Montos y transacciones mensuales por servicio seleccionado",
+        type: "punto_pago_metricas_por_servicio",
+        hint: "Solo aparecen tarjetas para los servicios que marcó. Estimaciones razonables; puede refinarlas con su asesor.",
       },
       {
         id: "operaciones_frecuencia",
@@ -1169,7 +1165,9 @@ export function isRenderableValueField(f: KybField): boolean {
   return (
     f.type !== "heading" &&
     f.type !== "static" &&
-    f.type !== "documentacion_personas"
+    f.type !== "documentacion_personas" &&
+    f.type !== "punto_pago_servicios_multi" &&
+    f.type !== "punto_pago_metricas_por_servicio"
   );
 }
 

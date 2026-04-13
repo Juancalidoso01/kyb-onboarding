@@ -13,7 +13,7 @@ import {
 import {
   type KybField,
   PP_SERVICIOS_CHECKBOX_IDS,
-  PP_SV_PERFIL_PAIRS,
+  PP_SV_METRICA_PAIRS,
 } from "@/lib/kyb-steps";
 import { PAIS_PANAMA } from "@/data/paises";
 import { isValidPanamaDate } from "@/lib/kyb-date";
@@ -28,9 +28,14 @@ function puntoPagoServiciosComplete(values: FormState): boolean {
     if ((values.pp_sv_otros_especifique ?? "").trim().length === 0)
       return false;
   }
-  for (const { serviceId, perfilId } of PP_SV_PERFIL_PAIRS) {
-    if (values[serviceId] === "true") {
-      if ((values[perfilId] ?? "").trim().length === 0) return false;
+  for (const row of PP_SV_METRICA_PAIRS) {
+    if (values[row.serviceId] === "true") {
+      const m = (values[row.montoId] ?? "").trim();
+      const t = (values[row.txId] ?? "").trim();
+      if (!m || m.endsWith(".")) return false;
+      if (!isValidUsdCanonical(m)) return false;
+      if (!t) return false;
+      if (!isValidQuantityCanonical(t)) return false;
     }
   }
   return true;
@@ -39,18 +44,20 @@ function puntoPagoServiciosComplete(values: FormState): boolean {
 export function isFieldComplete(field: KybField, values: FormState): boolean {
   const v = values[field.id] ?? "";
 
+  if (field.type === "punto_pago_servicios_multi") {
+    return puntoPagoServiciosComplete(values);
+  }
+
+  if (field.type === "punto_pago_metricas_por_servicio") {
+    return puntoPagoServiciosComplete(values);
+  }
+
   if ((PP_SERVICIOS_CHECKBOX_IDS as readonly string[]).includes(field.id)) {
     return puntoPagoServiciosComplete(values);
   }
 
   if (field.id === "pp_sv_otros_especifique") {
     if (values.pp_sv_otros !== "true") return true;
-    return v.trim().length > 0;
-  }
-
-  const perfilPair = PP_SV_PERFIL_PAIRS.find((p) => p.perfilId === field.id);
-  if (perfilPair) {
-    if (values[perfilPair.serviceId] !== "true") return true;
     return v.trim().length > 0;
   }
 

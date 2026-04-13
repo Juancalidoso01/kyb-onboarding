@@ -53,7 +53,10 @@ import {
 } from "@/lib/kyb-documentacion";
 import { KybDocumentacionPersonas } from "@/components/kyb-documentacion-personas";
 import { KybFileRow } from "@/components/kyb-file-row";
+import { KybPuntoPagoServiciosMulti } from "@/components/kyb-punto-pago-servicios-multi";
+import { KybPuntoPagoMetricasPorServicio } from "@/components/kyb-punto-pago-metricas-por-servicio";
 import {
+  algunaSeleccionServicioPuntoPago,
   formKeysForBfMemberSlot,
   formKeysForJuntaMemberSlot,
   isRenderableValueField,
@@ -66,7 +69,7 @@ import {
   juntaFieldMemberSlot,
   KYB_STEPS,
   NOMBRE_DILIGENCIA_FIELD_ID,
-  PP_SV_PERFIL_PAIRS,
+  PP_SV_METRICA_PAIRS,
 } from "@/lib/kyb-steps";
 import {
   playChoiceTick,
@@ -369,6 +372,14 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
           next[fid] = "";
         }
       }
+      const metricSvc = PP_SV_METRICA_PAIRS.find((m) => m.serviceId === id);
+      if (metricSvc && v !== "true") {
+        next[metricSvc.montoId] = "";
+        next[metricSvc.txId] = "";
+      }
+      if (id === "pp_sv_otros" && v !== "true") {
+        next.pp_sv_otros_especifique = "";
+      }
       const tipoBf = id.match(/^bf_(\d+)_tipo_persona$/);
       if (tipoBf) {
         const sn = tipoBf[1];
@@ -400,9 +411,10 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       if (id === "pp_sv_otros" && next[id] !== "true") {
         next.pp_sv_otros_especifique = "";
       }
-      const perfilMap = PP_SV_PERFIL_PAIRS.find((p) => p.serviceId === id);
-      if (perfilMap && next[id] !== "true") {
-        next[perfilMap.perfilId] = "";
+      const metricSvc = PP_SV_METRICA_PAIRS.find((m) => m.serviceId === id);
+      if (metricSvc && next[id] !== "true") {
+        next[metricSvc.montoId] = "";
+        next[metricSvc.txId] = "";
       }
       return next;
     });
@@ -566,6 +578,35 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
           juntaMemberSlots={juntaMemberSlots}
           bfMemberSlots={bfMemberSlots}
           omitirAccionistas={(values.cotiza_bolsa ?? "").trim() === "si"}
+        />,
+      );
+    }
+
+    if (field.type === "punto_pago_servicios_multi") {
+      return wrapField(
+        field,
+        <KybPuntoPagoServiciosMulti
+          key={field.id}
+          values={values}
+          setField={setField}
+          label={field.label}
+          hint={field.hint}
+        />,
+      );
+    }
+
+    if (field.type === "punto_pago_metricas_por_servicio") {
+      return wrapField(
+        field,
+        <KybPuntoPagoMetricasPorServicio
+          key={field.id}
+          values={values}
+          setField={setField}
+          inputClass={inputClass}
+          onTypingKey={typingKey}
+          onInputFeedback={inputTypingFeedback}
+          label={field.label}
+          hint={field.hint}
         />,
       );
     }
@@ -1159,23 +1200,8 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                     if (f.id === "persona_contacto_cargo_especifique") {
                       return values.persona_contacto_cargo === "otro_cargo";
                     }
-                    if (f.id === "pp_sv_otros_especifique") {
-                      return values.pp_sv_otros === "true";
-                    }
-                    if (f.id === "static_perfil_ref" || f.id === "__h_pp_perfil") {
-                      return PP_SV_PERFIL_PAIRS.some(
-                        (p) => values[p.serviceId] === "true",
-                      );
-                    }
-                    if (
-                      PP_SV_PERFIL_PAIRS.some((p) => p.perfilId === f.id)
-                    ) {
-                      const perfilPair = PP_SV_PERFIL_PAIRS.find(
-                        (p) => p.perfilId === f.id,
-                      );
-                      if (perfilPair) {
-                        return values[perfilPair.serviceId] === "true";
-                      }
+                    if (f.id === "static_perfil_ref" || f.id === "pp_metricas_servicios_ui") {
+                      return algunaSeleccionServicioPuntoPago(values);
                     }
                     if (f.id === "operaciones_frecuencia_otro") {
                       return values.operaciones_frecuencia === "otro";
