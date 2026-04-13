@@ -36,8 +36,10 @@ export type KybFieldType =
   | "declaracion_resumen"
   /** Descarga JSON y enlace a página de firma del director (solo UI). */
   | "firma_paquete_ui"
-  /** Botón Web MetaMap (KYC) para director/representante (solo UI). */
-  | "metamap_director_kyc";
+  /** MetaMap KYC + firma digital en canvas (representante; solo UI). */
+  | "representante_firma_kyc"
+  /** Descarga PDF del borrador tras KYC + firma (solo UI). */
+  | "kyb_export_pdf";
 
 export type KybField = {
   id: string;
@@ -1169,9 +1171,9 @@ export const KYB_STEPS: KybStep[] = [
         type: "firma_paquete_ui",
       },
       {
-        id: "decl_metamap_kyc_ui",
+        id: "decl_rep_verificacion_ui",
         label: "",
-        type: "metamap_director_kyc",
+        type: "representante_firma_kyc",
       },
       {
         id: "decl_metamap_verification_id",
@@ -1182,6 +1184,12 @@ export const KYB_STEPS: KybStep[] = [
       {
         id: "decl_metamap_identity_id",
         label: "MetaMap identityId (interno)",
+        type: "text",
+        hidden: true,
+      },
+      {
+        id: "decl_firma_canvas_data_url",
+        label: "Firma digital (data URL, interno)",
         type: "text",
         hidden: true,
       },
@@ -1197,6 +1205,11 @@ export const KYB_STEPS: KybStep[] = [
         label: "Fecha de la declaración",
         type: "date",
       },
+      {
+        id: "decl_export_pdf_ui",
+        label: "",
+        type: "kyb_export_pdf",
+      },
     ],
   },
 ];
@@ -1211,7 +1224,8 @@ export function isRenderableValueField(f: KybField): boolean {
     f.type !== "punto_pago_metricas_por_servicio" &&
     f.type !== "declaracion_resumen" &&
     f.type !== "firma_paquete_ui" &&
-    f.type !== "metamap_director_kyc"
+    f.type !== "representante_firma_kyc" &&
+    f.type !== "kyb_export_pdf"
   );
 }
 

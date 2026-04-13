@@ -19,7 +19,6 @@ import {
   isDocumentacionPersonasBlockComplete,
   type KybDocCompletenessContext,
 } from "@/lib/kyb-documentacion";
-import { getMetamapPublicConfig } from "@/lib/kyb-metamap-config";
 import { PAIS_PANAMA } from "@/data/paises";
 import { isValidPanamaDate } from "@/lib/kyb-date";
 
@@ -58,14 +57,20 @@ export function isFieldComplete(
     return true;
   }
 
-  if (field.type === "metamap_director_kyc") {
-    if (!getMetamapPublicConfig()) return true;
-    return (values.decl_metamap_verification_id ?? "").trim().length > 0;
+  if (field.type === "representante_firma_kyc") {
+    const vidOk = (values.decl_metamap_verification_id ?? "").trim().length > 0;
+    const firmaOk =
+      (values.decl_firma_canvas_data_url ?? "").trim().length > 0;
+    return vidOk && firmaOk;
   }
 
-  if (field.id === "decl_metamap_verification_id") {
-    if (!getMetamapPublicConfig()) return true;
-    return v.trim().length > 0;
+  if (field.type === "kyb_export_pdf") {
+    const rep =
+      (values.decl_metamap_verification_id ?? "").trim().length > 0 &&
+      (values.decl_firma_canvas_data_url ?? "").trim().length > 0;
+    if (!rep) return false;
+    if ((values.decl_director_nombre ?? "").trim().length === 0) return false;
+    return isValidPanamaDate(values.decl_fecha ?? "");
   }
 
   if (field.id === "decl_metamap_identity_id") {

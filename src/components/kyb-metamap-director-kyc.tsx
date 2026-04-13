@@ -20,7 +20,7 @@ type Props = {
 };
 
 export function KybMetamapDirectorKyc({ values, setField }: Props) {
-  const cfg = useMemo(() => getMetamapPublicConfig(), []);
+  const cfg = getMetamapPublicConfig();
   const [scriptReady, setScriptReady] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
@@ -92,27 +92,6 @@ export function KybMetamapDirectorKyc({ values, setField }: Props) {
 
   const vid = (values.decl_metamap_verification_id ?? "").trim();
   const hasVerification = vid.length > 0;
-
-  if (!cfg) {
-    return (
-      <div className="rounded-xl border border-amber-200/90 bg-amber-50/80 p-4 text-sm text-amber-950">
-        <p className="font-medium">MetaMap no configurado</p>
-        <p className={KYB_FIELD_HINT_CLASS}>
-          Defina{" "}
-          <code className="rounded bg-amber-100/80 px-1 text-xs">
-            NEXT_PUBLIC_METAMAP_CLIENT_ID
-          </code>{" "}
-          y{" "}
-          <code className="rounded bg-amber-100/80 px-1 text-xs">
-            NEXT_PUBLIC_METAMAP_FLOW_ID
-          </code>{" "}
-          en <code className="text-xs">.env.local</code> (valores del dashboard
-          Metamap, igual que en checkout-demo). Sin ellos el paso no exige
-          verificación biométrica.
-        </p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">

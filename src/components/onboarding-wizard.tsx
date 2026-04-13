@@ -53,7 +53,8 @@ import { KybDeclaracionResumen } from "@/components/kyb-declaracion-resumen";
 import { KybDocumentacionPersonas } from "@/components/kyb-documentacion-personas";
 import { KybFileRow } from "@/components/kyb-file-row";
 import { KybFirmaPaquetePanel } from "@/components/kyb-firma-paquete-panel";
-import { KybMetamapDirectorKyc } from "@/components/kyb-metamap-director-kyc";
+import { KybRepresentanteFirmaKyc } from "@/components/kyb-representante-firma-kyc";
+import { KybExportPdfPanel } from "@/components/kyb-export-pdf-panel";
 import { KybPuntoPagoServiciosMulti } from "@/components/kyb-punto-pago-servicios-multi";
 import { KybPuntoPagoMetricasPorServicio } from "@/components/kyb-punto-pago-metricas-por-servicio";
 import {
@@ -681,13 +682,29 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       );
     }
 
-    if (field.type === "metamap_director_kyc") {
+    if (field.type === "representante_firma_kyc") {
       return wrapField(
         field,
-        <KybMetamapDirectorKyc
+        <KybRepresentanteFirmaKyc
           key={field.id}
           values={values}
           setField={setField}
+        />,
+      );
+    }
+
+    if (field.type === "kyb_export_pdf") {
+      const summaryStepsForPdf = visibleSteps.filter(
+        (s) => s.id !== DECLARACION_STEP_ID,
+      );
+      return wrapField(
+        field,
+        <KybExportPdfPanel
+          key={field.id}
+          values={values}
+          summarySteps={summaryStepsForPdf}
+          visibility={fieldVisibilityCtx}
+          canDownload={isFieldComplete(field, values, docCompletenessCtx)}
         />,
       );
     }
