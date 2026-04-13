@@ -86,6 +86,12 @@ export function readDraft(steps: KybStep[]): KybLocalDraft | null {
         merged[slot1] = merged[legacy];
       }
     }
+    if (
+      (merged.decl_nombre_cliente ?? "").trim() &&
+      !(merged.decl_director_nombre ?? "").trim()
+    ) {
+      merged.decl_director_nombre = merged.decl_nombre_cliente;
+    }
     const maxStep = Math.max(0, steps.length - 1);
     const juntaMemberSlots =
       typeof d.juntaMemberSlots === "number" &&

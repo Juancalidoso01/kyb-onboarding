@@ -32,6 +32,12 @@ export function KybChrome({ children }: { children: ReactNode }) {
           </a>
           <nav className="hidden items-center gap-1 sm:flex">
             <a
+              href="/firmar-director"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-[#4749B6]"
+            >
+              Firma del director
+            </a>
+            <a
               href={BUSINESS_HUB_URL}
               target="_blank"
               rel="noopener noreferrer"

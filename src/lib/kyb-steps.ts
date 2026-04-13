@@ -31,7 +31,13 @@ export type KybFieldType =
   /** Multiselect de servicios PP (sincroniza `pp_sv_*`). */
   | "punto_pago_servicios_multi"
   /** Monto mensual y transacciones solo para servicios seleccionados. */
-  | "punto_pago_metricas_por_servicio";
+  | "punto_pago_metricas_por_servicio"
+  /** Resumen de respuestas antes de declaración (solo UI). */
+  | "declaracion_resumen"
+  /** Descarga JSON y enlace a página de firma del director (solo UI). */
+  | "firma_paquete_ui"
+  /** Botón Web MetaMap (KYC) para director/representante (solo UI). */
+  | "metamap_director_kyc";
 
 export type KybField = {
   id: string;
@@ -1134,9 +1140,23 @@ export const KYB_STEPS: KybStep[] = [
     id: "declaracion",
     title: "FIRMA Y DECLARACIÓN DEL CLIENTE",
     description:
-      "Lea la declaración y complete nombre y fecha. La firma puede completarse según el proceso indicado por su asesor.",
+      "Revise primero el resumen de lo diligenciado. La declaración debe suscribirla un director u oficial autorizado de la empresa. Si quien llena el formulario no es esa persona, use el paquete JSON y la página de firma del director.",
     pdfPage: "Pág. 4",
     fields: [
+      {
+        id: "decl_static_rol_diligencia",
+        label: "",
+        type: "static",
+        staticParagraphs: [
+          "Quien completa estos campos en nombre de la empresa suele ser personal administrativo o un asesor. La declaración jurada final debe alinearse con quien tiene facultades para comprometer a la sociedad (director, presidente, representante legal u otro cargo facultado según sus estatutos).",
+          "El resumen siguiente repasa las respuestas guardadas en este equipo. Confírmelas con el director antes de enviar documentación definitiva a su asesor comercial de Punto Pago.",
+        ],
+      },
+      {
+        id: "decl_resumen_ui",
+        label: "",
+        type: "declaracion_resumen",
+      },
       {
         id: "static_declaracion",
         label: "",
@@ -1144,13 +1164,37 @@ export const KYB_STEPS: KybStep[] = [
         hint: "Declaro de manera voluntaria, libre de cualquier error, fuerza o dolo que todas las afirmaciones y respuestas que he manifestado en este documento son correctas, veraces, completas y autorizo al GRUPO PUNTO PAGO a verificar toda la información detallada. Además, me obligo a informar al GRUPO PUNTO PAGO de cualquier cambio o actualización de información que pueda afectar las afirmaciones y respuestas anotadas en este formulario, en un término no mayor a 30 días.",
       },
       {
-        id: "decl_nombre_cliente",
-        label: "Nombre del cliente",
+        id: "decl_paquete_ui",
+        label: "",
+        type: "firma_paquete_ui",
+      },
+      {
+        id: "decl_metamap_kyc_ui",
+        label: "",
+        type: "metamap_director_kyc",
+      },
+      {
+        id: "decl_metamap_verification_id",
+        label: "MetaMap verificationId (interno)",
         type: "text",
+        hidden: true,
+      },
+      {
+        id: "decl_metamap_identity_id",
+        label: "MetaMap identityId (interno)",
+        type: "text",
+        hidden: true,
+      },
+      {
+        id: "decl_director_nombre",
+        label:
+          "Nombre completo del director u oficial que suscribe la declaración",
+        type: "text",
+        placeholder: "Según tarjeta de identificación o acta de junta",
       },
       {
         id: "decl_fecha",
-        label: "Fecha",
+        label: "Fecha de la declaración",
         type: "date",
       },
     ],
@@ -1164,9 +1208,14 @@ export function isRenderableValueField(f: KybField): boolean {
     f.type !== "static" &&
     f.type !== "documentacion_personas" &&
     f.type !== "punto_pago_servicios_multi" &&
-    f.type !== "punto_pago_metricas_por_servicio"
+    f.type !== "punto_pago_metricas_por_servicio" &&
+    f.type !== "declaracion_resumen" &&
+    f.type !== "firma_paquete_ui" &&
+    f.type !== "metamap_director_kyc"
   );
 }
 
 /** Primer paso: nombre de quien diligencia (obligatorio para avanzar). */
 export const NOMBRE_DILIGENCIA_FIELD_ID = "nombre_diligencia" as const;
+
+export const DECLARACION_STEP_ID = "declaracion" as const;

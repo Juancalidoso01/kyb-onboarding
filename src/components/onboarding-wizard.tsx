@@ -47,33 +47,30 @@ import {
   formKeysForPepMemberSlot,
   PEP_MEMBER_SLOTS_MAX,
   PEP_STEP_ID,
-  pepFieldMemberSlot,
 } from "@/lib/kyb-pep-content";
-import {
-  DOCUMENTACION_ENTREGAR_STEP_ID,
-  empresaOperaEnPanama,
-  type KybDocCompletenessContext,
-} from "@/lib/kyb-documentacion";
+import { type KybDocCompletenessContext } from "@/lib/kyb-documentacion";
+import { KybDeclaracionResumen } from "@/components/kyb-declaracion-resumen";
 import { KybDocumentacionPersonas } from "@/components/kyb-documentacion-personas";
 import { KybFileRow } from "@/components/kyb-file-row";
+import { KybFirmaPaquetePanel } from "@/components/kyb-firma-paquete-panel";
+import { KybMetamapDirectorKyc } from "@/components/kyb-metamap-director-kyc";
 import { KybPuntoPagoServiciosMulti } from "@/components/kyb-punto-pago-servicios-multi";
 import { KybPuntoPagoMetricasPorServicio } from "@/components/kyb-punto-pago-metricas-por-servicio";
 import {
-  algunaSeleccionServicioPuntoPago,
   formKeysForBfMemberSlot,
   formKeysForJuntaMemberSlot,
   isRenderableValueField,
   BENEFICIARIOS_FINALES_STEP_ID,
   BF_MEMBER_SLOTS_MAX,
-  bfFieldMemberSlot,
+  DECLARACION_STEP_ID,
   filterStepsByCotizaBolsa,
   JUNTA_DIRECTIVA_STEP_ID,
   JUNTA_MEMBER_SLOTS_MAX,
-  juntaFieldMemberSlot,
   KYB_STEPS,
   NOMBRE_DILIGENCIA_FIELD_ID,
   PP_SV_METRICA_PAIRS,
 } from "@/lib/kyb-steps";
+import { isKybStepFieldVisible } from "@/lib/kyb-step-field-visibility";
 import {
   playChoiceTick,
   playFieldComplete,
@@ -231,6 +228,30 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     [juntaMemberSlots, bfMemberSlots, values.cotiza_bolsa],
   );
 
+  const fieldVisibilityCtx = useMemo(
+    () => ({
+      juntaMemberSlots,
+      bfMemberSlots,
+      pepMemberSlots,
+    }),
+    [juntaMemberSlots, bfMemberSlots, pepMemberSlots],
+  );
+
+  const firmaPaqueteMeta = useMemo(
+    () => ({
+      juntaMemberSlots,
+      bfMemberSlots,
+      pepMemberSlots,
+      cotiza_bolsa: values.cotiza_bolsa ?? "",
+    }),
+    [
+      juntaMemberSlots,
+      bfMemberSlots,
+      pepMemberSlots,
+      values.cotiza_bolsa,
+    ],
+  );
+
   const nombreDiligencia = (values[NOMBRE_DILIGENCIA_FIELD_ID] ?? "").trim();
   const canLeaveIntro = nombreDiligencia.length > 0;
 
@@ -309,6 +330,17 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       setPepMemberSlots(1);
     }
   }, [started, values.pep_alguno_catalogado]);
+
+  useEffect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (typeof window !== "undefined" && window.__kybMetamapModalOpen) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, []);
 
   useEffect(() => {
     if (!started) {
@@ -530,7 +562,9 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     if (
       field.type === "heading" ||
       field.type === "static" ||
-      field.type === "documentacion_personas"
+      field.type === "documentacion_personas" ||
+      field.type === "declaracion_resumen" ||
+      field.type === "firma_paquete_ui"
     ) {
       return inner;
     }
@@ -617,6 +651,43 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
           juntaMemberSlots={juntaMemberSlots}
           bfMemberSlots={bfMemberSlots}
           omitirAccionistas={(values.cotiza_bolsa ?? "").trim() === "si"}
+        />,
+      );
+    }
+
+    if (field.type === "declaracion_resumen") {
+      const summarySteps = visibleSteps.filter(
+        (s) => s.id !== DECLARACION_STEP_ID,
+      );
+      return wrapField(
+        field,
+        <KybDeclaracionResumen
+          key={field.id}
+          steps={summarySteps}
+          values={values}
+          visibility={fieldVisibilityCtx}
+        />,
+      );
+    }
+
+    if (field.type === "firma_paquete_ui") {
+      return wrapField(
+        field,
+        <KybFirmaPaquetePanel
+          key={field.id}
+          values={values}
+          meta={firmaPaqueteMeta}
+        />,
+      );
+    }
+
+    if (field.type === "metamap_director_kyc") {
+      return wrapField(
+        field,
+        <KybMetamapDirectorKyc
+          key={field.id}
+          values={values}
+          setField={setField}
         />,
       );
     }
@@ -1196,77 +1267,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                 {step.fields
                   .filter((f) => {
                     if (f.hidden) return false;
-                    if (step.id === JUNTA_DIRECTIVA_STEP_ID) {
-                      const slot = juntaFieldMemberSlot(f.id);
-                      if (slot !== null && slot > juntaMemberSlots)
-                        return false;
-                    }
-                    if (step.id === BENEFICIARIOS_FINALES_STEP_ID) {
-                      const slot = bfFieldMemberSlot(f.id);
-                      if (slot !== null && slot > bfMemberSlots) return false;
-                      const bfSuffix = f.id.match(/^bf_\d+_(.+)$/)?.[1];
-                      if (
-                        bfSuffix === "fecha_nacimiento" ||
-                        bfSuffix === "nombre_completo" ||
-                        bfSuffix === "cedula_pasaporte"
-                      ) {
-                        const tipo = (
-                          values[`bf_${slot}_tipo_persona`] ?? ""
-                        ).trim();
-                        if (tipo !== "N") return false;
-                      }
-                      if (bfSuffix === "razon_social" || bfSuffix === "ruc") {
-                        const tipo = (
-                          values[`bf_${slot}_tipo_persona`] ?? ""
-                        ).trim();
-                        if (tipo !== "J") return false;
-                      }
-                    }
-                    if (f.id === "tipo_sociedad_otros_especifique") {
-                      return values.tipo_sociedad === "__otro__";
-                    }
-                    if (f.id === "actividad_empresa_especifique") {
-                      return values.actividad_empresa === KYB_ACTIVITY_NOT_LISTED_VALUE;
-                    }
-                    if (f.id === "rep_actividad_economica_especifique") {
-                      return (
-                        values.rep_actividad_economica ===
-                        KYB_ACTIVITY_NOT_LISTED_VALUE
-                      );
-                    }
-                    if (f.id === "doc_identidad_otro") {
-                      return values.doc_identidad_tipo === "otro_id";
-                    }
-                    if (f.id === "persona_contacto_cargo_especifique") {
-                      return values.persona_contacto_cargo === "otro_cargo";
-                    }
-                    if (f.id === "static_perfil_ref" || f.id === "pp_metricas_servicios_ui") {
-                      return algunaSeleccionServicioPuntoPago(values);
-                    }
-                    if (f.id === "operaciones_frecuencia_otro") {
-                      return values.operaciones_frecuencia === "otro";
-                    }
-                    if (f.id === "volumen_operaciones_otros") {
-                      return values.volumen_operaciones_anual === "otros";
-                    }
-                    if (f.id === "ref_tipo_otro_descripcion") {
-                      return values.ref_tipo === "otro";
-                    }
-                    if (f.id === "doc_nac_nis_numero") {
-                      return (
-                        step.id === DOCUMENTACION_ENTREGAR_STEP_ID &&
-                        empresaOperaEnPanama(values) &&
-                        (values.doc_upl_factura_servicios ?? "").trim().length > 0
-                      );
-                    }
-                    if (step.id === PEP_STEP_ID) {
-                      const pepSlot = pepFieldMemberSlot(f.id);
-                      if (pepSlot !== null && pepSlot > pepMemberSlots)
-                        return false;
-                      if (pepSlot !== null)
-                        return values.pep_alguno_catalogado === "si";
-                    }
-                    return true;
+                    return isKybStepFieldVisible(step, f, values, fieldVisibilityCtx);
                   })
                   .map((field, i) => (
                   <motion.div

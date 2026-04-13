@@ -19,6 +19,7 @@ import {
   isDocumentacionPersonasBlockComplete,
   type KybDocCompletenessContext,
 } from "@/lib/kyb-documentacion";
+import { getMetamapPublicConfig } from "@/lib/kyb-metamap-config";
 import { PAIS_PANAMA } from "@/data/paises";
 import { isValidPanamaDate } from "@/lib/kyb-date";
 
@@ -52,6 +53,24 @@ export function isFieldComplete(
   docCtx?: KybDocCompletenessContext,
 ): boolean {
   const v = values[field.id] ?? "";
+
+  if (field.type === "declaracion_resumen" || field.type === "firma_paquete_ui") {
+    return true;
+  }
+
+  if (field.type === "metamap_director_kyc") {
+    if (!getMetamapPublicConfig()) return true;
+    return (values.decl_metamap_verification_id ?? "").trim().length > 0;
+  }
+
+  if (field.id === "decl_metamap_verification_id") {
+    if (!getMetamapPublicConfig()) return true;
+    return v.trim().length > 0;
+  }
+
+  if (field.id === "decl_metamap_identity_id") {
+    return true;
+  }
 
   if (field.type === "punto_pago_servicios_multi") {
     return puntoPagoServiciosComplete(values);
