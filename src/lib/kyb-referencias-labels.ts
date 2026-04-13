@@ -19,8 +19,7 @@ const REF_LABELS: Record<RefLabelFieldId, Record<RefTipoKyB, string>> = {
     otro: "Nombre de la entidad, persona u organismo que otorga la referencia",
   },
   ref_contacto_entidad: {
-    bancaria:
-      "Nombre del oficial de cuenta, sucursal o ejecutivo de negocios (si aplica)",
+    bancaria: "Oficial de cuenta, sucursal o ejecutivo (si aplica)",
     comercial: "Nombre del contacto en la empresa de referencia",
     personal: "Relación o vínculo de la persona con la organización",
     otro: "Persona de contacto o forma de verificar la referencia (si aplica)",

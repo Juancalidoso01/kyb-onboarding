@@ -43,13 +43,16 @@ import {
   REFERENCIAS_STEP_ID,
 } from "@/lib/kyb-referencias-labels";
 import {
-  PEP_DETAIL_FIELD_IDS,
-  PEP_HEADING_FIELD_ID,
+  allPepMemberFormKeys,
+  formKeysForPepMemberSlot,
+  PEP_MEMBER_SLOTS_MAX,
   PEP_STEP_ID,
+  pepFieldMemberSlot,
 } from "@/lib/kyb-pep-content";
 import {
   DOCUMENTACION_ENTREGAR_STEP_ID,
   empresaOperaEnPanama,
+  type KybDocCompletenessContext,
 } from "@/lib/kyb-documentacion";
 import { KybDocumentacionPersonas } from "@/components/kyb-documentacion-personas";
 import { KybFileRow } from "@/components/kyb-file-row";
@@ -180,6 +183,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   const [values, setValues] = useState<FormState>(() => buildEmptyFormState(steps));
   const [juntaMemberSlots, setJuntaMemberSlots] = useState(1);
   const [bfMemberSlots, setBfMemberSlots] = useState(1);
+  const [pepMemberSlots, setPepMemberSlots] = useState(1);
   const [landingDraftAt, setLandingDraftAt] = useState<number | null>(null);
   const [apiStatus, setApiStatus] = useState<string | null>(null);
   const { options: activityOptions, loading: activityLoading } =
@@ -218,6 +222,15 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     [effectiveStepIndex, visibleSteps.length],
   );
 
+  const docCompletenessCtx = useMemo<KybDocCompletenessContext>(
+    () => ({
+      juntaMemberSlots,
+      bfMemberSlots,
+      omitirAccionistas: (values.cotiza_bolsa ?? "").trim() === "si",
+    }),
+    [juntaMemberSlots, bfMemberSlots, values.cotiza_bolsa],
+  );
+
   const nombreDiligencia = (values[NOMBRE_DILIGENCIA_FIELD_ID] ?? "").trim();
   const canLeaveIntro = nombreDiligencia.length > 0;
 
@@ -234,15 +247,27 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   useEffect(() => {
     if (!started) return;
     const t = window.setTimeout(() => {
-      saveDraft({ stepIndex, values, juntaMemberSlots, bfMemberSlots });
+      saveDraft({
+        stepIndex,
+        values,
+        juntaMemberSlots,
+        bfMemberSlots,
+        pepMemberSlots,
+      });
     }, 500);
     return () => window.clearTimeout(t);
-  }, [started, stepIndex, values, juntaMemberSlots, bfMemberSlots]);
+  }, [started, stepIndex, values, juntaMemberSlots, bfMemberSlots, pepMemberSlots]);
 
   useEffect(() => {
     if (!started) return;
     const flush = () =>
-      saveDraft({ stepIndex, values, juntaMemberSlots, bfMemberSlots });
+      saveDraft({
+        stepIndex,
+        values,
+        juntaMemberSlots,
+        bfMemberSlots,
+        pepMemberSlots,
+      });
     const onVis = () => {
       if (document.visibilityState === "hidden") flush();
     };
@@ -252,7 +277,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       window.removeEventListener("beforeunload", flush);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [started, stepIndex, values, juntaMemberSlots, bfMemberSlots]);
+  }, [started, stepIndex, values, juntaMemberSlots, bfMemberSlots, pepMemberSlots]);
 
   useEffect(() => {
     if (!started) return;
@@ -279,6 +304,13 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   }, [started, values.pais_opera]);
 
   useEffect(() => {
+    if (!started) return;
+    if (values.pep_alguno_catalogado !== "si") {
+      setPepMemberSlots(1);
+    }
+  }, [started, values.pep_alguno_catalogado]);
+
+  useEffect(() => {
     if (!started) {
       fieldCompleteSeededRef.current = false;
       prevCompleteRef.current = {};
@@ -290,7 +322,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       for (const st of visibleSteps) {
         for (const f of st.fields) {
           if (!isRenderableValueField(f) || f.hidden) continue;
-          next[f.id] = isFieldComplete(f, values);
+          next[f.id] = isFieldComplete(f, values, docCompletenessCtx);
         }
       }
       prevCompleteRef.current = next;
@@ -299,7 +331,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     for (const st of visibleSteps) {
       for (const f of st.fields) {
         if (!isRenderableValueField(f) || f.hidden) continue;
-        const c = isFieldComplete(f, values);
+        const c = isFieldComplete(f, values, docCompletenessCtx);
         const prev = prevCompleteRef.current[f.id];
         if (c && !prev) {
           playFieldComplete();
@@ -307,7 +339,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
         prevCompleteRef.current[f.id] = c;
       }
     }
-  }, [values, started, visibleSteps]);
+  }, [values, started, visibleSteps, docCompletenessCtx]);
 
   /**
    * keydown se mantiene por compatibilidad con componentes; el sonido por
@@ -367,8 +399,16 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       if (id === "ref_tipo" && v !== "otro") {
         next.ref_tipo_otro_descripcion = "";
       }
+      const docUplToCheckbox: Record<string, string> = {
+        doc_upl_aviso: "doc_aviso_operaciones",
+        doc_upl_pacto: "doc_pacto_social",
+        doc_upl_origen: "doc_origen_fondos",
+        doc_upl_ref_banc: "doc_referencias_bancarias",
+      };
+      const pairChk = docUplToCheckbox[id];
+      if (pairChk) next[pairChk] = v.trim() ? "true" : "";
       if (id === "pep_alguno_catalogado" && v !== "si") {
-        for (const fid of PEP_DETAIL_FIELD_IDS) {
+        for (const fid of allPepMemberFormKeys()) {
           next[fid] = "";
         }
       }
@@ -455,11 +495,13 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       setStepIndex(d.stepIndex);
       setJuntaMemberSlots(d.juntaMemberSlots ?? 1);
       setBfMemberSlots(d.bfMemberSlots ?? 1);
+      setPepMemberSlots(d.pepMemberSlots ?? 1);
     } else {
       setValues(buildEmptyFormState(steps));
       setStepIndex(0);
       setJuntaMemberSlots(1);
       setBfMemberSlots(1);
+      setPepMemberSlots(1);
     }
     setStarted(true);
   };
@@ -470,6 +512,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     setStepIndex(0);
     setJuntaMemberSlots(1);
     setBfMemberSlots(1);
+    setPepMemberSlots(1);
     setLandingDraftAt(null);
     unlockAudio();
     setStarted(true);
@@ -481,6 +524,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     setStepIndex(0);
     setJuntaMemberSlots(1);
     setBfMemberSlots(1);
+    setPepMemberSlots(1);
     setLandingDraftAt(null);
   };
 
@@ -495,7 +539,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     ) {
       return inner;
     }
-    const complete = isFieldComplete(field, values);
+    const complete = isFieldComplete(field, values, docCompletenessCtx);
     const formatErr = getFormatErrorForField(field, values);
     return (
       <div className="flex gap-1 sm:gap-2">
@@ -654,7 +698,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
           {field.fileAttachmentId ? (
             <div className="rounded-xl border border-slate-200/80 bg-white/80 px-3.5 py-3 sm:pl-10">
               <p className="mb-2 text-xs font-medium text-slate-600">
-                Adjunto del documento (opcional)
+                Cargue el archivo correspondiente
               </p>
               <KybFileRow
                 id={field.fileAttachmentId}
@@ -1159,7 +1203,8 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                     if (f.hidden) return false;
                     if (step.id === JUNTA_DIRECTIVA_STEP_ID) {
                       const slot = juntaFieldMemberSlot(f.id);
-                      if (slot !== null && slot > juntaMemberSlots) return false;
+                      if (slot !== null && slot > juntaMemberSlots)
+                        return false;
                     }
                     if (step.id === BENEFICIARIOS_FINALES_STEP_ID) {
                       const slot = bfFieldMemberSlot(f.id);
@@ -1219,14 +1264,11 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                       );
                     }
                     if (step.id === PEP_STEP_ID) {
-                      if (
-                        f.id === PEP_HEADING_FIELD_ID ||
-                        (PEP_DETAIL_FIELD_IDS as readonly string[]).includes(
-                          f.id,
-                        )
-                      ) {
+                      const pepSlot = pepFieldMemberSlot(f.id);
+                      if (pepSlot !== null && pepSlot > pepMemberSlots)
+                        return false;
+                      if (pepSlot !== null)
                         return values.pep_alguno_catalogado === "si";
-                      }
                     }
                     return true;
                   })
@@ -1339,6 +1381,55 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                     ) : null}
                   </motion.div>
                 ) : null}
+                {step.id === PEP_STEP_ID &&
+                values.pep_alguno_catalogado === "si" &&
+                (pepMemberSlots < PEP_MEMBER_SLOTS_MAX ||
+                  pepMemberSlots > 1) ? (
+                  <motion.div
+                    initial={reduce ? false : { opacity: 0, y: 8 }}
+                    animate={reduce ? false : { opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                    className="flex flex-wrap items-center justify-center gap-3 pt-2"
+                  >
+                    {pepMemberSlots < PEP_MEMBER_SLOTS_MAX ? (
+                      <button
+                        type="button"
+                        className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border-2 border-dashed border-[#4749B6]/35 bg-[#4749B6]/[0.04] px-4 py-2.5 text-sm font-semibold text-[#4749B6] shadow-sm transition hover:border-[#4749B6]/55 hover:bg-[#4749B6]/[0.08]"
+                        aria-label="Agregar otra persona PEP catalogada"
+                        onClick={() =>
+                          setPepMemberSlots((n) =>
+                            Math.min(PEP_MEMBER_SLOTS_MAX, n + 1),
+                          )
+                        }
+                      >
+                        <span className="text-lg leading-none" aria-hidden>
+                          +
+                        </span>
+                        <span className="ml-2">Agregar persona</span>
+                      </button>
+                    ) : null}
+                    {pepMemberSlots > 1 ? (
+                      <button
+                        type="button"
+                        className="rounded-xl border border-red-200/90 bg-red-50/80 px-4 py-2.5 text-sm font-semibold text-red-800 shadow-sm transition hover:border-red-300 hover:bg-red-50"
+                        aria-label="Eliminar la última persona añadida y borrar sus datos"
+                        onClick={() => {
+                          const slot = pepMemberSlots;
+                          setValues((prev) => {
+                            const next = { ...prev };
+                            for (const id of formKeysForPepMemberSlot(slot)) {
+                              next[id] = "";
+                            }
+                            return next;
+                          });
+                          setPepMemberSlots((n) => Math.max(1, n - 1));
+                        }}
+                      >
+                        Eliminar última persona
+                      </button>
+                    ) : null}
+                  </motion.div>
+                ) : null}
               </div>
 
               <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100/90 pt-8">
@@ -1367,6 +1458,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                           values,
                           juntaMemberSlots,
                           bfMemberSlots,
+                          pepMemberSlots,
                         });
                         setStarted(false);
                         setStepIndex(0);

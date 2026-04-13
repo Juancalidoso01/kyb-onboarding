@@ -1,6 +1,10 @@
 import type { FormState } from "@/lib/kyb-field-complete";
 import { allDocumentacionUploadKeys } from "@/lib/kyb-documentacion";
 import {
+  PEP_MEMBER_FIELD_SUFFIXES,
+  PEP_MEMBER_SLOTS_MAX,
+} from "@/lib/kyb-pep-content";
+import {
   allPuntoPagoMetricFieldKeys,
   BF_MEMBER_SLOTS_MAX,
   JUNTA_MEMBER_SLOTS_MAX,
@@ -22,6 +26,8 @@ export type KybLocalDraft = {
   juntaMemberSlots?: number;
   /** Cuántas filas de beneficiario final estaban visibles (1–20). */
   bfMemberSlots?: number;
+  /** Cuántas personas PEP estaban visibles (1–5). */
+  pepMemberSlots?: number;
 };
 
 export function buildEmptyFormState(steps: KybStep[]): FormState {
@@ -70,6 +76,16 @@ export function readDraft(steps: KybStep[]): KybLocalDraft | null {
     }
     const base = buildEmptyFormState(steps);
     const merged = mergeDraftValues(base, d.values as FormState);
+    for (const s of PEP_MEMBER_FIELD_SUFFIXES) {
+      const legacy = `pep_${s}`;
+      const slot1 = `pep_1_${s}`;
+      if (
+        (merged[legacy] ?? "").trim() &&
+        !(merged[slot1] ?? "").trim()
+      ) {
+        merged[slot1] = merged[legacy];
+      }
+    }
     const maxStep = Math.max(0, steps.length - 1);
     const juntaMemberSlots =
       typeof d.juntaMemberSlots === "number" &&
@@ -83,6 +99,12 @@ export function readDraft(steps: KybStep[]): KybLocalDraft | null {
       d.bfMemberSlots <= BF_MEMBER_SLOTS_MAX
         ? d.bfMemberSlots
         : 1;
+    const pepMemberSlots =
+      typeof d.pepMemberSlots === "number" &&
+      d.pepMemberSlots >= 1 &&
+      d.pepMemberSlots <= PEP_MEMBER_SLOTS_MAX
+        ? d.pepMemberSlots
+        : 1;
     return {
       version: KYB_PDF_FORM_VERSION,
       stepIndex: Math.min(Math.max(0, d.stepIndex), maxStep),
@@ -90,6 +112,7 @@ export function readDraft(steps: KybStep[]): KybLocalDraft | null {
       savedAt: d.savedAt,
       juntaMemberSlots,
       bfMemberSlots,
+      pepMemberSlots,
     };
   } catch {
     return null;
@@ -100,6 +123,7 @@ export function saveDraft(
   payload: Pick<KybLocalDraft, "stepIndex" | "values"> & {
     juntaMemberSlots?: number;
     bfMemberSlots?: number;
+    pepMemberSlots?: number;
   },
 ): void {
   if (typeof window === "undefined") return;
@@ -118,6 +142,11 @@ export function saveDraft(
       payload.bfMemberSlots >= 1 &&
       payload.bfMemberSlots <= BF_MEMBER_SLOTS_MAX
         ? { bfMemberSlots: payload.bfMemberSlots }
+        : {}),
+      ...(typeof payload.pepMemberSlots === "number" &&
+      payload.pepMemberSlots >= 1 &&
+      payload.pepMemberSlots <= PEP_MEMBER_SLOTS_MAX
+        ? { pepMemberSlots: payload.pepMemberSlots }
         : {}),
     };
     localStorage.setItem(KYB_LOCAL_STORAGE_KEY, JSON.stringify(full));

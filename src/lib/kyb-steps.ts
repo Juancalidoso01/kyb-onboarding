@@ -1,6 +1,6 @@
 import { SOCIEDAD_COMBO_OPTIONS } from "@/data/sociedad-tipos";
 import { DOCUMENTACION_PERSONAS_FIELD_ID } from "@/lib/kyb-documentacion";
-import { KYB_TEXT_PEP_STATIC_PARAGRAPHS } from "@/lib/kyb-pep-content";
+import { PEP_MEMBER_SLOTS_MAX } from "@/lib/kyb-pep-content";
 
 /**
  * Formulario «Perfil del Cliente PJ» — Punto Pago Panamá V2-2026 (PDF V002-2026).
@@ -921,7 +921,7 @@ export const KYB_STEPS: KybStep[] = [
     id: "referencias",
     title: "REFERENCIAS",
     description:
-      "Seleccione primero el tipo de referencia: las etiquetas de los campos siguientes se adaptan (bancaria, comercial, personal u otra). Si elige «Otra», deberá describir de qué tipo de referencia se trata. Luego complete los datos y la declaración sobre investigaciones. Después continuará la sección PEP.",
+      "Elija el tipo de referencia (las etiquetas cambian: bancaria, comercial, personal u otra). Si es «Otra», descríbala en una línea. Complete datos y la declaración sobre investigaciones; en el siguiente paso irá PEP.",
     pdfPage: "Pág. 3",
     fields: [
       {
@@ -938,10 +938,9 @@ export const KYB_STEPS: KybStep[] = [
       },
       {
         id: "ref_tipo_otro_descripcion",
-        label:
-          "Describa qué tipo de referencia es y en qué consiste (p. ej. profesional, sectorial, carta de recomendación, etc.)",
+        label: "Descripción breve (solo si el tipo es «Otra»)",
         type: "textarea",
-        hint: "Obligatorio cuando el tipo es «Otra». Sea breve y concreto para que el evaluador entienda el origen de la referencia.",
+        hint: "Ej.: profesional, carta de recomendación. Una o dos frases bastan.",
       },
       {
         id: "ref_nombre_entidad",
@@ -990,86 +989,84 @@ export const KYB_STEPS: KybStep[] = [
     id: "pep",
     title: "Persona expuesta políticamente (PEP)",
     description:
-      "Lea el resumen sobre PEP y responda la pregunta. Si ninguna persona en el formulario encaja en la definición, responda «No» y podrá continuar sin completar datos adicionales. Si responde «Sí», complete el bloque de datos del PEP, familiar o estrecho colaborador según corresponda.",
+      "PEP es quien tiene o tuvo función pública relevante (o equivalente internacional), o familiar cercano o colaborador cercano según la norma (p. ej. Ley 23/2015). Responda la pregunta; si «Sí», complete cada persona y use + para agregar hasta cinco.",
     pdfPage: "Pág. 3",
     fields: [
       {
-        id: "static_pep_definicion",
-        label: "",
-        type: "static",
-        staticParagraphs: KYB_TEXT_PEP_STATIC_PARAGRAPHS,
-      },
-      {
         id: "pep_alguno_catalogado",
         label:
-          "¿Alguna de las personas naturales incluidas en el presente formulario (dignatarios, directores, representante legal, apoderado y/o beneficiario(s) final(es)) desempeña o ha desempeñado en los últimos dos (2) años un cargo público que le catalogue como PEP, o es familiar cercano (cónyuge o pareja, padres, hermanos e hijos) o estrecho colaborador de una persona PEP, conforme a la Ley 23 de 2015 (artículo 4, numeral 18) y normativa aplicable?",
+          "¿Alguna persona natural de este formulario (dignatarios, directores, representante, apoderado o beneficiarios finales) califica como PEP, familiar cercano o colaborador cercano, conforme a la Ley 23/2015 y normativa aplicable?",
         type: "yesno",
-        hint: "Si su respuesta es «No», no es necesario completar el apartado de datos que aparece a continuación.",
+        hint: "«No» = no complete el bloque. «Sí» = una fila por persona; puede sumar filas con + abajo.",
       },
-      {
-        id: "__h_pep_datos",
-        label:
-          "DATOS DEL PEP, FAMILIAR CERCANO O ESTRECHO COLABORADOR",
-        type: "heading",
-      },
-      {
-        id: "pep_primer_nombre",
-        label: "Primer nombre",
-        type: "text",
-      },
-      {
-        id: "pep_segundo_nombre",
-        label: "Segundo nombre",
-        type: "text",
-      },
-      {
-        id: "pep_primer_apellido",
-        label: "Primer apellido",
-        type: "text",
-      },
-      {
-        id: "pep_segundo_apellido",
-        label: "Segundo apellido",
-        type: "text",
-      },
-      {
-        id: "pep_nacionalidad",
-        label: "Nacionalidad",
-        type: "country",
-        placeholder: "Buscar país…",
-      },
-      {
-        id: "pep_cedula_pasaporte",
-        label: "# Cédula o Pasaporte",
-        type: "text",
-      },
-      {
-        id: "pep_periodo_cargo",
-        label: "Periodo de Cargo",
-        type: "text",
-      },
-      {
-        id: "pep_pais",
-        label: "País",
-        type: "country",
-      },
-      {
-        id: "pep_funciones_cargo",
-        label: "¿Qué funciones o cargo público desempeña o ha desempeñado?",
-        type: "textarea",
-      },
-      {
-        id: "pep_parentesco",
-        label: "Parentesco o Relación:",
-        type: "textarea",
-      },
+      ...Array.from({ length: PEP_MEMBER_SLOTS_MAX }, (_, i) => i + 1).flatMap(
+        (n) =>
+          [
+            {
+              id: `__h_pep_${n}`,
+              label: `Persona catalogada ${n}`,
+              type: "heading" as const,
+            },
+            {
+              id: `pep_${n}_primer_nombre`,
+              label: "Primer nombre",
+              type: "text" as const,
+            },
+            {
+              id: `pep_${n}_segundo_nombre`,
+              label: "Segundo nombre",
+              type: "text" as const,
+            },
+            {
+              id: `pep_${n}_primer_apellido`,
+              label: "Primer apellido",
+              type: "text" as const,
+            },
+            {
+              id: `pep_${n}_segundo_apellido`,
+              label: "Segundo apellido",
+              type: "text" as const,
+            },
+            {
+              id: `pep_${n}_nacionalidad`,
+              label: "Nacionalidad",
+              type: "country" as const,
+              placeholder: "Buscar país…",
+            },
+            {
+              id: `pep_${n}_cedula_pasaporte`,
+              label: "# Cédula o Pasaporte",
+              type: "text" as const,
+            },
+            {
+              id: `pep_${n}_periodo_cargo`,
+              label: "Periodo de cargo",
+              type: "text" as const,
+            },
+            {
+              id: `pep_${n}_pais`,
+              label: "País",
+              type: "country" as const,
+            },
+            {
+              id: `pep_${n}_funciones_cargo`,
+              label: "Funciones o cargo público (desempeña o desempeñó)",
+              type: "textarea" as const,
+            },
+            {
+              id: `pep_${n}_parentesco`,
+              label: "Parentesco o relación con la organización",
+              type: "textarea" as const,
+            },
+          ] satisfies KybField[],
+      ),
     ],
   },
   {
     id: "documentacion_entregar",
     title: "DOCUMENTOS PARA ENTREGAR — Documentación de soporte",
     description:
-      "Adjunte archivos en formatos habituales (PDF, imágenes, hojas de cálculo, etc.). Indique NAC/NIS si la empresa opera en Panamá. Marque qué documentación entregará y, si ya la tiene, adjunte una copia. Añada observaciones si corresponde.",
+      "Debe cargar los archivos requeridos en cada apartado (PDF, imágenes, hojas de cálculo u otros formatos habituales). Indique NAC/NIS de la sucursal principal si la empresa opera en Panamá. Sin los adjuntos completos no se considera diligenciada esta sección.",
     pdfPage: "Pág. 4",
     fields: [
       {
@@ -1077,8 +1074,8 @@ export const KYB_STEPS: KybStep[] = [
         label: "",
         type: "static",
         staticParagraphs: [
-          "Use los adjuntos para cargar documentos. El sistema registra el nombre del archivo como referencia; el trámite definitivo de envío lo confirma su asesor según el canal acordado.",
-          "Más abajo aparecen los nombres ya indicados en Gobierno corporativo, accionistas o beneficiario final y en Representante legal, para que sepa exactamente qué cédulas o documentos de identidad cargar por persona.",
+          "Cada control de carga debe tener un archivo: el sistema guarda el nombre del archivo en este navegador; el envío formal lo coordina su asesor.",
+          "Las filas de personas muestran los nombres ya indicados en Gobierno corporativo, en Accionistas o beneficiario final (si aplica) y en Representante legal, para adjuntar la identificación correcta en cada caso.",
         ],
       },
       {
@@ -1092,14 +1089,14 @@ export const KYB_STEPS: KybStep[] = [
           "Número NAC o NIS de la sucursal principal de la empresa (solo si opera en Panamá)",
         type: "text",
         placeholder: "Ej. NAC o NIS según registro ante la SBP",
-        hint: "Indique el número de registro que corresponda a la sucursal principal en Panamá. Si la empresa no opera en Panamá, este campo no aplica y se oculta.",
+        hint: "Sucursal principal en Panamá: número NAC o NIS según registro ante la SBP. Si no opera en Panamá, este campo no aplica (se oculta).",
       },
       {
         id: "doc_upl_factura_servicios",
         type: "file",
         label:
           "Factura de servicios públicos (luz, agua, teléfono u otro) o estado de cuenta",
-        hint: "Antigüedad recomendada no mayor a tres meses. Formatos: PDF, imagen u otros compatibles con su navegador.",
+        hint: "Antigüedad del comprobante no mayor a tres meses. PDF, imagen u otros que acepte su navegador.",
       },
       {
         id: "doc_aviso_operaciones",

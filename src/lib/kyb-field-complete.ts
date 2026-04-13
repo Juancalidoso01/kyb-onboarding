@@ -15,9 +15,14 @@ import {
   PP_SERVICIOS_CHECKBOX_IDS,
   PP_SV_METRICA_PAIRS,
 } from "@/lib/kyb-steps";
+import {
+  isDocumentacionPersonasBlockComplete,
+  type KybDocCompletenessContext,
+} from "@/lib/kyb-documentacion";
 import { PAIS_PANAMA } from "@/data/paises";
 import { isValidPanamaDate } from "@/lib/kyb-date";
-import { PEP_DETAIL_FIELD_IDS } from "@/lib/kyb-pep-content";
+
+export type { KybDocCompletenessContext };
 
 export type FormState = Record<string, string>;
 
@@ -41,7 +46,11 @@ function puntoPagoServiciosComplete(values: FormState): boolean {
   return true;
 }
 
-export function isFieldComplete(field: KybField, values: FormState): boolean {
+export function isFieldComplete(
+  field: KybField,
+  values: FormState,
+  docCtx?: KybDocCompletenessContext,
+): boolean {
   const v = values[field.id] ?? "";
 
   if (field.type === "punto_pago_servicios_multi") {
@@ -79,7 +88,7 @@ export function isFieldComplete(field: KybField, values: FormState): boolean {
     return v.trim().length > 0;
   }
 
-  if ((PEP_DETAIL_FIELD_IDS as readonly string[]).includes(field.id)) {
+  if (/^pep_\d+_/.test(field.id)) {
     if (values.pep_alguno_catalogado !== "si") return true;
   }
 
@@ -88,8 +97,21 @@ export function isFieldComplete(field: KybField, values: FormState): boolean {
     return v.trim().length > 0;
   }
 
-  if (field.type === "documentacion_personas" || field.type === "file") {
+  if (field.id === "observaciones") {
     return true;
+  }
+
+  if (field.type === "documentacion_personas") {
+    if (!docCtx) return false;
+    return isDocumentacionPersonasBlockComplete(values, docCtx);
+  }
+
+  if (field.type === "file") {
+    return v.trim().length > 0;
+  }
+
+  if (field.fileAttachmentId) {
+    return (values[field.fileAttachmentId] ?? "").trim().length > 0;
   }
 
   if (field.numberFormat === "usd") {

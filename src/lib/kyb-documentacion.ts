@@ -35,6 +35,31 @@ export function empresaOperaEnPanama(values: Record<string, string>): boolean {
   return (values.pais_opera ?? "").trim() === PAIS_PANAMA;
 }
 
+/** Contexto para saber cuántas filas de junta/BF aplican y si se omite accionistas (cotiza en bolsa). */
+export type KybDocCompletenessContext = {
+  juntaMemberSlots: number;
+  bfMemberSlots: number;
+  omitirAccionistas: boolean;
+};
+
+/** Cédulas/pasaportes junta + BF (si aplica) + representante: todos con nombre de archivo cargado. */
+export function isDocumentacionPersonasBlockComplete(
+  values: Record<string, string>,
+  ctx: KybDocCompletenessContext,
+): boolean {
+  const jSlots = Math.min(MAX_JUNTA, Math.max(1, ctx.juntaMemberSlots));
+  const bfSlots = Math.min(MAX_BF, Math.max(1, ctx.bfMemberSlots));
+  for (let s = 1; s <= jSlots; s++) {
+    if (!(values[`doc_upl_junta_${s}`] ?? "").trim()) return false;
+  }
+  if (!ctx.omitirAccionistas) {
+    for (let s = 1; s <= bfSlots; s++) {
+      if (!(values[`doc_upl_bf_${s}`] ?? "").trim()) return false;
+    }
+  }
+  return Boolean((values.doc_upl_representante ?? "").trim());
+}
+
 /** Nombre mostrado para fila de beneficiario final / accionista. */
 export function nombreAccionistaParaDocumentos(
   values: Record<string, string>,

@@ -1,40 +1,52 @@
 /**
- * Contenido del paso PEP — definición y lista de campos de detalle (solo si aplica).
+ * Paso PEP — definición breve y campos por persona (hasta `PEP_MEMBER_SLOTS_MAX`).
  */
 
-/** Campos que solo se muestran y validan si la respuesta a `pep_alguno_catalogado` es «si». */
-export const PEP_DETAIL_FIELD_IDS = [
-  "pep_primer_nombre",
-  "pep_segundo_nombre",
-  "pep_primer_apellido",
-  "pep_segundo_apellido",
-  "pep_nacionalidad",
-  "pep_cedula_pasaporte",
-  "pep_periodo_cargo",
-  "pep_pais",
-  "pep_funciones_cargo",
-  "pep_parentesco",
+/** Máximo de personas PEP declaradas en el formulario web. */
+export const PEP_MEMBER_SLOTS_MAX = 5;
+
+/** Sufijos de `pep_{slot}_*` (mismo orden que en `kyb-steps`). */
+export const PEP_MEMBER_FIELD_SUFFIXES = [
+  "primer_nombre",
+  "segundo_nombre",
+  "primer_apellido",
+  "segundo_apellido",
+  "nacionalidad",
+  "cedula_pasaporte",
+  "periodo_cargo",
+  "pais",
+  "funciones_cargo",
+  "parentesco",
 ] as const;
 
-/** Sub-encabezado del bloque de datos (campo `heading`); visible solo si PEP aplica. */
-export const PEP_HEADING_FIELD_ID = "__h_pep_datos" as const;
+/** Índice de miembro (1..N) si el id pertenece al bloque PEP por slot. */
+export function pepFieldMemberSlot(fieldId: string): number | null {
+  const h = fieldId.match(/^__h_pep_(\d+)$/);
+  if (h) return parseInt(h[1], 10);
+  const p = fieldId.match(/^pep_(\d+)_/);
+  if (p) return parseInt(p[1], 10);
+  return null;
+}
+
+export function formKeysForPepMemberSlot(slot: number): string[] {
+  return PEP_MEMBER_FIELD_SUFFIXES.map((s) => `pep_${slot}_${s}`);
+}
+
+/** Todas las claves `pep_1_*` … `pep_MAX_*` (p. ej. vaciar al responder «No»). */
+export function allPepMemberFormKeys(): string[] {
+  return Array.from({ length: PEP_MEMBER_SLOTS_MAX }, (_, i) => i + 1).flatMap(
+    (slot) => formKeysForPepMemberSlot(slot),
+  );
+}
 
 export const PEP_STEP_ID = "pep" as const;
 
 /**
- * Párrafos justificados: qué es una PEP, base legal, alcance familiar y exclusión.
+ * Texto corto opcional (p. ej. PDF o ayudas). El paso prioriza `description` + pregunta en UI.
  */
 export const KYB_TEXT_PEP_STATIC_PARAGRAPHS: string[] = [
-  "Una Persona Expuesta Políticamente (PEP) es quien desempeña o ha desempeñado funciones públicas relevantes o de alto nivel en un Estado, o a quien una organización internacional le ha confiado funciones importantes. La idea es identificar exposición a riesgos asociados a cargos o relaciones de esa naturaleza.",
-  "En Panamá, el marco general incluye la Ley 23 de 2015 y normativa de debida diligencia aplicable al sistema financiero; el artículo 4, numeral 18, orienta quién puede catalogarse como PEP según el vínculo con funciones públicas.",
-  "El concepto de PEP también alcanza a familiares cercanos (cónyuge o pareja estable, padres, hermanos e hijos) y a estrechos colaboradores de la persona PEP, en los términos que la normativa y las políticas internas consideren pertinentes para el análisis del cliente.",
-  "No se busca tipificar como PEP a quienes sólo ocupan cargos de rango medio o inferior frente a las categorías de alto nivel o con mando y jurisdicción que la norma y la práctica del sector tienen en cuenta para estos efectos.",
+  "PEP: quien desempeña o desempeñó función pública relevante (u homóloga internacional) o es familiar cercano o colaborador cercano según la norma. En Panamá rige en especial la Ley 23/2015 y debida diligencia sectorial.",
 ];
 
-/** @deprecated Preferir `KYB_TEXT_PEP_STATIC_PARAGRAPHS` en la UI. */
+/** @deprecated Preferir `KYB_TEXT_PEP_STATIC_PARAGRAPHS`. */
 export const KYB_TEXT_PEP_DEFINICION = KYB_TEXT_PEP_STATIC_PARAGRAPHS.join("\n\n");
-
-/** @deprecated Sustituido por párrafos en `staticParagraphs`. */
-export const KYB_TEXT_PEP_BLOQUE_ANTES_PREGUNTA = `PERSONA EXPUESTA POLÍTICAMENTE (PEP)
-
-${KYB_TEXT_PEP_DEFINICION}`;
