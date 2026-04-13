@@ -1285,7 +1285,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl">
+    <div className="mx-auto w-full max-w-7xl">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:gap-8">
         <div className="min-w-0 flex-1 space-y-5">
           {canLeaveIntro ? (

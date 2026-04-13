@@ -64,6 +64,8 @@ export type KybStep = {
   id: string;
   /** Título como en el PDF (mayúsculas cuando el impreso lo usa así) */
   title: string;
+  /** Etiqueta breve (1–2 palabras) solo para la leyenda lateral / móvil; si falta, se usa `title`. */
+  navLabel?: string;
   description: string;
   /** Ubicación en el formulario impreso V002-2026 (útil para generar PDF final) */
   pdfPage?: string;
@@ -242,13 +244,14 @@ export const KYB_STEPS: KybStep[] = [
   {
     id: "intro_formulario",
     title: "FORMULARIO PERFIL DEL CLIENTE — PERSONA JURÍDICA",
+    navLabel: "Inicio",
     description:
-      "Indique quién diligencia este formulario. Los demás pasos se personalizarán con su nombre.",
+      "Por favor, escriba el nombre completo de quien va a completar este formulario. Usaremos ese dato para personalizar su experiencia en los pasos siguientes.",
     pdfPage: "Pág. 1 (encabezado)",
     fields: [
       {
         id: "nombre_diligencia",
-        label: "Nombre completo de quien diligencia este formulario",
+        label: "Nombre completo de quien completa el formulario",
         type: "text",
         placeholder: "Ej. María González de León",
       },
@@ -257,6 +260,7 @@ export const KYB_STEPS: KybStep[] = [
   {
     id: "como_conocio",
     title: "INDIQUE COMO CONOCIÓ A LA EMPRESA",
+    navLabel: "Origen",
     description: "Marque las opciones que apliquen.",
     pdfPage: "Pág. 1",
     fields: [
@@ -295,6 +299,7 @@ export const KYB_STEPS: KybStep[] = [
   {
     id: "identificacion_cliente",
     title: "IDENTIFICACIÓN DEL CLIENTE",
+    navLabel: "Identidad",
     description:
       "Nombre de razón social y comercial, tipo de persona jurídica, sociedad, actividad, bolsa, capital, países, identificación tributaria y documento de identidad, persona de contacto.",
     pdfPage: "Pág. 1",
@@ -475,6 +480,7 @@ export const KYB_STEPS: KybStep[] = [
   {
     id: "datos_generales",
     title: "DATOS GENERALES",
+    navLabel: "Ubicación",
     description:
       "Dirección comercial y auxiliar (misma búsqueda asistida en Panamá), país/provincia/ciudad según identificación y dirección; teléfonos y correo.",
     pdfPage: "Pág. 1",
@@ -532,6 +538,7 @@ export const KYB_STEPS: KybStep[] = [
     id: "junta_directiva",
     title:
       "GOBIERNO CORPORATIVO / JUNTA DIRECTIVA / CONSEJO FUNDACIONAL",
+    navLabel: "Junta",
     description:
       "Indique al menos un miembro de la junta o consejo como persona natural: cargo, fecha de nacimiento, nombre completo, documento, nacionalidad y dirección. La opción persona natural o jurídica aplica solo en el paso de accionistas o beneficiario final. Puede añadir filas con + Agregar miembro o quitar la última con Eliminar último miembro si se equivocó.",
     pdfPage: "Pág. 1–2",
@@ -591,6 +598,7 @@ export const KYB_STEPS: KybStep[] = [
   {
     id: "representante_legal",
     title: "REPRESENTANTE LEGAL O APODERADO",
+    navLabel: "Representante",
     description:
       "Nombre, identificación, nacionalidad, dirección, teléfono, correo, profesión, actividad económica, país de residencia y declaración sobre investigaciones.",
     pdfPage: "Pág. 2",
@@ -665,6 +673,7 @@ export const KYB_STEPS: KybStep[] = [
   {
     id: "beneficiarios_finales",
     title: "ACCIONISTAS O BENEFICIARIO FINAL",
+    navLabel: "Accionistas",
     description: "",
     pdfPage: "Pág. 2",
     fields: [
@@ -756,6 +765,7 @@ export const KYB_STEPS: KybStep[] = [
   {
     id: "perfil_financiero",
     title: "PERFIL FINANCIERO",
+    navLabel: "Finanzas",
     description:
       "Refleja el tamaño económico general de su organización (facturación o ingresos de la empresa en su conjunto), no el volumen ligado a los servicios de Punto Pago que detallará más adelante. Cuando ya exista documentación formal (por ejemplo, declaración de renta o estados financieros), los importes deben ser coherentes con ella. Si es un cliente nuevo, sin historial o aún sin saber cuánto facturará, puede indicar estimaciones o proyecciones razonables; no se le exige una cifra exacta ni documentos que aún no tenga. Ej.: una compañía puede facturar millones de USD al mes por su actividad principal. Después de este paso seguirán cómo pagará a Grupo Punto Pago y objeto del servicio, servicios de interés con Punto Pago, volumen estimado de operaciones con Punto Pago, referencias y PEP.",
     pdfPage: "Pág. 2",
@@ -785,6 +795,7 @@ export const KYB_STEPS: KybStep[] = [
   {
     id: "medios_pago",
     title: "MEDIOS DE PAGO HACIA GRUPO PUNTO PAGO",
+    navLabel: "Medios pago",
     description:
       "Indique el objeto de la relación con Punto Pago y cómo prevé cumplir los pagos hacia Grupo Punto Pago (comisiones, liquidaciones u otros flujos pactados). Las casillas siguientes son los mecanismos o canales por los que su empresa podría efectuar esos desembolsos; luego elegirá los servicios de interés.",
     pdfPage: "Pág. 3",
@@ -841,6 +852,7 @@ export const KYB_STEPS: KybStep[] = [
   {
     id: "servicios_punto_pago",
     title: "SERVICIOS DE INTERÉS CON PUNTO PAGO",
+    navLabel: "Servicios",
     description:
       "Seleccione los servicios de interés y, para cada uno elegido, indique el monto mensual estimado y la cantidad de transacciones mensuales previstas. Si elige «Otros», describa el alcance y complete también montos y volumen. Luego indique la frecuencia operativa global.",
     pdfPage: "Pág. 3",
@@ -896,6 +908,7 @@ export const KYB_STEPS: KybStep[] = [
   {
     id: "volumen_operaciones",
     title: "VOLUMEN ANUAL DE OPERACIONES ESTIMADO (USD)",
+    navLabel: "Volumen",
     description:
       "Indique el orden de magnitud del volumen anual de operaciones que proyecta en relación con los servicios seleccionados. Si elige «Otros», especifique.",
     pdfPage: "Pág. 3",
@@ -924,6 +937,7 @@ export const KYB_STEPS: KybStep[] = [
   {
     id: "referencias",
     title: "REFERENCIAS",
+    navLabel: "Referencias",
     description:
       "Elija el tipo de referencia (las etiquetas cambian: bancaria, comercial, personal u otra). Si es «Otra», descríbala en una línea. Complete datos y la declaración sobre investigaciones; en el siguiente paso irá PEP.",
     pdfPage: "Pág. 3",
@@ -992,6 +1006,7 @@ export const KYB_STEPS: KybStep[] = [
   {
     id: "pep",
     title: "Persona expuesta políticamente (PEP)",
+    navLabel: "PEP",
     description:
       "PEP es quien tiene o tuvo función pública relevante (o equivalente internacional), o familiar cercano o colaborador cercano según la norma (p. ej. Ley 23/2015). Responda la pregunta; si «Sí», complete cada persona y use + para agregar hasta cinco.",
     pdfPage: "Pág. 3",
@@ -1069,6 +1084,7 @@ export const KYB_STEPS: KybStep[] = [
   {
     id: "documentacion_entregar",
     title: "DOCUMENTOS PARA ENTREGAR — Documentación de soporte",
+    navLabel: "Documentos",
     description:
       "Debe cargar los archivos requeridos en cada apartado. Si opera en Panamá, después de cargar la factura de servicios deberá indicar el NAC o NIS de la sucursal principal. Sin los adjuntos completos no se considera diligenciada esta sección.",
     pdfPage: "Pág. 4",
@@ -1137,6 +1153,7 @@ export const KYB_STEPS: KybStep[] = [
   {
     id: "declaracion",
     title: "FIRMA Y DECLARACIÓN DEL CLIENTE",
+    navLabel: "Declaración",
     description:
       "Revise el resumen y el texto de la declaración. Indique el nombre y la fecha de quien suscribe; luego use el único botón inferior para pasar al paso en que el representante escaneará el QR y completará MetaMap y la firma en su celular.",
     pdfPage: "Pág. 4",
@@ -1201,9 +1218,10 @@ export const KYB_STEPS: KybStep[] = [
   },
   {
     id: "representante_cierre",
-    title: "FIRMA Y VERIFICACIÓN DEL REPRESENTANTE",
+    title: "Firma y verificación del representante legal o director autorizado",
+    navLabel: "Verificación",
     description:
-      "El director o representante legal debe escanear el código con su celular y completar en el mismo flujo la verificación MetaMap y la firma digital. Espere en esta pantalla hasta ver la confirmación y el número de formulario.",
+      "En un solo flujo desde el celular: verificamos la identidad del representante o director autorizado (documento y selfie) y realizamos la firma digital. Solo debe escanear el código QR con la cámara del teléfono; no requiere instalar ninguna aplicación. Mantenga esta ventana abierta hasta ver la confirmación y el número de formulario.",
     pdfPage: "Pág. 4",
     fields: [
       {

@@ -45,7 +45,7 @@ export function KybChrome({ children }: { children: ReactNode }) {
     <div className="pp-page-bg relative min-h-screen">
       <PpAmbient />
       <header className="sticky top-0 z-50 border-b border-white/60 bg-white/80 shadow-sm shadow-slate-900/[0.04] backdrop-blur-xl">
-        <div className="mx-auto flex max-w-5xl items-start justify-between gap-4 px-4 py-3 sm:items-center sm:px-6 sm:py-3.5">
+        <div className="mx-auto flex max-w-7xl items-start justify-between gap-4 px-4 py-3 sm:items-center sm:px-6 sm:py-3.5">
           <a
             href="https://puntopago.net/"
             target="_blank"
@@ -108,7 +108,7 @@ export function KybChrome({ children }: { children: ReactNode }) {
         />
       </header>
 
-      <main className="relative z-10 mx-auto max-w-5xl px-4 pb-16 pt-8 sm:px-6 sm:pt-10">
+      <main className="relative z-10 mx-auto max-w-7xl px-4 pb-16 pt-8 sm:px-6 sm:pt-10">
         {children}
       </main>
 

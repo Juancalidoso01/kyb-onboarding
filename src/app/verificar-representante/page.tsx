@@ -126,9 +126,9 @@ function VerificarRepresentanteInner() {
           Verificación del representante
         </h1>
         <p className={KYB_FIELD_HINT_CLASS + " mt-2"}>
-          Complete la verificación de identidad con MetaMap y luego su firma
-          digital. Al terminar ambos pasos, los datos se envían al formulario en
-          el equipo donde se generó el código.
+          Complete la verificación de identidad y luego la firma digital. Al
+          finalizar ambos pasos, podrá finalizar el formulario en el equipo donde
+          inició el proceso.
         </p>
 
         {loading ? (

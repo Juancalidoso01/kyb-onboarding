@@ -2,11 +2,14 @@
 
 import QRCode from "qrcode";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { KYB_FIELD_HINT_CLASS } from "@/lib/kyb-prose-classes";
 import type { FormState } from "@/lib/kyb-field-complete";
 import type { KybFirmaPaquetePayload } from "@/lib/kyb-firma-paquete";
 
 type PollStatus = "pending" | "partial" | "complete";
+
+const SHARE_TITLE = "Verificación y firma — Formulario KYB Punto Pago";
+const SHARE_TEXT =
+  "Abra este enlace en su celular para completar la verificación de identidad y la firma digital del formulario.";
 
 type Props = {
   values: FormState;
@@ -44,10 +47,72 @@ export function KybRepresentanteCierrePaso({
     "qr" | "finalizando" | "listo"
   >(refGuardado ? "listo" : "qr");
   const [numeroFormulario, setNumeroFormulario] = useState(refGuardado);
+  const [shareNotice, setShareNotice] = useState<"copied" | "error" | null>(
+    null,
+  );
 
   const publicUrl = code
     ? `${typeof window !== "undefined" ? window.location.origin : ""}/verificar-representante?c=${encodeURIComponent(code)}`
     : "";
+
+  const copyPublicUrl = useCallback(async (): Promise<boolean> => {
+    if (!publicUrl) return false;
+    try {
+      await navigator.clipboard.writeText(publicUrl);
+      return true;
+    } catch {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = publicUrl;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        return ok;
+      } catch {
+        return false;
+      }
+    }
+  }, [publicUrl]);
+
+  const shareOrCopyLink = useCallback(async () => {
+    if (!publicUrl) return;
+    setShareNotice(null);
+    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+      const payloads: ShareData[] = [
+        { title: SHARE_TITLE, text: SHARE_TEXT, url: publicUrl },
+        { url: publicUrl },
+      ];
+      for (const data of payloads) {
+        if (typeof navigator.canShare === "function" && !navigator.canShare(data)) {
+          continue;
+        }
+        try {
+          await navigator.share(data);
+          return;
+        } catch (e) {
+          if (e instanceof Error && e.name === "AbortError") return;
+        }
+      }
+    }
+    const ok = await copyPublicUrl();
+    setShareNotice(ok ? "copied" : "error");
+  }, [publicUrl, copyPublicUrl]);
+
+  const copyLinkOnly = useCallback(async () => {
+    setShareNotice(null);
+    const ok = await copyPublicUrl();
+    setShareNotice(ok ? "copied" : "error");
+  }, [copyPublicUrl]);
+
+  useEffect(() => {
+    if (!shareNotice) return;
+    const t = window.setTimeout(() => setShareNotice(null), 3500);
+    return () => window.clearTimeout(t);
+  }, [shareNotice]);
 
   const crearSesion = useCallback(async () => {
     setErr(null);
@@ -196,17 +261,6 @@ export function KybRepresentanteCierrePaso({
 
   return (
     <div className="space-y-6 rounded-2xl border border-[#4749B6]/25 bg-gradient-to-br from-[#4749B6]/[0.07] to-white p-5 shadow-sm sm:p-7">
-      <div>
-        <h3 className="text-base font-semibold text-[#0B0B13]">
-          Firma y verificación del representante legal
-        </h3>
-        <p className={KYB_FIELD_HINT_CLASS}>
-          En un solo flujo en el celular del director o representante: validación
-          de identidad con MetaMap (documento y selfie) y firma digital. Escanee
-          el código QR con la cámara del teléfono; no hace falta instalar una app.
-        </p>
-      </div>
-
       {busy && !qrSrc ? (
         <p className="text-sm text-slate-600">Preparando código QR…</p>
       ) : null}
@@ -231,17 +285,54 @@ export function KybRepresentanteCierrePaso({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={qrSrc}
-            alt="Código QR: verificación MetaMap y firma en el móvil"
+            alt="Código QR para verificación de identidad y firma digital en el celular del representante o director autorizado"
             width={240}
             height={240}
           />
           <p className="max-w-sm text-center text-xs text-slate-600">
             Si no puede usar la cámara, abra este enlace en el celular del
-            representante:
+            representante o director autorizado:
           </p>
           <code className="max-w-full break-all rounded-lg bg-slate-100 px-2 py-2 text-[11px] text-slate-800">
             {publicUrl}
           </code>
+          <div className="flex w-full max-w-md flex-col gap-2 sm:flex-row sm:justify-center">
+            <button
+              type="button"
+              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-gradient-to-b from-[#4749B6] to-[#3B3DA6] px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-[#4749B6]/25 transition hover:opacity-[0.97] active:scale-[0.99]"
+              onClick={() => void shareOrCopyLink()}
+            >
+              Compartir enlace
+            </button>
+            <button
+              type="button"
+              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50"
+              onClick={() => void copyLinkOnly()}
+            >
+              Copiar enlace
+            </button>
+          </div>
+          <p className="max-w-md text-center text-[11px] leading-snug text-slate-500">
+            En el teléfono, «Compartir enlace» abre el menú del sistema (WhatsApp,
+            correo, etc.). En la computadora, si no hay menú de compartir, se
+            copia el enlace al portapapeles.
+          </p>
+          {shareNotice === "copied" ? (
+            <p
+              className="text-center text-xs font-medium text-emerald-700"
+              role="status"
+            >
+              Enlace copiado al portapapeles.
+            </p>
+          ) : null}
+          {shareNotice === "error" ? (
+            <p
+              className="text-center text-xs font-medium text-red-700"
+              role="alert"
+            >
+              No se pudo copiar. Seleccione el enlace arriba y cópielo manualmente.
+            </p>
+          ) : null}
         </div>
       ) : null}
 
@@ -261,12 +352,13 @@ export function KybRepresentanteCierrePaso({
             <p className="font-medium">Verificación y firma recibidas.</p>
           ) : pollStatus === "partial" ? (
             <p>
-              Recibiendo datos del móvil… El representante debe completar{" "}
-              <strong>MetaMap</strong> y <strong>firma digital</strong>.
+              Recibiendo datos del móvil… La persona debe completar la{" "}
+              <strong>verificación de identidad</strong> y la{" "}
+              <strong>firma digital</strong>.
             </p>
           ) : (
             <p>
-              <span className="font-semibold">Esperando al representante.</span>{" "}
+              <span className="font-semibold">Esperando al representante o director autorizado.</span>{" "}
               Deje esta ventana abierta hasta que termine ambos pasos en el
               dispositivo móvil.
             </p>
