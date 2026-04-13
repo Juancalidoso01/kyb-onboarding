@@ -1,6 +1,6 @@
 "use client";
 
-import type { KeyboardEvent } from "react";
+import type { FormEvent, KeyboardEvent } from "react";
 import { useMemo } from "react";
 import { normalizePhoneDigits } from "@/lib/kyb-format-validation";
 
@@ -16,6 +16,7 @@ type Props = {
   hint?: string;
   formatErr: string | null;
   onTypingKey: (e: KeyboardEvent) => void;
+  onInputFeedback?: (e: FormEvent<HTMLInputElement>) => void;
 };
 
 export function KybPhoneField({
@@ -30,6 +31,7 @@ export function KybPhoneField({
   hint,
   formatErr,
   onTypingKey,
+  onInputFeedback,
 }: Props) {
   const hasMultiNumberSeparators = useMemo(
     () => Boolean(value.trim()) && /[,;/|]/.test(value),
@@ -73,6 +75,7 @@ export function KybPhoneField({
           }
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          onInput={onInputFeedback}
           onKeyDown={onTypingKey}
           onFocus={() => {
             if (!dialDigits || value.trim()) return;
@@ -127,6 +130,7 @@ export function KybPhoneField({
           }
           value={nationalDigits}
           onChange={(e) => onNationalChange(e.target.value)}
+          onInput={onInputFeedback}
           onPaste={(e) => {
             const t = e.clipboardData.getData("text");
             if (/[,;/|]/.test(t)) {

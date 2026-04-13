@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import type { KeyboardEvent } from "react";
+import type { FormEvent, KeyboardEvent } from "react";
 
 export type ComboboxOption = {
   value: string;
@@ -38,6 +38,8 @@ type Props = {
   className: string;
   emptyMessage?: string;
   onTypingKey?: (e: KeyboardEvent<HTMLInputElement>) => void;
+  /** Toque al escribir (móvil: teclado virtual). Mismo filtrado que en el wizard. */
+  onInputFeedback?: (e: FormEvent<HTMLInputElement>) => void;
   disabled?: boolean;
 };
 
@@ -50,6 +52,7 @@ export function KybCombobox({
   className,
   emptyMessage = "Sin coincidencias",
   onTypingKey,
+  onInputFeedback,
   disabled = false,
 }: Props) {
   const uid = useId();
@@ -148,6 +151,9 @@ export function KybCombobox({
           setQuery(v);
           setOpen(true);
           if (!v) onChange("");
+        }}
+        onInput={(e) => {
+          onInputFeedback?.(e);
         }}
         onFocus={() => {
           setOpen(true);

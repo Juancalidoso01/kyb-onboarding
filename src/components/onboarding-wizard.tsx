@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import type { KeyboardEvent, ReactNode } from "react";
+import type { FormEvent, ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { KybCombobox } from "@/components/kyb-combobox";
 import { KybDateField } from "@/components/kyb-date-field";
@@ -195,11 +195,18 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
 
   useEffect(() => {
     if (!started) return;
-    const onPointer = () => {
+    const onGesture = () => {
       unlockAudio();
     };
-    window.addEventListener("pointerdown", onPointer, { once: true });
-    return () => window.removeEventListener("pointerdown", onPointer);
+    window.addEventListener("pointerdown", onGesture, { once: true });
+    window.addEventListener("touchstart", onGesture, {
+      once: true,
+      passive: true,
+    });
+    return () => {
+      window.removeEventListener("pointerdown", onGesture);
+      window.removeEventListener("touchstart", onGesture);
+    };
   }, [started]);
 
   useEffect(() => {
@@ -225,13 +232,33 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     }
   }, [values, started, steps]);
 
-  const typingKey = useCallback((e: KeyboardEvent) => {
-    if (e.key.length !== 1) return;
-    const now = Date.now();
-    if (now - lastKeySoundRef.current < 42) return;
-    lastKeySoundRef.current = now;
-    playKeyTap();
-  }, []);
+  /**
+   * keydown se mantiene por compatibilidad con componentes; el sonido por
+   * tecla va por inputTypingFeedback (input) para no duplicar en desktop y
+   * para cubrir teclados virtuales que no disparan keydown por letra.
+   */
+  const typingKey = useCallback(() => {}, []);
+
+  /** Teclado virtual / móvil: evento input por inserción (y escritura por voz, etc.). */
+  const inputTypingFeedback = useCallback(
+    (e: FormEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const ie = e.nativeEvent as InputEvent;
+      if (typeof ie.inputType === "string") {
+        if (ie.inputType.startsWith("delete")) return;
+        if (
+          ie.inputType === "insertFromPaste" ||
+          ie.inputType === "insertFromDrop"
+        ) {
+          return;
+        }
+      }
+      const now = Date.now();
+      if (now - lastKeySoundRef.current < 42) return;
+      lastKeySoundRef.current = now;
+      playKeyTap();
+    },
+    [],
+  );
 
   const setField = (id: string, v: string) => {
     setValues((prev) => {
@@ -397,6 +424,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
             onChange={(v) => setField(field.id, v)}
             className={inputClass}
             onKeyDown={typingKey}
+            onInput={inputTypingFeedback}
           />
           {field.hint ? (
             <span className="mt-1.5 block text-xs text-slate-500">{field.hint}</span>
@@ -420,6 +448,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
             className={inputClass}
             emptyMessage="Sin coincidencias"
             onTypingKey={typingKey}
+            onInputFeedback={inputTypingFeedback}
           />
           {field.hint ? (
             <span className="mt-1.5 block text-xs text-slate-500">{field.hint}</span>
@@ -443,6 +472,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
             className={inputClass}
             emptyMessage="Sin coincidencias"
             onTypingKey={typingKey}
+            onInputFeedback={inputTypingFeedback}
           />
           {field.hint ? (
             <span className="mt-1.5 block text-xs text-slate-500">{field.hint}</span>
@@ -470,6 +500,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
             className={inputClass}
             emptyMessage="Sin coincidencias"
             onTypingKey={typingKey}
+            onInputFeedback={inputTypingFeedback}
             disabled={activityLoading}
           />
           {field.hint ? (
@@ -498,6 +529,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
             className={inputClass}
             emptyMessage="Sin coincidencias"
             onTypingKey={typingKey}
+            onInputFeedback={inputTypingFeedback}
             disabled={professionLoading}
           />
           {field.hint ? (
@@ -536,6 +568,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                 const normalized = normalizePercentInput(values[id] ?? "");
                 if (normalized !== (values[id] ?? "")) setField(id, normalized);
               }}
+              onInput={inputTypingFeedback}
               onKeyDown={typingKey}
               aria-invalid={invalid || undefined}
             />
@@ -581,6 +614,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
             hint={field.hint}
             formatErr={formatErr}
             onTypingKey={typingKey}
+            onInputFeedback={inputTypingFeedback}
           />
         </div>
       );
@@ -601,6 +635,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
             onChange={(v) => setField(field.id, v)}
             inputClass={inputClass}
             onTypingKey={typingKey}
+            onInputFeedback={inputTypingFeedback}
           />
         </div>
       );
@@ -622,6 +657,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
             onChange={(v) => setField(field.id, v)}
             inputClass={inputClass}
             onTypingKey={typingKey}
+            onInputFeedback={inputTypingFeedback}
             onStructuredFromApi={
               field.id === "direccion_comercial"
                 ? (meta) => {
@@ -664,6 +700,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
             placeholder={field.placeholder}
             value={values[field.id] ?? ""}
             onChange={(e) => setField(field.id, e.target.value)}
+            onInput={inputTypingFeedback}
             onKeyDown={typingKey}
             required={field.id === NOMBRE_DILIGENCIA_FIELD_ID}
           />
@@ -696,6 +733,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
             placeholder={field.placeholder}
             value={values[field.id] ?? ""}
             onChange={(e) => setField(field.id, e.target.value)}
+            onInput={inputTypingFeedback}
             onKeyDown={typingKey}
             required={field.id === NOMBRE_DILIGENCIA_FIELD_ID}
             aria-invalid={contactInputInvalid || undefined}

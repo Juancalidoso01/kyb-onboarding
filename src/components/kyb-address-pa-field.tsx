@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import type { KeyboardEvent } from "react";
+import type { FormEvent, KeyboardEvent } from "react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { PANAMA_ADDRESS_LOCAL_SUGGESTIONS } from "@/data/panama-address-seed";
 import {
@@ -65,6 +65,7 @@ type Props = {
   onChange: (v: string) => void;
   inputClass: string;
   onTypingKey: (e: KeyboardEvent) => void;
+  onInputFeedback?: (e: FormEvent<HTMLTextAreaElement>) => void;
   /** Panamá: lista local + API filtrado PA. Mundial: solo API Geoapify sin filtro de país. */
   variant?: KybAddressFieldVariant;
   /** Al elegir sugerencia del API o de la lista local con formato «barrio, provincia». */
@@ -78,6 +79,7 @@ export function KybAddressPaField({
   onChange,
   inputClass,
   onTypingKey,
+  onInputFeedback,
   variant = "panama",
   onStructuredFromApi,
 }: Props) {
@@ -346,6 +348,9 @@ export function KybAddressPaField({
               value={inputValue}
               aria-busy={fetching && !booting}
               onChange={(e) => onInputChange(e.target.value)}
+              onInput={(e) => {
+                onInputFeedback?.(e);
+              }}
               onKeyDown={(e) => {
                 onTypingKey(e);
                 if (e.key === "Escape") {

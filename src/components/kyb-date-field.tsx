@@ -1,6 +1,6 @@
 "use client";
 
-import type { KeyboardEvent } from "react";
+import type { FormEvent, KeyboardEvent } from "react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { isValidPanamaDate } from "@/lib/kyb-date";
 
@@ -9,6 +9,7 @@ type Props = {
   onChange: (v: string) => void;
   className: string;
   onKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void;
+  onInput?: (e: FormEvent<HTMLInputElement>) => void;
 };
 
 const MONTHS_ES = [
@@ -60,7 +61,13 @@ function todayParts() {
 /**
  * Campo de fecha DD-MM-AAAA: escritura directa + calendario con selector de mes y año (salto rápido a fechas antiguas).
  */
-export function KybDateField({ value, onChange, className, onKeyDown }: Props) {
+export function KybDateField({
+  value,
+  onChange,
+  className,
+  onKeyDown,
+  onInput,
+}: Props) {
   const uid = useId();
   const panelId = `${uid}-panel`;
   const containerRef = useRef<HTMLDivElement>(null);
@@ -156,6 +163,7 @@ export function KybDateField({ value, onChange, className, onKeyDown }: Props) {
           className={`min-w-0 flex-1 ${className}`}
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          onInput={onInput}
           onKeyDown={onKeyDown}
           aria-describedby={`${uid}-hint`}
         />
