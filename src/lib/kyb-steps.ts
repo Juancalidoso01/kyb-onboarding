@@ -667,7 +667,7 @@ export const KYB_STEPS: KybStep[] = [
     id: "perfil_financiero",
     title: "PERFIL FINANCIERO",
     description:
-      "Declaración y montos en USD (persona jurídica). Luego indicará medios de pago, servicios de interés con Punto Pago, volumen de operaciones estimado, referencias y la sección PEP.",
+      "Refleja el tamaño económico general de su organización (facturación o ingresos de la empresa en su conjunto), no el volumen ligado a los servicios de Punto Pago que detallará más adelante. Cuando ya exista documentación formal (por ejemplo, declaración de renta o estados financieros), los importes deben ser coherentes con ella. Si es un cliente nuevo, sin historial o aún sin saber cuánto facturará, puede indicar estimaciones o proyecciones razonables; no se le exige una cifra exacta ni documentos que aún no tenga. Ej.: una compañía puede facturar millones de USD al mes por su actividad principal. Después de este paso seguirán medios de pago, servicios de interés con Punto Pago, volumen estimado de operaciones con Punto Pago, referencias y PEP.",
     pdfPage: "Pág. 2",
     fields: [
       {
@@ -678,15 +678,17 @@ export const KYB_STEPS: KybStep[] = [
       },
       {
         id: "ingresos_mensuales_usd",
-        label: "Ingresos mensuales aproximados son de: (USD)",
+        label: "Facturación o ingresos mensuales aproximados de la organización (USD)",
         type: "text",
         numberFormat: "usd",
+        hint: "Total a nivel empresa (todas sus líneas de negocio), no el monto relacionado solo con Punto Pago. Si aún no tiene cifras, indique una estimación o proyección razonable; cuando tenga declaración de renta o estados financieros, debe alinearse con ellos.",
       },
       {
         id: "ingresos_anuales_usd",
-        label: "Ingresos anuales aproximados son de: (USD)",
+        label: "Facturación o ingresos anuales aproximados de la organización (USD)",
         type: "text",
         numberFormat: "usd",
+        hint: "Magnitud global del negocio; se distingue de los montos de operación con Grupo Punto Pago que indicará en pasos posteriores. Puede usar proyección anual si la empresa es nueva o en arranque.",
       },
     ],
   },
