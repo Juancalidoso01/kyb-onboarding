@@ -16,6 +16,9 @@ node_modules/
 .env.local
 .env*.local
 .vercel
+
+# Secretos locales (base64 de cuenta Google; no subir)
+kyb-google-base64-for-vercel.txt
 *.tsbuildinfo
 
 # testing
