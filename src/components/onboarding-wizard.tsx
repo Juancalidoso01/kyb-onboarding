@@ -51,6 +51,10 @@ import {
 import { type KybDocCompletenessContext } from "@/lib/kyb-documentacion";
 import { KybDeclaracionResumen } from "@/components/kyb-declaracion-resumen";
 import { KybDocumentacionPersonas } from "@/components/kyb-documentacion-personas";
+import {
+  formatMaxMb,
+  KYB_MAX_TOTAL_ATTACHMENT_BYTES,
+} from "@/lib/kyb-attachment-limits";
 import { KybFileRow } from "@/components/kyb-file-row";
 import { KybRepresentanteCierrePaso } from "@/components/kyb-representante-cierre-paso";
 import {
@@ -321,6 +325,16 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
 
   const onFinalizarCierre = useCallback(
     async (patch: Partial<FormState>) => {
+      let attachmentsTotal = 0;
+      for (const f of Object.values(attachmentFilesRef.current)) {
+        if (f) attachmentsTotal += f.size;
+      }
+      if (attachmentsTotal > KYB_MAX_TOTAL_ATTACHMENT_BYTES) {
+        throw new Error(
+          `Los archivos adjuntos superan en conjunto el máximo de ${formatMaxMb(KYB_MAX_TOTAL_ATTACHMENT_BYTES)} MB. Reduzca el número de documentos o comprima los PDF.`,
+        );
+      }
+
       const merged: FormState = { ...valuesRef.current };
       for (const [k, v] of Object.entries(patch)) {
         if (v !== undefined) merged[k] = v;

@@ -1,4 +1,8 @@
 import { NextResponse } from "next/server";
+import {
+  KYB_MAX_ATTACHMENT_BYTES_PER_FILE,
+  KYB_MAX_TOTAL_ATTACHMENT_BYTES,
+} from "@/lib/kyb-attachment-limits";
 import type { FormState } from "@/lib/kyb-field-complete";
 import type { KybDriveAttachment } from "@/lib/kyb-google-sync";
 import {
@@ -109,10 +113,18 @@ export async function POST(req: Request) {
           value instanceof File && value.type
             ? value.type
             : "application/octet-stream";
+        if (buf.length > KYB_MAX_ATTACHMENT_BYTES_PER_FILE) {
+          return bad(`attachment_too_large:${fieldId}`);
+        }
         attachments.push({ fieldId, fileName, buffer: buf, mimeType });
       } catch {
         return bad(`attachment_read_failed:${fieldId}`);
       }
+    }
+    let totalBytes = 0;
+    for (const a of attachments) totalBytes += a.buffer.length;
+    if (totalBytes > KYB_MAX_TOTAL_ATTACHMENT_BYTES) {
+      return bad("attachments_total_too_large");
     }
   } else {
     let body: unknown;

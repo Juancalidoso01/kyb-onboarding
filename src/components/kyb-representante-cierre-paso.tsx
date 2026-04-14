@@ -184,12 +184,14 @@ export function KybRepresentanteCierrePaso({
         setFase("listo");
         onTerminado();
         onFlushDraft();
-      } catch {
+      } catch (e) {
         finalizarEnCursoRef.current = false;
         setFase("qr");
-        setErr(
-          "No se pudo generar el PDF o el número de formulario. Recargue la página o pulse Reintentar finalizar.",
-        );
+        const msg =
+          e instanceof Error && e.message.trim()
+            ? e.message
+            : "No se pudo generar el PDF o el número de formulario. Recargue la página o pulse Reintentar finalizar.";
+        setErr(msg);
       }
     },
     [onFinalizar, setField, onTerminado, onFlushDraft],
