@@ -1,13 +1,39 @@
 import { NextResponse } from "next/server";
 import type { FormState } from "@/lib/kyb-field-complete";
-import { googleSheetsDriveConfigured } from "@/lib/kyb-google-credentials";
+import {
+  googleSheetsDriveConfigured,
+  loadGoogleServiceAccount,
+} from "@/lib/kyb-google-credentials";
 import { syncKybSubmissionToGoogle } from "@/lib/kyb-google-sync";
 import type { SubmissionSlotCounts } from "@/lib/kyb-submission-pdf-context";
 
 export const runtime = "nodejs";
+/** Plan Pro+ en Vercel permite hasta 60s; en Hobby el máximo efectivo suele ser 10s. */
+export const maxDuration = 60;
 
 function bad(msg: string, status = 400) {
   return NextResponse.json({ ok: false, error: msg }, { status });
+}
+
+/**
+ * GET: diagnóstico sin secretos (abre en el navegador en producción).
+ * Si `configured` es false, revisa variables en Vercel y el base64.
+ */
+export async function GET() {
+  const sheet = Boolean(process.env.GOOGLE_SHEET_ID?.trim());
+  const folder = Boolean(process.env.GOOGLE_DRIVE_FOLDER_ID?.trim());
+  const credsOk = Boolean(loadGoogleServiceAccount());
+  const configured = sheet && folder && credsOk;
+  return NextResponse.json({
+    configured,
+    hasSheetId: sheet,
+    hasFolderId: folder,
+    hasCredentialsJson: credsOk,
+    sheetTab: process.env.GOOGLE_SHEET_TAB?.trim() || "Hoja 1",
+    hint: configured
+      ? "Variables mínimas OK. Si aún falla el POST, revisa permisos del Sheet/carpeta y el nombre de la pestaña."
+      : "Falta GOOGLE_SHEET_ID, GOOGLE_DRIVE_FOLDER_ID o credenciales válidas (BASE64).",
+  });
 }
 
 export async function POST(req: Request) {
@@ -52,6 +78,7 @@ export async function POST(req: Request) {
   });
 
   if (!result.ok) {
+    console.error("[kyb/google/submission]", result.error);
     return NextResponse.json(
       {
         ok: false,

@@ -13,7 +13,8 @@ export function loadGoogleServiceAccount(): GoogleServiceAccount | null {
   let jsonStr = "";
   if (b64) {
     try {
-      jsonStr = Buffer.from(b64, "base64").toString("utf8");
+      const clean = b64.replace(/\s+/g, "");
+      jsonStr = Buffer.from(clean, "base64").toString("utf8");
     } catch {
       return null;
     }

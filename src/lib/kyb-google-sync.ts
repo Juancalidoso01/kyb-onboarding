@@ -13,10 +13,26 @@ import {
 } from "@/lib/kyb-submission-pdf-context";
 
 const SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets";
-const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file";
+/** `drive.file` a veces devuelve 403 al crear archivos en carpetas compartidas / unidades compartidas. */
+const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive";
 
 function driveFileViewUrl(fileId: string): string {
   return `https://drive.google.com/file/d/${fileId}/view`;
+}
+
+function googleApiErrorMessage(e: unknown, fallback: string): string {
+  if (e && typeof e === "object" && "response" in e) {
+    const data = (e as { response?: { data?: unknown } }).response?.data;
+    if (data !== undefined) {
+      try {
+        return typeof data === "string" ? data : JSON.stringify(data);
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+  if (e instanceof Error) return e.message;
+  return fallback;
 }
 
 function sanitizeValuesJson(values: FormState): string {
@@ -91,8 +107,10 @@ export async function syncKybSubmissionToGoogle(input: {
   try {
     pdfBuffer = buildKybPdfBuffer(valuesWithRef, summarySteps, visibility);
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "pdf_build_failed";
-    return { ok: false, error: msg };
+    return {
+      ok: false,
+      error: googleApiErrorMessage(e, "pdf_build_failed"),
+    };
   }
 
   const drive = google.drive({ version: "v3", auth });
@@ -120,8 +138,7 @@ export async function syncKybSubmissionToGoogle(input: {
       return { ok: false, error: "drive_upload_no_id" };
     }
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "drive_upload_failed";
-    return { ok: false, error: msg };
+    return { ok: false, error: googleApiErrorMessage(e, "drive_upload_failed") };
   }
 
   const viewUrl = driveFileViewUrl(fileId);
@@ -156,12 +173,11 @@ export async function syncKybSubmissionToGoogle(input: {
       requestBody: { values: [row] },
     });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "sheets_append_failed";
     return {
       ok: false,
       driveFileId: fileId,
       driveViewUrl: viewUrl,
-      error: msg,
+      error: googleApiErrorMessage(e, "sheets_append_failed"),
     };
   }
 

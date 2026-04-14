@@ -331,17 +331,39 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       const ref = j.ref ?? `PP-KYB-${Date.now()}`;
       const mergedConRef: FormState = { ...merged, decl_formulario_ref: ref };
       const slots = fieldVisibilityCtxRef.current;
-      void fetch("/api/kyb/google/submission", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          formRef: ref,
-          values: mergedConRef,
-          juntaMemberSlots: slots.juntaMemberSlots,
-          bfMemberSlots: slots.bfMemberSlots,
-          pepMemberSlots: slots.pepMemberSlots,
-        }),
-      }).catch(() => {});
+      try {
+        const gr = await fetch("/api/kyb/google/submission", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            formRef: ref,
+            values: mergedConRef,
+            juntaMemberSlots: slots.juntaMemberSlots,
+            bfMemberSlots: slots.bfMemberSlots,
+            pepMemberSlots: slots.pepMemberSlots,
+          }),
+        });
+        const gj = (await gr.json()) as {
+          ok?: boolean;
+          skipped?: boolean;
+          reason?: string;
+          error?: string;
+        };
+        if (gj.skipped) {
+          console.warn(
+            "[KYB] Google sync omitido:",
+            gj.reason ?? "revisa variables en el servidor",
+          );
+        } else if (!gr.ok || !gj.ok) {
+          console.error(
+            "[KYB] Google sync error:",
+            gr.status,
+            gj.error ?? gj,
+          );
+        }
+      } catch (e) {
+        console.error("[KYB] Google sync fetch falló:", e);
+      }
       return ref;
     },
     [mergeRemoteRepresentantePatch],
