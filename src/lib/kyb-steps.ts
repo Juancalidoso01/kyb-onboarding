@@ -341,11 +341,6 @@ export const KYB_STEPS: KybStep[] = [
         options: SOCIEDAD_COMBO_OPTIONS,
       },
       {
-        id: "tipo_sociedad_otros_especifique",
-        label: "Especifique el tipo de sociedad (solo si eligió «Otro»)",
-        type: "textarea",
-      },
-      {
         id: "actividad_empresa",
         label: "Actividad a la que se dedica su empresa",
         type: "activity_search",

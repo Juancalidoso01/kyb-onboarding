@@ -50,9 +50,6 @@ export function isKybStepFieldVisible(
       if (tipo !== "J") return false;
     }
   }
-  if (f.id === "tipo_sociedad_otros_especifique") {
-    return values.tipo_sociedad === "__otro__";
-  }
   if (f.id === "actividad_empresa_especifique") {
     return values.actividad_empresa === KYB_ACTIVITY_NOT_LISTED_VALUE;
   }

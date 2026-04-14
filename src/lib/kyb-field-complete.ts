@@ -164,17 +164,7 @@ export function isFieldComplete(
   }
 
   if (field.id === "tipo_sociedad") {
-    const ts = values.tipo_sociedad ?? "";
-    if (!ts) return false;
-    if (ts === "__otro__") {
-      return (values.tipo_sociedad_otros_especifique ?? "").trim().length > 0;
-    }
-    return true;
-  }
-
-  if (field.id === "tipo_sociedad_otros_especifique") {
-    if (values.tipo_sociedad !== "__otro__") return true;
-    return v.trim().length > 0;
+    return (values.tipo_sociedad ?? "").trim().length > 0;
   }
 
   if (field.id === "actividad_empresa") {

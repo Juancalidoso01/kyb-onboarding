@@ -611,9 +611,6 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   const setField = (id: string, v: string) => {
     setValues((prev) => {
       const next: FormState = { ...prev, [id]: v };
-      if (id === "tipo_sociedad" && v !== "__otro__") {
-        next.tipo_sociedad_otros_especifique = "";
-      }
       if (id === "actividad_empresa" && v !== KYB_ACTIVITY_NOT_LISTED_VALUE) {
         next.actividad_empresa_especifique = "";
       }
