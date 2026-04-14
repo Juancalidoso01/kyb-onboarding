@@ -10,6 +10,10 @@ import {
   loadGoogleServiceAccount,
 } from "@/lib/kyb-google-credentials";
 import { syncKybSubmissionToGoogle } from "@/lib/kyb-google-sync";
+import {
+  kybNotifyEmailConfigured,
+  sendKybSubmissionNotifyEmail,
+} from "@/lib/kyb-notify-email";
 import type { SubmissionSlotCounts } from "@/lib/kyb-submission-pdf-context";
 
 export const runtime = "nodejs";
@@ -44,9 +48,13 @@ export async function GET() {
     hasFolderId: folder,
     hasCredentialsJson: credsOk,
     sheetTab: process.env.GOOGLE_SHEET_TAB?.trim() || "Hoja 1",
+    notifyEmailConfigured: kybNotifyEmailConfigured(),
     hint: configured
       ? "Variables mínimas OK. Si aún falla el POST, revisa permisos del Sheet/carpeta y el nombre de la pestaña."
       : "Falta GOOGLE_SHEET_ID, GOOGLE_DRIVE_FOLDER_ID o credenciales válidas (BASE64).",
+    notifyHint: kybNotifyEmailConfigured()
+      ? "Correo interno: KYB_NOTIFY_EMAILS + RESEND_API_KEY + RESEND_FROM."
+      : "Opcional: KYB_NOTIFY_EMAILS, RESEND_API_KEY, RESEND_FROM (Resend) para avisar al equipo.",
   });
 }
 
@@ -177,6 +185,27 @@ export async function POST(req: Request) {
     );
   }
 
+  const razonSocial = (values.razon_social ?? "").trim();
+  const contactEmail =
+    (values.email_generales ?? "").trim() ||
+    (values.persona_contacto_correo ?? "").trim() ||
+    (values.rep_correo ?? "").trim();
+
+  const notify = await sendKybSubmissionNotifyEmail({
+    formRef,
+    razonSocial,
+    contactEmail,
+    driveFolderUrl: result.driveFolderUrl ?? "",
+    driveViewUrl: result.driveViewUrl ?? "",
+    attachmentCount: attachments.length,
+  });
+
+  if (!notify.sent) {
+    if ("error" in notify) {
+      console.error("[kyb/google/submission] notify email failed:", notify.error);
+    }
+  }
+
   return NextResponse.json({
     ok: true,
     driveFileId: result.driveFileId,
@@ -184,5 +213,10 @@ export async function POST(req: Request) {
     driveFolderId: result.driveFolderId,
     driveFolderUrl: result.driveFolderUrl,
     attachmentsUploaded: attachments.length,
+    notifyEmail: notify.sent
+      ? { sent: true as const }
+      : "skipped" in notify
+        ? { sent: false as const, skipped: notify.skipped }
+        : { sent: false as const, error: notify.error },
   });
 }
