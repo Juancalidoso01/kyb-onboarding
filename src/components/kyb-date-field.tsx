@@ -11,6 +11,8 @@ type Props = {
   className: string;
   onKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void;
   onInput?: (e: FormEvent<HTMLInputElement>) => void;
+  /** Si es false (por defecto), no se pueden elegir ni escribir fechas posteriores a hoy. */
+  allowFuture?: boolean;
 };
 
 const MONTHS_ES = [
@@ -59,6 +61,20 @@ function todayParts() {
   return { y: n.getFullYear(), m: n.getMonth(), d: n.getDate() };
 }
 
+/** Compara solo calendario local: día del mes visible en el picker vs hoy. */
+function isFuturePanamaDay(
+  year: number,
+  monthIndex: number,
+  day: number,
+  today: { y: number; m: number; d: number },
+): boolean {
+  if (year > today.y) return true;
+  if (year < today.y) return false;
+  if (monthIndex > today.m) return true;
+  if (monthIndex < today.m) return false;
+  return day > today.d;
+}
+
 /**
  * Campo de fecha DD-MM-AAAA: escritura directa + calendario con selector de mes y año (salto rápido a fechas antiguas).
  */
@@ -68,6 +84,7 @@ export function KybDateField({
   className,
   onKeyDown,
   onInput,
+  allowFuture = false,
 }: Props) {
   const uid = useId();
   const panelId = `${uid}-panel`;
@@ -90,6 +107,12 @@ export function KybDateField({
     setViewY(initialView.y);
     setViewM(initialView.m);
   }, [open, initialView.y, initialView.m]);
+
+  useEffect(() => {
+    if (allowFuture || !open) return;
+    const tp = todayParts();
+    if (viewY === tp.y && viewM > tp.m) setViewM(tp.m);
+  }, [allowFuture, open, viewY, viewM]);
 
   useEffect(() => {
     if (!open) return;
@@ -118,23 +141,31 @@ export function KybDateField({
 
   const yearOptions = useMemo(() => {
     const out: number[] = [];
-    for (let y = MAX_YEAR; y >= MIN_YEAR; y--) out.push(y);
+    const maxY = allowFuture ? MAX_YEAR : new Date().getFullYear();
+    for (let y = maxY; y >= MIN_YEAR; y--) out.push(y);
     return out;
-  }, []);
+  }, [allowFuture]);
 
   const pickDay = (day: number) => {
+    const tp = todayParts();
+    if (!allowFuture && isFuturePanamaDay(viewY, viewM, day, tp)) return;
     onChange(`${pad(day)}-${pad(viewM + 1)}-${viewY}`);
     setOpen(false);
     btnRef.current?.focus();
   };
 
   const shiftMonth = (delta: number) => {
+    const tp = todayParts();
     const d = new Date(viewY, viewM + delta, 1);
     let y = d.getFullYear();
     let m = d.getMonth();
     if (y < MIN_YEAR) {
       y = MIN_YEAR;
       m = 0;
+    }
+    if (!allowFuture && (y > tp.y || (y === tp.y && m > tp.m))) {
+      y = tp.y;
+      m = tp.m;
     }
     if (y > MAX_YEAR) {
       y = MAX_YEAR;
@@ -151,7 +182,7 @@ export function KybDateField({
     "rounded-lg border border-slate-200/95 bg-white px-2 py-1.5 text-sm font-medium text-slate-800 outline-none transition focus:border-[#4749B6] focus:ring-2 focus:ring-[#4749B6]/20";
 
   const navBtn =
-    "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200/90 text-slate-600 transition hover:border-[#4749B6]/35 hover:bg-[#4749B6]/[0.06] hover:text-[#4749B6] focus:outline-none focus:ring-2 focus:ring-[#4749B6]/25";
+    "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200/90 text-slate-600 transition hover:border-[#4749B6]/35 hover:bg-[#4749B6]/[0.06] hover:text-[#4749B6] focus:outline-none focus:ring-2 focus:ring-[#4749B6]/25 disabled:cursor-not-allowed disabled:opacity-35";
 
   return (
     <div ref={containerRef} className="relative flex flex-col gap-2">
@@ -196,8 +227,9 @@ export function KybDateField({
       </div>
 
       <p id={`${uid}-hint`} className={KYB_FIELD_HINT_CLASS}>
-        Escriba la fecha o use el calendario. Mes y año se eligen en listas para ir rápido a fechas
-        antiguas.
+        {allowFuture
+          ? "Escriba la fecha o use el calendario. Mes y año se eligen en listas para ir rápido a fechas antiguas."
+          : "Solo fechas hasta hoy (incluida). Escriba DD-MM-AAAA o use el calendario; mes y año en listas para fechas pasadas."}
       </p>
 
       {open ? (
@@ -219,11 +251,15 @@ export function KybDateField({
               onChange={(e) => setViewM(Number(e.target.value))}
               aria-label="Mes"
             >
-              {MONTHS_ES.map((name, i) => (
-                <option key={name} value={i}>
-                  {name}
-                </option>
-              ))}
+              {MONTHS_ES.map((name, i) => {
+                const disabled =
+                  !allowFuture && viewY === t.y && i > t.m;
+                return (
+                  <option key={name} value={i} disabled={disabled}>
+                    {name}
+                  </option>
+                );
+              })}
             </select>
             <select
               className={`${controlSelect} w-[5.5rem] sm:w-24`}
@@ -237,7 +273,13 @@ export function KybDateField({
                 </option>
               ))}
             </select>
-            <button type="button" className={navBtn} onClick={() => shiftMonth(1)} aria-label="Mes siguiente">
+            <button
+              type="button"
+              className={navBtn}
+              onClick={() => shiftMonth(1)}
+              aria-label="Mes siguiente"
+              disabled={!allowFuture && viewY === t.y && viewM >= t.m}
+            >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M9 18l6-6-6-6" />
               </svg>
@@ -253,26 +295,32 @@ export function KybDateField({
           </div>
 
           <div className="mt-0.5 grid grid-cols-7 gap-1">
-            {cells.map((day, i) =>
-              day === null ? (
-                <div key={`e-${i}`} className="aspect-square" />
-              ) : (
+            {cells.map((day, i) => {
+              if (day === null) {
+                return <div key={`e-${i}`} className="aspect-square" />;
+              }
+              const future =
+                !allowFuture && isFuturePanamaDay(viewY, viewM, day, t);
+              return (
                 <button
                   key={`${viewY}-${viewM}-${day}`}
                   type="button"
+                  disabled={future}
                   onClick={() => pickDay(day)}
                   className={`flex aspect-square items-center justify-center rounded-lg text-sm font-medium transition ${
-                    isSelected(day)
-                      ? "bg-[#4749B6] text-white shadow-md shadow-[#4749B6]/25"
-                      : isToday(day)
-                        ? "bg-[#4749B6]/12 text-[#4749B6] ring-1 ring-[#4749B6]/30"
-                        : "text-slate-700 hover:bg-slate-100"
+                    future
+                      ? "cursor-not-allowed text-slate-300"
+                      : isSelected(day)
+                        ? "bg-[#4749B6] text-white shadow-md shadow-[#4749B6]/25"
+                        : isToday(day)
+                          ? "bg-[#4749B6]/12 text-[#4749B6] ring-1 ring-[#4749B6]/30"
+                          : "text-slate-700 hover:bg-slate-100"
                   }`}
                 >
                   {day}
                 </button>
-              ),
-            )}
+              );
+            })}
           </div>
 
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-2">

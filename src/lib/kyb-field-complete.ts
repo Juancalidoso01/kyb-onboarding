@@ -20,7 +20,7 @@ import {
   type KybDocCompletenessContext,
 } from "@/lib/kyb-documentacion";
 import { PAIS_PANAMA } from "@/data/paises";
-import { isValidPanamaDate } from "@/lib/kyb-date";
+import { isPanamaDateNotAfterToday, isValidPanamaDate } from "@/lib/kyb-date";
 
 export type { KybDocCompletenessContext };
 
@@ -258,7 +258,7 @@ export function isFieldComplete(
     case "profession_search":
       return v.trim().length > 0;
     case "date":
-      return isValidPanamaDate(v);
+      return isValidPanamaDate(v) && isPanamaDateNotAfterToday(v);
     case "percent": {
       const raw = v.trim();
       if (raw === "") return true;

@@ -13,6 +13,17 @@ export function isValidPanamaDate(s: string): boolean {
   return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d;
 }
 
+/** Fecha de calendario local no posterior a hoy (evita fechas futuras en el formulario). */
+export function isPanamaDateNotAfterToday(s: string): boolean {
+  if (!isValidPanamaDate(s)) return false;
+  const [, dd, mm, yyyy] = s.trim().match(DDMMYYYY)!;
+  const chosen = new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  chosen.setHours(0, 0, 0, 0);
+  return chosen.getTime() <= today.getTime();
+}
+
 /** yyyy-mm-dd (input type=date) → DD-MM-AAAA */
 export function isoToPanama(iso: string): string {
   if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return "";

@@ -78,7 +78,7 @@ import {
   NOMBRE_DILIGENCIA_FIELD_ID,
   PP_SV_METRICA_PAIRS,
 } from "@/lib/kyb-steps";
-import { isValidPanamaDate } from "@/lib/kyb-date";
+import { isPanamaDateNotAfterToday, isValidPanamaDate } from "@/lib/kyb-date";
 import { buildAndDownloadKybPdf } from "@/lib/kyb-export-pdf";
 import { isKybStepFieldVisible } from "@/lib/kyb-step-field-visibility";
 import {
@@ -412,7 +412,11 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   const puedeContinuarDeclaracion = useMemo(() => {
     const nom = (values.decl_director_nombre ?? "").trim();
     const f = values.decl_fecha ?? "";
-    return nom.length > 0 && isValidPanamaDate(f);
+    return (
+      nom.length > 0 &&
+      isValidPanamaDate(f) &&
+      isPanamaDateNotAfterToday(f)
+    );
   }, [values.decl_director_nombre, values.decl_fecha]);
 
   useEffect(() => {
@@ -971,6 +975,10 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     }
 
     if (field.type === "date") {
+      const dateFormatErr = getFormatErrorForField(field, values);
+      const dateInputClass = dateFormatErr
+        ? `${inputClass} border-red-400/95 focus:border-red-500 focus:ring-red-500/20`
+        : inputClass;
       const inner = (
         <label key={field.id} className="block">
           <span
@@ -985,12 +993,20 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
           <KybDateField
             value={values[field.id] ?? ""}
             onChange={(v) => setField(field.id, v)}
-            className={inputClass}
+            className={dateInputClass}
             onKeyDown={typingKey}
             onInput={inputTypingFeedback}
           />
           {field.hint ? (
             <span className={KYB_FIELD_HINT_CLASS}>{field.hint}</span>
+          ) : null}
+          {dateFormatErr ? (
+            <span
+              className="mt-1.5 block text-xs font-medium text-red-600"
+              role="alert"
+            >
+              {dateFormatErr}
+            </span>
           ) : null}
         </label>
       );

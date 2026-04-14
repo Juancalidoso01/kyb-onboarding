@@ -5,6 +5,7 @@ import {
   isValidQuantityCanonical,
   isValidUsdCanonical,
 } from "@/lib/kyb-number-input-format";
+import { isPanamaDateNotAfterToday, isValidPanamaDate } from "@/lib/kyb-date";
 import type { KybField } from "@/lib/kyb-steps";
 
 /** Subconjunto práctico de correo con @, dominio y TLD con punto. */
@@ -159,6 +160,22 @@ export function getNumericFormatError(
   return null;
 }
 
+export function getDateFormatError(
+  field: KybField,
+  values: FormState,
+): string | null {
+  if (field.type !== "date") return null;
+  const v = (values[field.id] ?? "").trim();
+  if (!v) return null;
+  if (!isValidPanamaDate(v)) {
+    return "Use el formato DD-MM-AAAA (día, mes y año con guiones).";
+  }
+  if (!isPanamaDateNotAfterToday(v)) {
+    return "La fecha no puede ser posterior a hoy.";
+  }
+  return null;
+}
+
 export function getFormatErrorForField(
   field: KybField,
   values: FormState,
@@ -166,6 +183,7 @@ export function getFormatErrorForField(
   return (
     getContactFormatError(field, values) ??
     getPercentFormatError(field, values) ??
-    getNumericFormatError(field, values)
+    getNumericFormatError(field, values) ??
+    getDateFormatError(field, values)
   );
 }
