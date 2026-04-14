@@ -10,6 +10,7 @@ import type { FormState } from "@/lib/kyb-field-complete";
 type Props = {
   values: FormState;
   onFileName: (fieldId: string, fileName: string) => void;
+  onFileObject?: (fieldId: string, file: File | null) => void;
   juntaMemberSlots: number;
   bfMemberSlots: number;
   /** Si cotiza en bolsa, no hay paso de accionistas en el flujo. */
@@ -19,6 +20,7 @@ type Props = {
 export function KybDocumentacionPersonas({
   values,
   onFileName,
+  onFileObject,
   juntaMemberSlots,
   bfMemberSlots,
   omitirAccionistas,
@@ -54,6 +56,7 @@ export function KybDocumentacionPersonas({
                   id={fid}
                   fileName={values[fid] ?? ""}
                   onChange={onFileName}
+                  onFileObject={onFileObject}
                 />
               </li>
             );
@@ -99,6 +102,7 @@ export function KybDocumentacionPersonas({
                     id={fid}
                     fileName={values[fid] ?? ""}
                     onChange={onFileName}
+                    onFileObject={onFileObject}
                   />
                 </li>
               );
@@ -124,6 +128,7 @@ export function KybDocumentacionPersonas({
             id="doc_upl_representante"
             fileName={values.doc_upl_representante ?? ""}
             onChange={onFileName}
+            onFileObject={onFileObject}
           />
         </div>
       </div>

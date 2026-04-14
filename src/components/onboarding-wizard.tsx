@@ -270,6 +270,16 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   const fieldVisibilityCtxRef = useRef(fieldVisibilityCtx);
   fieldVisibilityCtxRef.current = fieldVisibilityCtx;
 
+  /** Archivos seleccionados en inputs file (solo memoria; para subida a Drive al finalizar). */
+  const attachmentFilesRef = useRef<Record<string, File>>({});
+  const registerAttachmentFile = useCallback((id: string, file: File | null) => {
+    if (file) {
+      attachmentFilesRef.current[id] = file;
+    } else {
+      delete attachmentFilesRef.current[id];
+    }
+  }, []);
+
   const firmaPaqueteMeta = useMemo(
     () => ({
       juntaMemberSlots,
@@ -332,16 +342,23 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       const mergedConRef: FormState = { ...merged, decl_formulario_ref: ref };
       const slots = fieldVisibilityCtxRef.current;
       try {
-        const gr = await fetch("/api/kyb/google/submission", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        const fd = new FormData();
+        fd.append(
+          "payload",
+          JSON.stringify({
             formRef: ref,
             values: mergedConRef,
             juntaMemberSlots: slots.juntaMemberSlots,
             bfMemberSlots: slots.bfMemberSlots,
             pepMemberSlots: slots.pepMemberSlots,
           }),
+        );
+        for (const [k, file] of Object.entries(attachmentFilesRef.current)) {
+          if (file) fd.append(`file_${k}`, file, file.name);
+        }
+        const gr = await fetch("/api/kyb/google/submission", {
+          method: "POST",
+          body: fd,
         });
         const gj = (await gr.json()) as {
           ok?: boolean;
@@ -811,6 +828,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
           key={field.id}
           values={values}
           onFileName={setField}
+          onFileObject={registerAttachmentFile}
           juntaMemberSlots={juntaMemberSlots}
           bfMemberSlots={bfMemberSlots}
           omitirAccionistas={(values.cotiza_bolsa ?? "").trim() === "si"}
@@ -894,6 +912,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
             id={field.id}
             fileName={values[field.id] ?? ""}
             onChange={setField}
+            onFileObject={registerAttachmentFile}
             hint={field.hint}
           />
         </div>
@@ -927,6 +946,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                 id={field.fileAttachmentId}
                 fileName={values[field.fileAttachmentId] ?? ""}
                 onChange={setField}
+                onFileObject={registerAttachmentFile}
                 hint="PDF, imagen u otros formatos compatibles."
               />
             </div>

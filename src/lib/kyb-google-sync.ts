@@ -16,8 +16,19 @@ const SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets";
 /** `drive.file` a veces devuelve 403 al crear archivos en carpetas compartidas / unidades compartidas. */
 const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive";
 
+export type KybDriveAttachment = {
+  fieldId: string;
+  fileName: string;
+  buffer: Buffer;
+  mimeType: string;
+};
+
 function driveFileViewUrl(fileId: string): string {
   return `https://drive.google.com/file/d/${fileId}/view`;
+}
+
+function driveFolderViewUrl(folderId: string): string {
+  return `https://drive.google.com/drive/folders/${folderId}`;
 }
 
 function googleApiErrorMessage(e: unknown, fallback: string): string {
@@ -58,21 +69,29 @@ function archivosResumen(values: FormState): string {
   return s.length > 5000 ? `${s.slice(0, 5000)}…` : s;
 }
 
+function safeDriveFileName(fieldId: string, original: string): string {
+  const cleaned = (original || "archivo").replace(/[\\/:*?"<>|]+/g, "-");
+  const prefix = fieldId.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 40);
+  return `${prefix}_${cleaned}`.slice(0, 200) || "adjunto.bin";
+}
+
 export type GoogleSubmissionResult = {
   ok: boolean;
   driveFileId?: string;
   driveViewUrl?: string;
+  driveFolderId?: string;
+  driveFolderUrl?: string;
   error?: string;
 };
 
 /**
- * Sube el PDF a Drive y agrega una fila al Sheet. Idempotencia no garantizada
- * (cada llamada añade fila); el cliente debe llamar una vez al finalizar.
+ * Crea carpeta por expediente, sube PDF + adjuntos y agrega fila al Sheet.
  */
 export async function syncKybSubmissionToGoogle(input: {
   formRef: string;
   values: FormState;
   slots: SubmissionSlotCounts;
+  attachments?: KybDriveAttachment[];
 }): Promise<GoogleSubmissionResult> {
   if (!googleSheetsDriveConfigured()) {
     return { ok: false, error: "google_not_configured" };
@@ -116,14 +135,40 @@ export async function syncKybSubmissionToGoogle(input: {
   const drive = google.drive({ version: "v3", auth });
   const sheets = google.sheets({ version: "v4", auth });
 
-  const safeName = `${input.formRef.replace(/[\\/:*?"<>|]+/g, "-")}.pdf`;
+  const folderNameSafe = input.formRef.replace(/[\\/:*?"<>|]+/g, "-").slice(0, 200);
 
-  let fileId: string;
+  let submissionFolderId: string;
+  try {
+    const folderRes = await drive.files.create({
+      requestBody: {
+        name: folderNameSafe,
+        parents: [folderId],
+        mimeType: "application/vnd.google-apps.folder",
+      },
+      fields: "id",
+      supportsAllDrives: true,
+    });
+    submissionFolderId = folderRes.data.id ?? "";
+    if (!submissionFolderId) {
+      return { ok: false, error: "drive_folder_create_no_id" };
+    }
+  } catch (e) {
+    return {
+      ok: false,
+      error: googleApiErrorMessage(e, "drive_folder_create_failed"),
+    };
+  }
+
+  const folderUrl = driveFolderViewUrl(submissionFolderId);
+
+  const pdfName = `${input.formRef.replace(/[\\/:*?"<>|]+/g, "-")}.pdf`;
+
+  let pdfFileId: string;
   try {
     const created = await drive.files.create({
       requestBody: {
-        name: safeName,
-        parents: [folderId],
+        name: pdfName,
+        parents: [submissionFolderId],
         mimeType: "application/pdf",
       },
       media: {
@@ -133,15 +178,59 @@ export async function syncKybSubmissionToGoogle(input: {
       fields: "id",
       supportsAllDrives: true,
     });
-    fileId = created.data.id ?? "";
-    if (!fileId) {
+    pdfFileId = created.data.id ?? "";
+    if (!pdfFileId) {
       return { ok: false, error: "drive_upload_no_id" };
     }
   } catch (e) {
-    return { ok: false, error: googleApiErrorMessage(e, "drive_upload_failed") };
+    return { ok: false, error: googleApiErrorMessage(e, "drive_pdf_upload_failed") };
   }
 
-  const viewUrl = driveFileViewUrl(fileId);
+  const pdfViewUrl = driveFileViewUrl(pdfFileId);
+
+  const attachmentLines: string[] = [];
+  for (const att of input.attachments ?? []) {
+    if (!att.buffer.length) continue;
+    try {
+      const nm = safeDriveFileName(att.fieldId, att.fileName);
+      const up = await drive.files.create({
+        requestBody: {
+          name: nm,
+          parents: [submissionFolderId],
+        },
+        media: {
+          mimeType: att.mimeType || "application/octet-stream",
+          body: Readable.from(att.buffer),
+        },
+        fields: "id",
+        supportsAllDrives: true,
+      });
+      const fid = up.data.id ?? "";
+      if (fid) {
+        attachmentLines.push(`${att.fieldId}: ${driveFileViewUrl(fid)}`);
+      }
+    } catch (e) {
+      return {
+        ok: false,
+        driveFileId: pdfFileId,
+        driveViewUrl: pdfViewUrl,
+        driveFolderId: submissionFolderId,
+        driveFolderUrl: folderUrl,
+        error: googleApiErrorMessage(e, "drive_attachment_failed"),
+      };
+    }
+  }
+
+  const linksCellLines = [
+    `Carpeta expediente: ${folderUrl}`,
+    `PDF resumen KYB: ${pdfViewUrl}`,
+    ...attachmentLines,
+  ];
+  let linksCell = linksCellLines.join("\n");
+  if (linksCell.length > 48_000) {
+    linksCell = `${linksCell.slice(0, 48_000)}…`;
+  }
+
   const rs = (valuesWithRef.razon_social ?? "").trim();
   const email =
     (valuesWithRef.email_generales ?? "").trim() ||
@@ -156,12 +245,13 @@ export async function syncKybSubmissionToGoogle(input: {
     input.formRef,
     rs,
     email,
-    viewUrl,
+    pdfViewUrl,
     director,
     fechaDecl,
     vid,
     archivosResumen(valuesWithRef),
     sanitizeValuesJson(valuesWithRef),
+    linksCell,
   ];
 
   try {
@@ -175,11 +265,19 @@ export async function syncKybSubmissionToGoogle(input: {
   } catch (e) {
     return {
       ok: false,
-      driveFileId: fileId,
-      driveViewUrl: viewUrl,
+      driveFileId: pdfFileId,
+      driveViewUrl: pdfViewUrl,
+      driveFolderId: submissionFolderId,
+      driveFolderUrl: folderUrl,
       error: googleApiErrorMessage(e, "sheets_append_failed"),
     };
   }
 
-  return { ok: true, driveFileId: fileId, driveViewUrl: viewUrl };
+  return {
+    ok: true,
+    driveFileId: pdfFileId,
+    driveViewUrl: pdfViewUrl,
+    driveFolderId: submissionFolderId,
+    driveFolderUrl: folderUrl,
+  };
 }

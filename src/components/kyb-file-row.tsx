@@ -7,10 +7,12 @@ type Props = {
   id: string;
   fileName: string;
   onChange: (id: string, fileName: string) => void;
+  /** Referencia al archivo para subida a servidor (Drive); solo vive en memoria en esta sesión. */
+  onFileObject?: (id: string, file: File | null) => void;
   hint?: string;
 };
 
-export function KybFileRow({ id, fileName, onChange, hint }: Props) {
+export function KybFileRow({ id, fileName, onChange, onFileObject, hint }: Props) {
   return (
     <div className="min-w-0 flex-1">
       <label className="flex cursor-pointer flex-col gap-1.5">
@@ -22,6 +24,7 @@ export function KybFileRow({ id, fileName, onChange, hint }: Props) {
           onChange={(e) => {
             const f = e.target.files?.[0];
             onChange(id, f?.name ?? "");
+            onFileObject?.(id, f ?? null);
             e.target.value = "";
           }}
         />

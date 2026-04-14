@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { FormState } from "@/lib/kyb-field-complete";
+import type { KybDriveAttachment } from "@/lib/kyb-google-sync";
 import {
   googleSheetsDriveConfigured,
   loadGoogleServiceAccount,
@@ -8,11 +9,20 @@ import { syncKybSubmissionToGoogle } from "@/lib/kyb-google-sync";
 import type { SubmissionSlotCounts } from "@/lib/kyb-submission-pdf-context";
 
 export const runtime = "nodejs";
-/** Plan Pro+ en Vercel permite hasta 60s; en Hobby el máximo efectivo suele ser 10s. */
-export const maxDuration = 60;
+/** Subida de varios adjuntos + PDF puede acercarse al límite en Hobby (10s); Pro permite más tiempo. */
+export const maxDuration = 120;
 
 function bad(msg: string, status = 400) {
   return NextResponse.json({ ok: false, error: msg }, { status });
+}
+
+function isBlobLike(v: unknown): v is Blob {
+  return (
+    typeof v === "object" &&
+    v !== null &&
+    "arrayBuffer" in v &&
+    typeof (v as Blob).arrayBuffer === "function"
+  );
 }
 
 /**
@@ -45,36 +55,99 @@ export async function POST(req: Request) {
     });
   }
 
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return bad("invalid_json");
+  const ct = req.headers.get("content-type") || "";
+  let formRef: string;
+  let values: FormState;
+  let slots: SubmissionSlotCounts;
+  const attachments: KybDriveAttachment[] = [];
+
+  if (ct.includes("multipart/form-data")) {
+    let form: FormData;
+    try {
+      form = await req.formData();
+    } catch {
+      return bad("invalid_multipart");
+    }
+    const payloadRaw = form.get("payload");
+    if (typeof payloadRaw !== "string") return bad("missing_payload");
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(payloadRaw);
+    } catch {
+      return bad("invalid_payload_json");
+    }
+    if (!parsed || typeof parsed !== "object") return bad("invalid_payload");
+    const o = parsed as {
+      formRef?: string;
+      values?: unknown;
+      juntaMemberSlots?: unknown;
+      bfMemberSlots?: unknown;
+      pepMemberSlots?: unknown;
+    };
+    formRef = typeof o.formRef === "string" ? o.formRef.trim() : "";
+    if (!formRef) return bad("missing_formRef");
+    if (!o.values || typeof o.values !== "object") return bad("missing_values");
+    values = o.values as FormState;
+    slots = {
+      juntaMemberSlots: Number(o.juntaMemberSlots) || 1,
+      bfMemberSlots: Number(o.bfMemberSlots) || 1,
+      pepMemberSlots: Number(o.pepMemberSlots) || 1,
+    };
+
+    for (const [key, value] of form.entries()) {
+      if (!key.startsWith("file_")) continue;
+      const fieldId = key.slice("file_".length);
+      if (!fieldId) continue;
+      if (!isBlobLike(value)) continue;
+      try {
+        const buf = Buffer.from(await value.arrayBuffer());
+        const fileName =
+          value instanceof File && value.name
+            ? value.name
+            : `${fieldId}.bin`;
+        const mimeType =
+          value instanceof File && value.type
+            ? value.type
+            : "application/octet-stream";
+        attachments.push({ fieldId, fileName, buffer: buf, mimeType });
+      } catch {
+        return bad(`attachment_read_failed:${fieldId}`);
+      }
+    }
+  } else {
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return bad("invalid_json");
+    }
+    if (!body || typeof body !== "object") return bad("invalid_body");
+
+    const o = body as {
+      formRef?: string;
+      values?: unknown;
+      juntaMemberSlots?: unknown;
+      bfMemberSlots?: unknown;
+      pepMemberSlots?: unknown;
+    };
+
+    formRef = typeof o.formRef === "string" ? o.formRef.trim() : "";
+    if (!formRef) return bad("missing_formRef");
+    if (!o.values || typeof o.values !== "object") return bad("missing_values");
+
+    values = o.values as FormState;
+    slots = {
+      juntaMemberSlots: Number(o.juntaMemberSlots) || 1,
+      bfMemberSlots: Number(o.bfMemberSlots) || 1,
+      pepMemberSlots: Number(o.pepMemberSlots) || 1,
+    };
   }
-  if (!body || typeof body !== "object") return bad("invalid_body");
-
-  const o = body as {
-    formRef?: string;
-    values?: unknown;
-    juntaMemberSlots?: unknown;
-    bfMemberSlots?: unknown;
-    pepMemberSlots?: unknown;
-  };
-
-  const formRef = typeof o.formRef === "string" ? o.formRef.trim() : "";
-  if (!formRef) return bad("missing_formRef");
-  if (!o.values || typeof o.values !== "object") return bad("missing_values");
-
-  const slots: SubmissionSlotCounts = {
-    juntaMemberSlots: Number(o.juntaMemberSlots) || 1,
-    bfMemberSlots: Number(o.bfMemberSlots) || 1,
-    pepMemberSlots: Number(o.pepMemberSlots) || 1,
-  };
 
   const result = await syncKybSubmissionToGoogle({
     formRef,
-    values: o.values as FormState,
+    values,
     slots,
+    attachments: attachments.length > 0 ? attachments : undefined,
   });
 
   if (!result.ok) {
@@ -85,6 +158,8 @@ export async function POST(req: Request) {
         error: result.error ?? "sync_failed",
         driveFileId: result.driveFileId,
         driveViewUrl: result.driveViewUrl,
+        driveFolderId: result.driveFolderId,
+        driveFolderUrl: result.driveFolderUrl,
       },
       { status: 502 },
     );
@@ -94,5 +169,8 @@ export async function POST(req: Request) {
     ok: true,
     driveFileId: result.driveFileId,
     driveViewUrl: result.driveViewUrl,
+    driveFolderId: result.driveFolderId,
+    driveFolderUrl: result.driveFolderUrl,
+    attachmentsUploaded: attachments.length,
   });
 }
