@@ -328,6 +328,21 @@ export function KybRepresentanteCierrePaso({
               Copiar enlace
             </button>
           </div>
+          {publicUrl ? (
+            <a
+              href={publicUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-11 w-full max-w-md items-center justify-center rounded-xl border-2 border-[#4749B6]/40 bg-[#4749B6]/[0.08] px-5 py-3 text-sm font-semibold text-[#4749B6] shadow-sm transition hover:border-[#4749B6]/60 hover:bg-[#4749B6]/[0.12] sm:w-auto"
+            >
+              Continuar en este dispositivo (nueva pestaña)
+            </a>
+          ) : null}
+          <p className="max-w-md text-center text-[11px] leading-snug text-slate-500">
+            Use esta opción si el representante va a completar en el mismo equipo
+            (otra pestaña). Deje abierta la ventana del formulario para
+            sincronizar al terminar.
+          </p>
           <p className="max-w-md text-center text-[11px] leading-snug text-slate-500">
             En el teléfono, «Compartir enlace» abre el menú del sistema (WhatsApp,
             correo, etc.). En la computadora, si no hay menú de compartir, se

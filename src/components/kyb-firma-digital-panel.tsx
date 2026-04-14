@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 import { KYB_FIELD_HINT_CLASS } from "@/lib/kyb-prose-classes";
 import type { FormState } from "@/lib/kyb-field-complete";
 
@@ -47,13 +48,25 @@ export function KybFirmaDigitalPanel({ values, setField }: Props) {
     setConsent(false);
   }, [open, resetCanvas]);
 
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
+  /** Coordenadas en píxeles del buffer del canvas (el lienzo se escala con CSS; sin esto la firma se desalinea). */
   const pos = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const c = canvasRef.current;
     if (!c) return { x: 0, y: 0 };
     const r = c.getBoundingClientRect();
+    const sx = c.width / Math.max(r.width, 1);
+    const sy = c.height / Math.max(r.height, 1);
     return {
-      x: e.clientX - r.left,
-      y: e.clientY - r.top,
+      x: (e.clientX - r.left) * sx,
+      y: (e.clientY - r.top) * sy,
     };
   };
 
@@ -145,14 +158,15 @@ export function KybFirmaDigitalPanel({ values, setField }: Props) {
         </button>
       )}
 
-      {open ? (
-        <div
-          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 p-4 sm:items-center"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="kyb-firma-modal-title"
-        >
-          <div className="max-h-[90vh] w-full max-w-lg overflow-auto rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xl">
+      {open && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              className="fixed inset-0 z-[1000] flex items-end justify-center bg-black/50 p-4 sm:items-center"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="kyb-firma-modal-title"
+            >
+              <div className="max-h-[90vh] w-full max-w-lg overflow-auto rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xl">
             <h4
               id="kyb-firma-modal-title"
               className="text-base font-semibold text-[#0B0B13]"
@@ -167,8 +181,11 @@ export function KybFirmaDigitalPanel({ values, setField }: Props) {
                 ref={canvasRef}
                 width={CANVAS_W}
                 height={CANVAS_H}
-                className="block w-full touch-none"
-                style={{ maxHeight: CANVAS_H }}
+                className="block h-auto w-full touch-none"
+                style={{
+                  aspectRatio: `${CANVAS_W} / ${CANVAS_H}`,
+                  maxHeight: "min(40vh, 220px)",
+                }}
                 onPointerDown={onPointerDown}
                 onPointerMove={onPointerMove}
                 onPointerUp={endStroke}
@@ -219,9 +236,11 @@ export function KybFirmaDigitalPanel({ values, setField }: Props) {
                 Guardar firma
               </button>
             </div>
-          </div>
-        </div>
-      ) : null}
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

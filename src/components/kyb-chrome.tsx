@@ -112,7 +112,7 @@ export function KybChrome({ children }: { children: ReactNode }) {
         {children}
       </main>
 
-      <footer className="relative z-10 border-t border-white/50 bg-white/55 py-8 text-center text-xs text-slate-500 backdrop-blur-md">
+      <footer className="relative z-0 border-t border-white/50 bg-white/55 py-8 text-center text-xs text-slate-500 backdrop-blur-md">
         <p>
           <span className="font-medium text-slate-600">Grupo Punto Pago</span>
           {" · "}
