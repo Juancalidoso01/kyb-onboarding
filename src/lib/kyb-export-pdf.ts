@@ -1,5 +1,6 @@
 import { jsPDF } from "jspdf";
 import { allDocumentacionUploadKeys } from "@/lib/kyb-documentacion";
+import { KYB_PDF_PP_LOGO_PNG_BASE64 } from "@/lib/kyb-pdf-assets";
 import type { FormState } from "@/lib/kyb-field-complete";
 import {
   displayLabelForSummaryField,
@@ -23,8 +24,15 @@ const PP_SLATE: [number, number, number] = [51, 65, 85];
 const PP_MUTED: [number, number, number] = [100, 116, 139];
 const PP_BODY: [number, number, number] = [30, 41, 59];
 const PP_LINE: [number, number, number] = [226, 232, 240];
+/** Fondo suave alineado con puntopago.net (cards / secciones). */
+const PP_SOFT: [number, number, number] = [244, 246, 255];
+/** Acento tipo “mark” del sitio (amarillo suave). */
+const PP_MARK: [number, number, number] = [255, 249, 138];
+const PP_ACCENT: [number, number, number] = [57, 221, 86];
 const MARGIN = 18;
 const MARGIN_BOTTOM = 24;
+const MAX_PDF_VALUE_CHARS = 560;
+const MAX_PDF_VALUE_LINES = 13;
 
 function includeFieldInSummaryTable(f: KybField): boolean {
   if (f.hidden) return false;
@@ -66,28 +74,13 @@ function lineHeightMm(fontSize: number): number {
   return fontSize * 0.45;
 }
 
-/**
- * Párrafo con líneas justificadas (última línea alineada a la izquierda).
- */
-function addJustifiedBlock(
-  doc: jsPDF,
-  text: string,
-  x: number,
-  y: number,
-  maxW: number,
-  fontSize: number,
-  color: [number, number, number],
-): number {
-  const parts = text.split(/\n/).map((p) => p.trim()).filter(Boolean);
-  let yy = y;
-  for (let pi = 0; pi < parts.length; pi++) {
-    yy = addJustifiedParagraph(doc, parts[pi], x, yy, maxW, fontSize, color);
-    if (pi < parts.length - 1) yy += 1.5;
-  }
-  return yy;
+function truncatePdfText(s: string, max: number): string {
+  const t = (s ?? "").trim().replace(/\s+/g, " ");
+  if (t.length <= max) return t;
+  return `${t.slice(0, Math.max(0, max - 1))}…`;
 }
 
-function addJustifiedParagraph(
+function addWrappedLeft(
   doc: jsPDF,
   text: string,
   x: number,
@@ -95,51 +88,107 @@ function addJustifiedParagraph(
   maxW: number,
   fontSize: number,
   color: [number, number, number],
+  style: "normal" | "bold" | "italic" | "bolditalic" = "normal",
 ): number {
+  doc.setFont("helvetica", style);
+  doc.setFontSize(fontSize);
+  doc.setTextColor(...color);
+  const lines = doc.splitTextToSize(text.trim() || "—", maxW);
+  const lh = lineHeightMm(fontSize);
+  let yy = y;
+  for (const line of lines) {
+    doc.text(line, x, yy);
+    yy += lh;
+  }
+  return yy + 2;
+}
+
+function addWrappedValueBlock(
+  doc: jsPDF,
+  text: string,
+  x: number,
+  y: number,
+  maxW: number,
+  fontSize: number,
+  color: [number, number, number],
+  maxLines: number,
+): number {
+  const display = truncatePdfText(text || "—", MAX_PDF_VALUE_CHARS);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(fontSize);
   doc.setTextColor(...color);
-  const words = text.trim().split(/\s+/).filter(Boolean);
-  if (!words.length) return y;
-
-  const lines: string[][] = [];
-  let line: string[] = [];
-  for (const word of words) {
-    const trial = line.length ? [...line, word].join(" ") : word;
-    if (doc.getTextWidth(trial) <= maxW || !line.length) {
-      line.push(word);
-    } else {
-      lines.push(line);
-      line = [word];
-    }
-  }
-  if (line.length) lines.push(line);
-
+  const lines = doc.splitTextToSize(display, maxW);
+  const limited = lines.slice(0, maxLines);
   const lh = lineHeightMm(fontSize);
   let yy = y;
-  for (let li = 0; li < lines.length; li++) {
-    const isLast = li === lines.length - 1;
-    const ws = lines[li];
-    if (!ws.length) continue;
-    if (ws.length === 1 || isLast) {
-      doc.text(ws.join(" "), x, yy);
-    } else {
-      let totalW = 0;
-      for (const w of ws) totalW += doc.getTextWidth(w);
-      const gaps = ws.length - 1;
-      const extra = maxW - totalW;
-      const gapW = gaps > 0 ? extra / gaps : 0;
-      let cx = x;
-      for (let i = 0; i < ws.length; i++) {
-        doc.text(ws[i], cx, yy);
-        cx += doc.getTextWidth(ws[i]) + (i < ws.length - 1 ? gapW : 0);
-      }
-    }
+  for (const line of limited) {
+    doc.text(line, x, yy);
     yy += lh;
   }
-  return yy + 2.5;
+  if (lines.length > maxLines) {
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(fontSize - 0.6);
+    doc.setTextColor(...PP_MUTED);
+    doc.text("(Continúa en expediente digital / Sheet)", x, yy);
+    yy += lh;
+  }
+  return yy + 2;
 }
 
+/** Fila marca Punto Pago (logo oficial del sitio + copy). */
+/** Wordmark PNG 320×132 — mantiene proporción en mm. */
+const PP_LOGO_NATIVE_W = 320;
+const PP_LOGO_NATIVE_H = 132;
+
+function drawBrandRow(
+  doc: jsPDF,
+  pageW: number,
+  margin: number,
+  yStart: number,
+): number {
+  const y = yStart;
+  const stampW = 14;
+  const maxLogoW = pageW - margin * 2 - stampW - 5;
+  const logoW = Math.min(56, maxLogoW);
+  const logoH = (logoW * PP_LOGO_NATIVE_H) / PP_LOGO_NATIVE_W;
+  try {
+    doc.addImage(
+      `data:image/png;base64,${KYB_PDF_PP_LOGO_PNG_BASE64}`,
+      "PNG",
+      margin,
+      y,
+      logoW,
+      logoH,
+    );
+  } catch {
+    doc.setFillColor(...PP_SOFT);
+    doc.roundedRect(margin, y, logoW, logoH, 1.2, 1.2, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...PP_BRAND);
+    doc.text("punto pago", margin + 2, y + logoH * 0.55);
+  }
+  const stamp = "KYB";
+  doc.setFillColor(...PP_MARK);
+  doc.roundedRect(pageW - margin - stampW, y + 1, stampW, 6.2, 1, 1, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7);
+  doc.setTextColor(...PP_TEXT);
+  doc.text(
+    stamp,
+    pageW - margin - stampW + (stampW - doc.getTextWidth(stamp)) / 2,
+    y + 5.4,
+  );
+  let yy = y + logoH + 2.8;
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(7.6);
+  doc.setTextColor(...PP_MUTED);
+  const tag = "Grupo Punto Pago  ·  Super app de pagos y servicios  ·  puntopago.net";
+  const tagLines = doc.splitTextToSize(tag, pageW - margin * 2);
+  doc.text(tagLines, margin, yy);
+  yy += tagLines.length * lineHeightMm(7.6) + 2;
+  return yy;
+}
 
 function addFieldBlock(
   doc: jsPDF,
@@ -151,19 +200,28 @@ function addFieldBlock(
 ): number {
   let yy = y;
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(8.2);
-  doc.setTextColor(...PP_SLATE);
+  doc.setFontSize(7.6);
+  doc.setTextColor(...PP_BRAND);
   const labelLines = doc.splitTextToSize(label.toUpperCase(), maxW);
   doc.text(labelLines, x, yy);
-  yy += labelLines.length * lineHeightMm(8.2) + 1.2;
+  yy += labelLines.length * lineHeightMm(7.6) + 0.8;
 
   const display = (value ?? "").trim() || "—";
-  yy = addJustifiedBlock(doc, display, x, yy, maxW, 9.2, PP_BODY);
+  yy = addWrappedValueBlock(
+    doc,
+    display,
+    x,
+    yy,
+    maxW,
+    9,
+    PP_BODY,
+    MAX_PDF_VALUE_LINES,
+  );
 
   doc.setDrawColor(...PP_LINE);
-  doc.setLineWidth(0.12);
+  doc.setLineWidth(0.1);
   doc.line(x, yy, x + maxW, yy);
-  yy += 4;
+  yy += 3.2;
   return yy;
 }
 
@@ -175,60 +233,73 @@ function drawCoverHeader(
   yStart: number,
   formVersion: string,
 ): number {
-  let y = yStart;
-  doc.setDrawColor(...PP_BRAND);
-  doc.setLineWidth(0.6);
-  doc.line(margin, y, pageW - margin, y);
-  y += 5;
+  doc.setFillColor(...PP_BRAND);
+  doc.rect(0, 0, pageW, 4.2, "F");
+  doc.setFillColor(...PP_SOFT);
+  doc.rect(0, 4.2, pageW, 28, "F");
+  let y = Math.max(11, yStart);
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7.5);
-  doc.setTextColor(...PP_MUTED);
-  const left = "GRUPO PUNTO PAGO";
-  doc.text(left, margin, y);
-  const right = formVersion;
-  const rw = doc.getTextWidth(right);
-  doc.text(right, pageW - margin - rw, y);
-  y += 8;
+  y = drawBrandRow(doc, pageW, margin, y);
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(15);
-  doc.setTextColor(...PP_BRAND);
-  const line1 = "FORMULARIO DEL CLIENTE";
-  const line2 = "PERSONA JURÍDICA";
+  doc.setFontSize(17);
+  doc.setTextColor(...PP_TEXT);
+  const line1 = "Formulario KYB";
   doc.text(line1, (pageW - doc.getTextWidth(line1)) / 2, y);
-  y += 7.5;
+  y += 9;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12.5);
+  doc.setTextColor(...PP_BRAND);
+  const line2 = "Cliente · persona jurídica";
   doc.text(line2, (pageW - doc.getTextWidth(line2)) / 2, y);
   y += 7;
 
-  doc.setFont("helvetica", "normal");
+  doc.setFont("helvetica", "italic");
   doc.setFontSize(9);
   doc.setTextColor(...PP_SLATE);
-  const sub = "Perfil del cliente — Persona jurídica (debida diligencia)";
+  const sub = "Know Your Business — debida diligencia documentada";
   doc.text(sub, (pageW - doc.getTextWidth(sub)) / 2, y);
-  y += 8;
+  y += 7;
+
+  doc.setDrawColor(...PP_BRAND);
+  doc.setLineWidth(0.28);
+  doc.setLineDashPattern([0.6, 1.2], 0);
+  const dashW = 48;
+  doc.line((pageW - dashW) / 2, y, (pageW + dashW) / 2, y);
+  doc.setLineDashPattern([], 0);
+  y += 6;
 
   const intro =
-    "Este documento resume la información declarada en el formulario digital. " +
-    "Los datos tienen carácter declarativo y serán utilizados para identificación, verificación y gestión de riesgos, " +
-    "conforme a la normativa aplicable en materia de prevención de blanqueo de capitales y protección de datos personales.";
-  y = addJustifiedBlock(doc, intro, margin, y, maxW, 8.5, PP_BODY);
-  y += 4;
+    "Resumen declarativo del onboarding digital. Uso interno: identificación, verificación y riesgos (AML / datos personales). " +
+    "El expediente íntegro permanece en los canales oficiales de Grupo Punto Pago.";
+  y = addWrappedLeft(doc, intro, margin, y, maxW, 8.4, PP_BODY);
+  y += 3;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.setTextColor(...PP_MUTED);
+  doc.text(formVersion, margin, y);
+  const foot = "puntopago.net";
+  doc.text(foot, pageW - margin - doc.getTextWidth(foot), y);
+  y += 7;
   return y;
 }
 
 function drawSectionBanner(doc: jsPDF, x: number, y: number, maxW: number, title: string): number {
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(9.5);
+  doc.setFontSize(9.2);
   const t = title.toUpperCase();
-  const lines = doc.splitTextToSize(t, maxW - 5);
-  const lineH = lineHeightMm(9.5);
-  const h = Math.max(8.5, lines.length * lineH + 4);
+  const lines = doc.splitTextToSize(t, maxW - 12);
+  const lineH = lineHeightMm(9.2);
+  const h = Math.max(9, lines.length * lineH + 5);
+  doc.setFillColor(...PP_SOFT);
+  doc.roundedRect(x, y, maxW, h, 1.8, 1.8, "F");
   doc.setFillColor(...PP_BRAND);
-  doc.rect(x, y, maxW, h, "F");
-  doc.setTextColor(255, 255, 255);
-  const ty = y + lineH + 2.2;
-  doc.text(lines, x + 2.5, ty);
+  doc.rect(x, y, 1.5, h, "F");
+  doc.setTextColor(...PP_TEXT);
+  const ty = y + lineH + 2.6;
+  doc.text(lines, x + 4, ty);
   return y + h + 3.5;
 }
 
@@ -249,15 +320,18 @@ function applyFooters(doc: jsPDF, formRef: string, version: string) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
     doc.setTextColor(...PP_MUTED);
-    doc.text(`Grupo Punto Pago · ${version}`, MARGIN, pageH - 11);
+    doc.text(`KYB · Grupo Punto Pago · ${version}`, MARGIN, pageH - 11);
     const center = `Página ${i} de ${n}`;
     doc.text(center, (pageW - doc.getTextWidth(center)) / 2, pageH - 11);
     const right = formRef.trim() || "—";
     const rw = doc.getTextWidth(right);
     doc.text(right, pageW - MARGIN - rw, pageH - 11);
     doc.setDrawColor(...PP_LINE);
-    doc.setLineWidth(0.25);
+    doc.setLineWidth(0.22);
     doc.line(MARGIN, pageH - 13.5, pageW - MARGIN, pageH - 13.5);
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(6.2);
+    doc.text("puntopago.net", pageW - MARGIN - doc.getTextWidth("puntopago.net"), pageH - 7.2);
   }
 }
 
@@ -284,14 +358,31 @@ function renderKybPdfToDoc(
 
   const rs = (values.razon_social ?? "").trim();
   if (rs) {
-    ensureSpace(16);
+    const rsT = truncatePdfText(rs, 240);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-    doc.setTextColor(...PP_TEXT);
-    doc.text("RAZÓN SOCIAL", MARGIN, y);
-    y += 5;
-    y = addJustifiedBlock(doc, rs, MARGIN, y, maxW, 10, PP_TEXT);
-    y += 5;
+    doc.setFontSize(11);
+    const rsLines = doc.splitTextToSize(rsT, maxW - 7).length;
+    const boxH = 8 + rsLines * lineHeightMm(11) + 3;
+    ensureSpace(boxH + 4);
+    doc.setFillColor(...PP_SOFT);
+    doc.roundedRect(MARGIN, y - 1, maxW, boxH, 2, 2, "F");
+    doc.setFillColor(...PP_MARK);
+    doc.rect(MARGIN, y - 1, 2.2, boxH, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.4);
+    doc.setTextColor(...PP_BRAND);
+    doc.text("RAZÓN SOCIAL", MARGIN + 5, y + 3.6);
+    y = addWrappedLeft(
+      doc,
+      rsT,
+      MARGIN + 5,
+      y + 6.2,
+      maxW - 7,
+      11,
+      PP_TEXT,
+      "bold",
+    );
+    y += 3;
   }
 
   for (const st of summarySteps) {
@@ -334,9 +425,15 @@ function renderKybPdfToDoc(
         (values[k] ?? "").trim(),
       );
       if (keys.length > 0) {
+        const shortList = keys
+          .slice(0, 4)
+          .map((k) => `${k}: ${truncatePdfText((values[k] ?? "").trim(), 48)}`)
+          .join(" · ");
+        const more =
+          keys.length > 4 ? ` (+${keys.length - 4} más en expediente)` : "";
         rows.push({
-          label: "Nombres de archivo cargados",
-          value: keys.map((k) => `${k}: ${values[k]}`).join("; "),
+          label: "Documentación cargada",
+          value: `${keys.length} archivo(s). ${shortList}${more}`,
         });
       }
     }
@@ -356,15 +453,19 @@ function renderKybPdfToDoc(
       doc.setFontSize(8.2);
       const labelLines = doc.splitTextToSize(r.label.toUpperCase(), innerW).length;
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(9.2);
-      const valueLines = doc.splitTextToSize(
+      doc.setFontSize(9);
+      const valuePreview = truncatePdfText(
         (r.value || "—").trim() || "—",
-        innerW,
-      ).length;
+        MAX_PDF_VALUE_CHARS,
+      );
+      const valueLines = Math.min(
+        doc.splitTextToSize(valuePreview, innerW).length,
+        MAX_PDF_VALUE_LINES + 1,
+      );
       const est =
-        labelLines * lineHeightMm(8.2) +
-        valueLines * lineHeightMm(9.2) +
-        18;
+        labelLines * lineHeightMm(7.6) +
+        valueLines * lineHeightMm(9) +
+        16;
       ensureSpace(est);
       y = addFieldBlock(doc, r.label, r.value, innerX, y, innerW);
     }
@@ -385,6 +486,22 @@ function renderKybPdfToDoc(
     innerW,
     "Declaración y verificación del representante",
   );
+
+  ensureSpace(14);
+  doc.setFillColor(...PP_SOFT);
+  doc.roundedRect(innerX, y, innerW, 8, 1.2, 1.2, "F");
+  doc.setDrawColor(...PP_ACCENT);
+  doc.setLineWidth(0.4);
+  doc.line(innerX, y + 1.2, innerX + 1.8, y + 6.8);
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(8);
+  doc.setTextColor(...PP_SLATE);
+  doc.text(
+    "« Verificación de identidad y firma digital — trazabilidad del expediente »",
+    innerX + 4,
+    y + 5.2,
+  );
+  y += 10;
 
   const dn = (values.decl_director_nombre ?? "").trim();
   const df = (values.decl_fecha ?? "").trim();
@@ -419,8 +536,8 @@ function renderKybPdfToDoc(
     ensureSpace(52);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
-    doc.setTextColor(...PP_SLATE);
-    doc.text("FIRMA DIGITAL (CAPTURA)", innerX, y);
+    doc.setTextColor(...PP_BRAND);
+    doc.text("Firma digital (captura en pantalla)", innerX, y);
     y += 5.5;
     try {
       const boxW = Math.min(innerW, 115);
@@ -428,7 +545,7 @@ function renderKybPdfToDoc(
       doc.addImage(sig, "PNG", innerX, y, boxW, boxH);
       y += boxH + 5;
     } catch {
-      y = addJustifiedBlock(
+      y = addWrappedLeft(
         doc,
         "(No se pudo incrustar la imagen de firma en el PDF.)",
         innerX,
@@ -436,6 +553,7 @@ function renderKybPdfToDoc(
         innerW,
         8.5,
         PP_MUTED,
+        "italic",
       );
     }
   }
