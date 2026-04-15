@@ -265,32 +265,57 @@ export function KybLanding({
 
         <div className="border-t border-slate-100/90 px-6 py-6 sm:px-10">
           {savedDraftAt != null && onStartFresh ? (
-            <div className="mb-5 rounded-xl border border-amber-200/90 bg-amber-50/90 px-4 py-3 text-sm text-amber-950 shadow-sm">
-              <p className="font-medium">Borrador almacenado en este navegador</p>
-              <p className="mt-1 text-xs text-amber-900/90">
-                Última actualización: {formatDraftSavedAt(savedDraftAt)}. Puede reanudar o
-                iniciar un formulario nuevo (el borrador local se eliminará).
+            <div className="mb-5 rounded-xl border border-amber-200/90 bg-amber-50/90 px-4 py-4 text-sm text-amber-950 shadow-sm">
+              <p className="text-base font-semibold text-amber-950">
+                Continuar diligenciando
               </p>
-              <div className="mt-3 flex flex-wrap gap-2">
+              <p className="mt-2 text-xs leading-relaxed text-amber-900/90">
+                En este navegador hay un borrador guardado (última actualización:{" "}
+                {formatDraftSavedAt(savedDraftAt)}). Puede{" "}
+                <span className="font-medium">retomar el mismo avance</span> donde lo dejó o, si
+                prefiere, <span className="font-medium">iniciar un formulario nuevo</span> en
+                blanco; en ese caso se elimina solo el borrador de este equipo.
+              </p>
+              <div className="mt-4 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center">
+                <motion.button
+                  type="button"
+                  className="w-full rounded-xl bg-gradient-to-b from-[#4749B6] to-[#3B3DA6] px-6 py-3.5 text-base font-semibold text-white shadow-lg shadow-[#4749B6]/30 sm:w-auto sm:min-w-[240px]"
+                  onClick={onContinue}
+                  whileHover={reduce ? undefined : { scale: 1.02 }}
+                  whileTap={reduce ? undefined : { scale: 0.98 }}
+                >
+                  Continuar diligenciando
+                </motion.button>
                 <button
                   type="button"
-                  className="rounded-lg border border-amber-300/90 bg-white px-3 py-2 text-sm font-semibold text-amber-950 shadow-sm transition hover:bg-amber-100/80"
+                  className="w-full rounded-xl border border-amber-300/90 bg-white px-5 py-3 text-sm font-semibold text-amber-950 shadow-sm transition hover:bg-amber-100/80 sm:w-auto"
                   onClick={onStartFresh}
                 >
-                  Iniciar de nuevo
+                  Iniciar formulario nuevo
                 </button>
               </div>
             </div>
-          ) : null}
-          <motion.button
-            type="button"
-            className="w-full rounded-xl bg-gradient-to-b from-[#4749B6] to-[#3B3DA6] px-6 py-3.5 text-base font-semibold text-white shadow-lg shadow-[#4749B6]/30 sm:w-auto sm:min-w-[220px]"
-            onClick={onContinue}
-            whileHover={reduce ? undefined : { scale: 1.02 }}
-            whileTap={reduce ? undefined : { scale: 0.98 }}
-          >
-            {savedDraftAt != null ? "Reanudar borrador" : "Continuar al formulario"}
-          </motion.button>
+          ) : savedDraftAt != null ? (
+            <motion.button
+              type="button"
+              className="w-full rounded-xl bg-gradient-to-b from-[#4749B6] to-[#3B3DA6] px-6 py-3.5 text-base font-semibold text-white shadow-lg shadow-[#4749B6]/30 sm:w-auto sm:min-w-[240px]"
+              onClick={onContinue}
+              whileHover={reduce ? undefined : { scale: 1.02 }}
+              whileTap={reduce ? undefined : { scale: 0.98 }}
+            >
+              Continuar diligenciando
+            </motion.button>
+          ) : (
+            <motion.button
+              type="button"
+              className="w-full rounded-xl bg-gradient-to-b from-[#4749B6] to-[#3B3DA6] px-6 py-3.5 text-base font-semibold text-white shadow-lg shadow-[#4749B6]/30 sm:w-auto sm:min-w-[220px]"
+              onClick={onContinue}
+              whileHover={reduce ? undefined : { scale: 1.02 }}
+              whileTap={reduce ? undefined : { scale: 0.98 }}
+            >
+              Continuar al formulario
+            </motion.button>
+          )}
           <p className="mt-3 max-w-xl text-xs leading-relaxed text-slate-500">
             El avance se guarda solo en este navegador; no se recupera en otro dispositivo ni
             tras borrar los datos del sitio.
