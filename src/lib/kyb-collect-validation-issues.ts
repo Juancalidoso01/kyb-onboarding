@@ -37,8 +37,12 @@ export function collectKybValidationIssues(
 
   for (const step of steps) {
     for (const f of step.fields) {
-      if (f.hidden) continue;
-      if (!isKybStepFieldVisible(step, f, values, visibilityCtx)) continue;
+      if (f.hidden && !f.validateWhenHidden) continue;
+      if (
+        !f.validateWhenHidden &&
+        !isKybStepFieldVisible(step, f, values, visibilityCtx)
+      )
+        continue;
       if (f.type === "heading" || f.type === "static") continue;
       if (f.type === "representante_cierre_flow") continue;
 

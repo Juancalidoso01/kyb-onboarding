@@ -5,6 +5,7 @@ import type { FormState } from "@/lib/kyb-field-complete";
 import {
   displayLabelForSummaryField,
   formatKybValueForSummary,
+  includeFieldInCompactSummary,
 } from "@/lib/kyb-form-summary-format";
 import { isKybStepFieldVisible } from "@/lib/kyb-step-field-visibility";
 import type { KybFieldVisibilityContext } from "@/lib/kyb-step-field-visibility";
@@ -391,6 +392,7 @@ function renderKybPdfToDoc(
       if (!includeFieldInSummaryTable(f)) continue;
       if (!isKybStepFieldVisible(st, f, values, visibility)) continue;
       if (!isRenderableValueField(f)) continue;
+      if (!includeFieldInCompactSummary(f, values)) continue;
       rows.push({
         label: displayLabelForSummaryField(f, values, st.id),
         value: formatKybValueForSummary(f, values),

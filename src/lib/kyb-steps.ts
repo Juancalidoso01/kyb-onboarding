@@ -54,6 +54,8 @@ export type KybField = {
   staticParagraphs?: string[];
   /** Valor en estado/API pero sin control visible (sincronizado por lógica). */
   hidden?: boolean;
+  /** Si está oculto, incluirlo igual en validación previa al envío (p. ej. `decl_fecha`). */
+  validateWhenHidden?: boolean;
   /**
    * Montos en USD o cantidades: separadores de miles al escribir; el estado guarda valor «canónico» (solo dígitos; USD admite hasta 2 decimales).
    */
@@ -1150,7 +1152,7 @@ export const KYB_STEPS: KybStep[] = [
     title: "FIRMA Y DECLARACIÓN DEL CLIENTE",
     navLabel: "Declaración",
     description:
-      "Revise el resumen y el texto de la declaración. Indique el nombre y la fecha de quien suscribe; luego use el único botón inferior para pasar al paso en que el representante escaneará el QR y completará la verificación de identidad y la firma en su celular.",
+      "Revise el resumen y el texto de la declaración. Indique el nombre de quien suscribe; la fecha y hora de la declaración se registran automáticamente al momento de la firma. Use el único botón inferior para pasar al paso en que el representante escaneará el QR y completará la verificación de identidad y la firma en su celular.",
     pdfPage: "Pág. 4",
     fields: [
       {
@@ -1200,8 +1202,10 @@ export const KYB_STEPS: KybStep[] = [
       },
       {
         id: "decl_fecha",
-        label: "Fecha de la declaración",
-        type: "date",
+        label: "Fecha y hora de la declaración (automático)",
+        type: "text",
+        hidden: true,
+        validateWhenHidden: true,
       },
       {
         id: "decl_formulario_ref",

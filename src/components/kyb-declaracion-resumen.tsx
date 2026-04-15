@@ -5,6 +5,7 @@ import { allDocumentacionUploadKeys } from "@/lib/kyb-documentacion";
 import {
   displayLabelForSummaryField,
   formatKybValueForSummary,
+  includeFieldInCompactSummary,
 } from "@/lib/kyb-form-summary-format";
 import type { FormState } from "@/lib/kyb-field-complete";
 import type { KybFieldVisibilityContext } from "@/lib/kyb-step-field-visibility";
@@ -63,6 +64,7 @@ export function KybDeclaracionResumen({ steps, values, visibility }: Props) {
               .filter((f) => includeFieldInSummaryTable(f))
               .filter((f) => isKybStepFieldVisible(st, f, values, visibility))
               .filter((f) => isRenderableValueField(f))
+              .filter((f) => includeFieldInCompactSummary(f, values))
               .map((f) => (
                 <div
                   key={`${st.id}-${f.id}`}

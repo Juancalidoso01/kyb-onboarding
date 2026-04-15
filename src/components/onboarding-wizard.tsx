@@ -76,7 +76,13 @@ import {
   NOMBRE_DILIGENCIA_FIELD_ID,
   PP_SV_METRICA_PAIRS,
 } from "@/lib/kyb-steps";
-import { isPanamaDateNotAfterToday, isValidPanamaDate } from "@/lib/kyb-date";
+import {
+  formatPanamaDateTimeNow,
+  isPanamaDateNotAfterToday,
+  isPanamaDateTimeNotAfterNow,
+  isValidPanamaDate,
+  isValidPanamaDateTime,
+} from "@/lib/kyb-date";
 import { buildAndDownloadKybPdf } from "@/lib/kyb-export-pdf";
 import { isKybStepFieldVisible } from "@/lib/kyb-step-field-visibility";
 import {
@@ -274,6 +280,9 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   const fieldVisibilityCtxRef = useRef(fieldVisibilityCtx);
   fieldVisibilityCtxRef.current = fieldVisibilityCtx;
 
+  /** Evita reestampar `decl_fecha` en cada render si la firma no cambió. */
+  const declFirmaStampedRef = useRef("");
+
   /** Archivos seleccionados en inputs file (solo memoria; para subida a Drive al finalizar). */
   const attachmentFilesRef = useRef<Record<string, File>>({});
   const registerAttachmentFile = useCallback((id: string, file: File | null) => {
@@ -413,12 +422,32 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   const puedeContinuarDeclaracion = useMemo(() => {
     const nom = (values.decl_director_nombre ?? "").trim();
     const f = values.decl_fecha ?? "";
-    return (
-      nom.length > 0 &&
-      isValidPanamaDate(f) &&
-      isPanamaDateNotAfterToday(f)
-    );
+    const fechaOk =
+      (isValidPanamaDateTime(f) && isPanamaDateTimeNotAfterNow(f)) ||
+      (isValidPanamaDate(f) && isPanamaDateNotAfterToday(f));
+    return nom.length > 0 && fechaOk;
   }, [values.decl_director_nombre, values.decl_fecha]);
+
+  useEffect(() => {
+    if (!started) return;
+    if (visibleSteps[effectiveStepIndex]?.id !== DECLARACION_STEP_ID) return;
+    setValues((prev) => {
+      if ((prev.decl_fecha ?? "").trim()) return prev;
+      return { ...prev, decl_fecha: formatPanamaDateTimeNow() };
+    });
+  }, [started, effectiveStepIndex, visibleSteps]);
+
+  useEffect(() => {
+    const sig = (values.decl_firma_canvas_data_url ?? "").trim();
+    if (!sig) {
+      declFirmaStampedRef.current = "";
+      return;
+    }
+    if (sig === declFirmaStampedRef.current) return;
+    declFirmaStampedRef.current = sig;
+    const stamp = formatPanamaDateTimeNow();
+    setValues((prev) => ({ ...prev, decl_fecha: stamp }));
+  }, [values.decl_firma_canvas_data_url]);
 
   useEffect(() => {
     if (!started) return;

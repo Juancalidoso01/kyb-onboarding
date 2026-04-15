@@ -1,6 +1,55 @@
-/** Fechas en formulario: DD-MM-AAAA (Panamá). */
+/** Fechas en formulario: DD-MM-AAAA (Panamá). Momento de firma: DD-MM-AAAA HH:mm (hora Panamá). */
 
 const DDMMYYYY = /^(\d{2})-(\d{2})-(\d{4})$/;
+const DDMMYYYY_HHmm = /^(\d{2})-(\d{2})-(\d{4}) (\d{2}):(\d{2})$/;
+
+/** Hora local de Panamá en el momento indicado (sin DST). */
+export function formatPanamaDateTimeNow(d = new Date()): string {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "America/Panama",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(d);
+  const get = (t: Intl.DateTimeFormatPartTypes) =>
+    parts.find((p) => p.type === t)?.value ?? "";
+  const dd = get("day");
+  const mm = get("month");
+  const yyyy = get("year");
+  const hh = get("hour");
+  const min = get("minute");
+  return `${dd}-${mm}-${yyyy} ${hh}:${min}`;
+}
+
+export function isValidPanamaDateTime(s: string): boolean {
+  const t = s.trim();
+  if (!DDMMYYYY_HHmm.test(t)) return false;
+  const [, dd, mm, yyyy, hh, min] = t.match(DDMMYYYY_HHmm)!;
+  if (!isValidPanamaDate(`${dd}-${mm}-${yyyy}`)) return false;
+  const h = Number(hh);
+  const m = Number(min);
+  if (h < 0 || h > 23 || m < 0 || m > 59) return false;
+  return true;
+}
+
+/**
+ * Interpreta DD-MM-AAAA HH:mm como instante en America/Panama (UTC−5 fijo)
+ * y comprueba que no sea posterior al instante actual.
+ */
+export function isPanamaDateTimeNotAfterNow(s: string): boolean {
+  if (!isValidPanamaDateTime(s)) return false;
+  const t = s.trim().match(DDMMYYYY_HHmm)!;
+  const dd = Number(t[1]);
+  const mm = Number(t[2]);
+  const yyyy = Number(t[3]);
+  const hh = Number(t[4]);
+  const min = Number(t[5]);
+  const utcMs = Date.UTC(yyyy, mm - 1, dd, hh + 5, min, 0, 0);
+  return utcMs <= Date.now();
+}
 
 export function isValidPanamaDate(s: string): boolean {
   if (!DDMMYYYY.test(s.trim())) return false;

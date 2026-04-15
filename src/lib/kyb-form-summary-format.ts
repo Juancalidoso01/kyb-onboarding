@@ -76,6 +76,39 @@ export function formatKybValueForSummary(field: KybField, values: FormState): st
   return t.length > MAX_LEN ? `${t.slice(0, MAX_LEN)}…` : t;
 }
 
+/**
+ * Preguntas de elección: en resumen final y PDF solo se listan si hay opción
+ * marcada o valor elegido (reduce ruido y tamaño del PDF).
+ */
+export function includeFieldInCompactSummary(
+  field: KybField,
+  values: FormState,
+): boolean {
+  const raw = values[field.id] ?? "";
+  switch (field.type) {
+    case "checkbox":
+      if (field.fileAttachmentId) {
+        return (
+          raw === "true" ||
+          (values[field.fileAttachmentId] ?? "").trim().length > 0
+        );
+      }
+      return raw === "true";
+    case "yesno": {
+      const t = raw.trim();
+      return t === "si" || t === "no";
+    }
+    case "select":
+    case "combobox":
+    case "country":
+    case "activity_search":
+    case "profession_search":
+      return raw.trim().length > 0;
+    default:
+      return true;
+  }
+}
+
 export function displayLabelForSummaryField(
   field: KybField,
   values: FormState,

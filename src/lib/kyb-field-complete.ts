@@ -20,7 +20,12 @@ import {
   type KybDocCompletenessContext,
 } from "@/lib/kyb-documentacion";
 import { PAIS_PANAMA } from "@/data/paises";
-import { isPanamaDateNotAfterToday, isValidPanamaDate } from "@/lib/kyb-date";
+import {
+  isPanamaDateNotAfterToday,
+  isPanamaDateTimeNotAfterNow,
+  isValidPanamaDate,
+  isValidPanamaDateTime,
+} from "@/lib/kyb-date";
 
 export type { KybDocCompletenessContext };
 
@@ -62,6 +67,14 @@ export function isFieldComplete(
 
   if (field.id === "decl_formulario_ref") {
     return true;
+  }
+
+  if (field.id === "decl_fecha") {
+    const t = v.trim();
+    if (!t) return false;
+    if (isValidPanamaDateTime(t)) return isPanamaDateTimeNotAfterNow(t);
+    if (isValidPanamaDate(t)) return isPanamaDateNotAfterToday(t);
+    return false;
   }
 
   if (field.id === "decl_metamap_identity_id") {

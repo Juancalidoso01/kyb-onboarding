@@ -5,7 +5,12 @@ import {
   isValidQuantityCanonical,
   isValidUsdCanonical,
 } from "@/lib/kyb-number-input-format";
-import { isPanamaDateNotAfterToday, isValidPanamaDate } from "@/lib/kyb-date";
+import {
+  isPanamaDateNotAfterToday,
+  isPanamaDateTimeNotAfterNow,
+  isValidPanamaDate,
+  isValidPanamaDateTime,
+} from "@/lib/kyb-date";
 import type { KybField } from "@/lib/kyb-steps";
 
 /** Subconjunto práctico de correo con @, dominio y TLD con punto. */
@@ -176,6 +181,29 @@ export function getDateFormatError(
   return null;
 }
 
+/** `decl_fecha`: automático DD-MM-AAAA HH:mm o borradores antiguos solo fecha. */
+export function getDeclFechaFormatError(
+  field: KybField,
+  values: FormState,
+): string | null {
+  if (field.id !== "decl_fecha") return null;
+  const v = (values.decl_fecha ?? "").trim();
+  if (!v) return null;
+  if (isValidPanamaDateTime(v)) {
+    if (!isPanamaDateTimeNotAfterNow(v)) {
+      return "La fecha y hora no pueden ser posteriores al momento actual.";
+    }
+    return null;
+  }
+  if (isValidPanamaDate(v)) {
+    if (!isPanamaDateNotAfterToday(v)) {
+      return "La fecha no puede ser posterior a hoy.";
+    }
+    return null;
+  }
+  return "Use el formato DD-MM-AAAA HH:mm (fecha y hora de Panamá).";
+}
+
 export function getFormatErrorForField(
   field: KybField,
   values: FormState,
@@ -184,6 +212,7 @@ export function getFormatErrorForField(
     getContactFormatError(field, values) ??
     getPercentFormatError(field, values) ??
     getNumericFormatError(field, values) ??
-    getDateFormatError(field, values)
+    getDateFormatError(field, values) ??
+    getDeclFechaFormatError(field, values)
   );
 }
