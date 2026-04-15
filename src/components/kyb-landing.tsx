@@ -23,6 +23,61 @@ const sectionLabelClass =
 const bodyClass =
   "text-[15px] leading-relaxed text-slate-700 sm:text-base sm:leading-[1.75] text-justify hyphens-auto [text-wrap:pretty]";
 
+/** Acento de marca (alineado al índigo del ecosistema Punto Pago / puntopago.net). */
+const accentClass = "font-semibold text-[#4749B6]";
+
+function LandingAccent({ children }: { children: ReactNode }) {
+  return <span className={accentClass}>{children}</span>;
+}
+
+const introListContainer = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.11, delayChildren: 0.05 },
+  },
+};
+
+const introListItem = {
+  hidden: { opacity: 0, y: 8 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.42, ease: [0.22, 1, 0.36, 1] as const },
+  },
+};
+
+const marcoListContainer = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.08, delayChildren: 0.12 },
+  },
+};
+
+const marcoListItem = {
+  hidden: { opacity: 0, x: -6 },
+  show: {
+    opacity: 1,
+    x: 0,
+    transition: { duration: 0.38, ease: [0.22, 1, 0.36, 1] as const },
+  },
+};
+
+const legalSectionsContainer = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.09, delayChildren: 0.08 },
+  },
+};
+
+const legalSectionItem = {
+  hidden: { opacity: 0, y: 6 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as const },
+  },
+};
+
 function AnimatedBlock({
   children,
   delay,
@@ -80,55 +135,78 @@ export function KybLanding({
             transition={{ duration: 0.45, delay: 0.04 }}
           >
             Debida diligencia
-            <span className="mt-1 block text-xl font-semibold text-slate-600 sm:text-2xl">
+            <span className={`mt-1 block text-xl font-semibold sm:text-2xl ${accentClass}`}>
               Persona jurídica
             </span>
           </motion.h1>
 
           <AnimatedBlock delay={base} reduce={reduce}>
             <div className="mt-8 rounded-2xl border border-slate-200/80 bg-white/90 p-5 shadow-[0_1px_0_0_rgba(15,23,42,0.04)] backdrop-blur-sm sm:p-7">
-              <div className={`${bodyClass} space-y-4 text-slate-800`}>
-                <p>
+              <motion.div
+                className={`${bodyClass} space-y-4 text-slate-800`}
+                variants={reduce ? { hidden: {}, show: {} } : introListContainer}
+                initial="hidden"
+                animate="show"
+              >
+                <motion.p variants={reduce ? {} : introListItem}>
                   En los pasos siguientes se solicitará la información y la documentación para
-                  identificar a la persona jurídica, a quienes la representan y a los beneficiarios
-                  finales, en el marco de la debida diligencia y del cumplimiento en materia de
-                  prevención de lavado de activos, financiamiento del terrorismo y proliferación
-                  (PBC/FT/FPADM). El proceso está organizado en secciones consecutivas; el avance
-                  puede guardarse en este navegador hasta completar el envío.
-                </p>
-                <p>
-                  Puede diligenciarlo cualquier persona autorizada por la empresa. Como sugerencia,
-                  suele resultar más ágil que lo complete quien concentre el conocimiento del negocio
-                  y la documentación —por ejemplo, alguien del área jurídica, de cumplimiento o
-                  prevención (AML/FT), o un contacto de referencia en otro país cuando aplique. Si no
-                  cuenta con ese perfil, no hay inconveniente: lo importante es que quien lo haga
-                  pueda reunir la información solicitada.
-                </p>
-              </div>
+                  identificar a la <LandingAccent>persona jurídica</LandingAccent>, a quienes la
+                  representan y a los <LandingAccent>beneficiarios finales</LandingAccent>, en el
+                  marco de la <LandingAccent>debida diligencia</LandingAccent> y del cumplimiento
+                  en materia de prevención de lavado de activos, financiamiento del terrorismo y
+                  proliferación (<LandingAccent>PBC/FT/FPADM</LandingAccent>). El proceso avanza en{" "}
+                  <LandingAccent>secciones consecutivas</LandingAccent>; puede{" "}
+                  <LandingAccent>guardar el avance en este navegador</LandingAccent> hasta completar
+                  el envío.
+                </motion.p>
+                <motion.p variants={reduce ? {} : introListItem}>
+                  <LandingAccent>Cualquier persona autorizada</LandingAccent> por la empresa puede
+                  diligenciar el formulario. Como sugerencia, suele ser más ágil que lo complete
+                  quien concentre el conocimiento del negocio y la documentación: por ejemplo,
+                  alguien del área jurídica, de cumplimiento o prevención (
+                  <LandingAccent>AML/FT</LandingAccent>), o bien{" "}
+                  <LandingAccent>
+                    un representante o enlace de la empresa en el extranjero
+                  </LandingAccent>
+                  , cuando corresponda. Si no cuenta con ese perfil, no hay inconveniente; lo esencial
+                  es poder <LandingAccent>reunir la información solicitada</LandingAccent>.
+                </motion.p>
+              </motion.div>
 
               <div className="mt-8">
-                <p className={sectionLabelClass}>Marco regulatorio</p>
-                <ul className="mt-3 list-none space-y-2.5 text-[15px] leading-snug text-slate-700 sm:text-base">
-                  <li>
-                    <span className="font-semibold text-[#0B0B13]">Finalidad.</span>{" "}
-                    Cumplimiento de obligaciones en PBC/FT/FPADM conforme a la legislación
-                    panameña.
-                  </li>
-                  <li>
-                    <span className="font-semibold text-[#0B0B13]">Supervisión.</span> La
-                    Superintendencia de Bancos de Panamá (SBP) supervisa a los sujetos obligados;{" "}
-                    <span className="font-semibold text-[#0B0B13]">Grupo Punto Pago</span> actúa
-                    como tal ante la SBP.
-                  </li>
-                  <li>
-                    <span className="font-semibold text-[#0B0B13]">Consulta.</span> Resoluciones
-                    y registro en el portal de la SBP, incluida la{" "}
+                <motion.p
+                  className={sectionLabelClass}
+                  initial={reduce ? false : { opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.35, delay: reduce ? 0 : 0.2 }}
+                >
+                  Marco regulatorio
+                </motion.p>
+                <motion.ul
+                  className="mt-3 list-none space-y-2.5 text-[15px] leading-snug text-slate-700 sm:text-base"
+                  variants={reduce ? { hidden: {}, show: {} } : marcoListContainer}
+                  initial="hidden"
+                  animate="show"
+                >
+                  <motion.li variants={reduce ? {} : marcoListItem}>
+                    <span className={accentClass}>Finalidad.</span> Cumplimiento de obligaciones en{" "}
+                    <LandingAccent>PBC/FT/FPADM</LandingAccent> conforme a la legislación panameña.
+                  </motion.li>
+                  <motion.li variants={reduce ? {} : marcoListItem}>
+                    <span className={accentClass}>Supervisión.</span> La Superintendencia de Bancos
+                    de Panamá (<LandingAccent>SBP</LandingAccent>) supervisa a los sujetos
+                    obligados; <LandingAccent>Grupo Punto Pago</LandingAccent> actúa como tal ante la
+                    SBP.
+                  </motion.li>
+                  <motion.li variants={reduce ? {} : marcoListItem}>
+                    <span className={accentClass}>Consulta.</span> Resoluciones y registro en el
+                    portal de la SBP, incluida la{" "}
                     <span className="font-semibold text-[#0B0B13]">
                       RESOLUCIÓN SBP-PSO-R-2023-01022
                     </span>
                     .
-                  </li>
-                </ul>
+                  </motion.li>
+                </motion.ul>
                 <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 border-t border-slate-100 pt-4 text-sm">
                   <a
                     href="https://www.superbancos.gob.pa/"
@@ -155,15 +233,31 @@ export function KybLanding({
               />
 
               <div>
-                <p className={sectionLabelClass}>Alcance, normativa y tratamiento de la información</p>
-                <div className="mt-4 space-y-5">
+                <motion.p
+                  className={sectionLabelClass}
+                  initial={reduce ? false : { opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.35, delay: reduce ? 0 : 0.28 }}
+                >
+                  Alcance, normativa y tratamiento de la información
+                </motion.p>
+                <motion.div
+                  className="mt-4 space-y-5"
+                  variants={reduce ? { hidden: {}, show: {} } : legalSectionsContainer}
+                  initial="hidden"
+                  animate="show"
+                >
                   {KYB_WELCOME_SECTIONS.map((section) => (
-                    <p key={section.label} className={bodyClass}>
-                      <span className="font-semibold text-[#0B0B13]">{section.label}.</span>{" "}
+                    <motion.p
+                      key={section.label}
+                      className={bodyClass}
+                      variants={reduce ? {} : legalSectionItem}
+                    >
+                      <span className={accentClass}>{section.label}.</span>{" "}
                       <TextWithBrand>{section.body}</TextWithBrand>
-                    </p>
+                    </motion.p>
                   ))}
-                </div>
+                </motion.div>
               </div>
             </div>
           </AnimatedBlock>
