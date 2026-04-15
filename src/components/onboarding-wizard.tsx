@@ -51,10 +51,8 @@ import {
 import { type KybDocCompletenessContext } from "@/lib/kyb-documentacion";
 import { KybDeclaracionResumen } from "@/components/kyb-declaracion-resumen";
 import { KybDocumentacionPersonas } from "@/components/kyb-documentacion-personas";
-import {
-  formatMaxMb,
-  KYB_MAX_TOTAL_ATTACHMENT_BYTES,
-} from "@/lib/kyb-attachment-limits";
+import { collectKybValidationIssues } from "@/lib/kyb-collect-validation-issues";
+import { KybSubmissionBlockedError } from "@/lib/kyb-submission-errors";
 import { KybFileRow } from "@/components/kyb-file-row";
 import { KybRepresentanteCierrePaso } from "@/components/kyb-representante-cierre-paso";
 import {
@@ -257,6 +255,8 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     }),
     [juntaMemberSlots, bfMemberSlots, values.cotiza_bolsa],
   );
+  const docCompletenessCtxRef = useRef(docCompletenessCtx);
+  docCompletenessCtxRef.current = docCompletenessCtx;
 
   const fieldVisibilityCtx = useMemo(
     () => ({
@@ -325,14 +325,15 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
 
   const onFinalizarCierre = useCallback(
     async (patch: Partial<FormState>) => {
-      let attachmentsTotal = 0;
-      for (const f of Object.values(attachmentFilesRef.current)) {
-        if (f) attachmentsTotal += f.size;
-      }
-      if (attachmentsTotal > KYB_MAX_TOTAL_ATTACHMENT_BYTES) {
-        throw new Error(
-          `Los archivos adjuntos superan en conjunto el máximo de ${formatMaxMb(KYB_MAX_TOTAL_ATTACHMENT_BYTES)} MB. Reduzca el número de documentos o comprima los PDF.`,
-        );
+      const issues = collectKybValidationIssues(
+        visibleStepsRef.current,
+        valuesRef.current,
+        fieldVisibilityCtxRef.current,
+        docCompletenessCtxRef.current,
+        attachmentFilesRef.current,
+      );
+      if (issues.length > 0) {
+        throw new KybSubmissionBlockedError(issues);
       }
 
       const merged: FormState = { ...valuesRef.current };
@@ -645,6 +646,9 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
       if (id === "ref_tipo" && v !== "otro") {
         next.ref_tipo_otro_descripcion = "";
       }
+      if (id === "ref_tipo" && v === "bancaria") {
+        next.ref_fecha = "";
+      }
       if (id === "doc_upl_factura_servicios" && !v.trim()) {
         next.doc_nac_nis_numero = "";
       }
@@ -759,6 +763,28 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     setLandingDraftAt(null);
     setCierreRepresentanteListo(false);
   };
+
+  const goToLandingIntro = useCallback(() => {
+    playWizardNav();
+    saveDraft({
+      stepIndex,
+      values,
+      juntaMemberSlots,
+      bfMemberSlots,
+      pepMemberSlots,
+    });
+    setStarted(false);
+    setStepIndex(0);
+    const d = readDraft(steps);
+    setLandingDraftAt(d ? d.savedAt : null);
+  }, [
+    stepIndex,
+    values,
+    juntaMemberSlots,
+    bfMemberSlots,
+    pepMemberSlots,
+    steps,
+  ]);
 
   const inputClass =
     "w-full rounded-xl border border-slate-200/95 bg-white/95 px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition duration-200 placeholder:text-slate-400 focus:border-[#4749B6] focus:ring-2 focus:ring-[#4749B6]/20";
@@ -1451,16 +1477,29 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                 Su avance se guarda <span className="font-medium text-slate-700">automáticamente</span>{" "}
                 en este navegador, solo en este equipo. No se sincroniza con otros dispositivos.
               </p>
-              <p className="text-slate-500">
+              <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-slate-500">
                 <button
                   type="button"
                   className="font-semibold text-[#4749B6] underline decoration-[#4749B6]/30 underline-offset-2 transition hover:decoration-[#4749B6]"
-                  aria-label="Eliminar el borrador guardado solo en este navegador"
+                  aria-label="Limpiar el formulario y borrar el borrador guardado en este navegador"
                   onClick={clearLocalDraftOnly}
                 >
-                  Borrar borrador guardado
+                  Limpiar formulario
                 </button>
-                <span className="text-slate-400"> — solo afecta a este navegador.</span>
+                <span className="text-slate-300" aria-hidden>
+                  ·
+                </span>
+                <button
+                  type="button"
+                  className="font-semibold text-[#4749B6] underline decoration-[#4749B6]/30 underline-offset-2 transition hover:decoration-[#4749B6]"
+                  aria-label="Volver a la pantalla inicial; el avance se guarda en este navegador"
+                  onClick={goToLandingIntro}
+                >
+                  Volver a iniciar
+                </button>
+              </p>
+              <p className="text-[10px] leading-snug text-slate-400">
+                Solo aplica en este navegador y en este equipo.
               </p>
             </div>
           </div>
@@ -1669,20 +1708,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                     <button
                       type="button"
                       className="text-sm font-medium text-slate-500 underline-offset-2 transition hover:text-[#4749B6] hover:underline"
-                      onClick={() => {
-                        playWizardNav();
-                        saveDraft({
-                          stepIndex,
-                          values,
-                          juntaMemberSlots,
-                          bfMemberSlots,
-                          pepMemberSlots,
-                        });
-                        setStarted(false);
-                        setStepIndex(0);
-                        const d = readDraft(steps);
-                        setLandingDraftAt(d ? d.savedAt : null);
-                      }}
+                      onClick={goToLandingIntro}
                     >
                       Volver a la introducción
                     </button>

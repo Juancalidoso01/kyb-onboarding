@@ -25,7 +25,7 @@ const REF_LABELS: Record<RefLabelFieldId, Record<RefTipoKyB, string>> = {
     otro: "Persona de contacto o forma de verificar la referencia (si aplica)",
   },
   ref_fecha: {
-    bancaria: "Fecha de emisión de la carta o referencia bancaria",
+    bancaria: "",
     comercial: "Fecha del documento de respaldo o último movimiento relevante",
     personal: "Fecha desde la cual puede ubicarse la referencia",
     otro: "Fecha o vigencia del documento o referencia",
@@ -64,5 +64,8 @@ export function getReferenciasFieldLabel(
   const t = raw as RefTipoKyB;
   const row = REF_LABELS[fieldId as RefLabelFieldId];
   if (!row) return null;
-  return row[t] ?? null;
+  if (fieldId === "ref_fecha" && t === "bancaria") return null;
+  const label = row[t] ?? null;
+  if (label === "") return null;
+  return label;
 }

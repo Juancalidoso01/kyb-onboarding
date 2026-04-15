@@ -5,6 +5,7 @@ import {
 } from "@/lib/kyb-documentacion";
 import type { FormState } from "@/lib/kyb-field-complete";
 import { PEP_STEP_ID, pepFieldMemberSlot } from "@/lib/kyb-pep-content";
+import { REFERENCIAS_STEP_ID } from "@/lib/kyb-referencias-labels";
 import {
   algunaSeleccionServicioPuntoPago,
   BENEFICIARIOS_FINALES_STEP_ID,
@@ -73,6 +74,13 @@ export function isKybStepFieldVisible(
   }
   if (f.id === "ref_tipo_otro_descripcion") {
     return values.ref_tipo === "otro";
+  }
+  if (
+    step.id === REFERENCIAS_STEP_ID &&
+    f.id === "ref_fecha" &&
+    values.ref_tipo === "bancaria"
+  ) {
+    return false;
   }
   if (f.id === "doc_nac_nis_numero") {
     return (

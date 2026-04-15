@@ -103,6 +103,10 @@ export function isFieldComplete(
     return v.trim().length > 0;
   }
 
+  if (field.id === "ref_fecha" && values.ref_tipo === "bancaria") {
+    return true;
+  }
+
   if (/^pep_\d+_/.test(field.id)) {
     if (values.pep_alguno_catalogado !== "si") return true;
   }

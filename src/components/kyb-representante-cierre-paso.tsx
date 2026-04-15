@@ -2,7 +2,9 @@
 
 import QRCode from "qrcode";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { KybBlockingIssuesModal } from "@/components/kyb-blocking-issues-modal";
 import { KybRepresentanteExitoPanel } from "@/components/kyb-representante-exito-panel";
+import { isKybSubmissionBlockedError } from "@/lib/kyb-submission-errors";
 import type { FormState } from "@/lib/kyb-field-complete";
 import type { KybFirmaPaquetePayload } from "@/lib/kyb-firma-paquete";
 
@@ -51,6 +53,8 @@ export function KybRepresentanteCierrePaso({
   const [shareNotice, setShareNotice] = useState<"copied" | "error" | null>(
     null,
   );
+  const [blockingOpen, setBlockingOpen] = useState(false);
+  const [blockingIssues, setBlockingIssues] = useState<string[]>([]);
 
   const publicUrl = code
     ? `${typeof window !== "undefined" ? window.location.origin : ""}/verificar-representante?c=${encodeURIComponent(code)}`
@@ -187,11 +191,17 @@ export function KybRepresentanteCierrePaso({
       } catch (e) {
         finalizarEnCursoRef.current = false;
         setFase("qr");
+        if (isKybSubmissionBlockedError(e)) {
+          setBlockingIssues(e.issues);
+          setBlockingOpen(true);
+          return;
+        }
         const msg =
           e instanceof Error && e.message.trim()
             ? e.message
             : "No se pudo generar el PDF o el número de formulario. Recargue la página o pulse Reintentar finalizar.";
-        setErr(msg);
+        setBlockingIssues([msg]);
+        setBlockingOpen(true);
       }
     },
     [onFinalizar, setField, onTerminado, onFlushDraft],
@@ -249,17 +259,34 @@ export function KybRepresentanteCierrePaso({
     patchFromValues,
   ]);
 
+  const blockingModal = (
+    <KybBlockingIssuesModal
+      open={blockingOpen}
+      title="Revise el formulario"
+      issues={blockingIssues}
+      onClose={() => {
+        setBlockingOpen(false);
+        setBlockingIssues([]);
+      }}
+    />
+  );
+
   if (fase === "listo" && numeroFormulario) {
     return (
-      <KybRepresentanteExitoPanel
-        variant="desktop"
-        numeroFormulario={numeroFormulario}
-      />
+      <>
+        {blockingModal}
+        <KybRepresentanteExitoPanel
+          variant="desktop"
+          numeroFormulario={numeroFormulario}
+        />
+      </>
     );
   }
 
   if (fase === "finalizando") {
     return (
+      <>
+        {blockingModal}
       <div
         className="rounded-2xl border border-[#4749B6]/25 bg-white/95 p-8 text-center shadow-sm"
         role="status"
@@ -272,10 +299,13 @@ export function KybRepresentanteCierrePaso({
           Generando PDF y asignando número de referencia.
         </p>
       </div>
+      </>
     );
   }
 
   return (
+    <>
+      {blockingModal}
     <div className="space-y-6 rounded-2xl border border-[#4749B6]/25 bg-gradient-to-br from-[#4749B6]/[0.07] to-white p-5 shadow-sm sm:p-7">
       {busy && !qrSrc ? (
         <p className="text-sm text-slate-600">Preparando código QR…</p>
@@ -416,5 +446,6 @@ export function KybRepresentanteCierrePaso({
         </div>
       ) : null}
     </div>
+    </>
   );
 }
