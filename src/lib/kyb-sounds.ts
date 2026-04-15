@@ -1,9 +1,10 @@
 /**
  * Sonidos breves con Web Audio API (sin archivos externos).
- * Móvil (Safari / Chrome Android): el contexto suele arrancar "suspended" hasta
- * un gesto del usuario; hay que llamar resume() y, idealmente, reanudar antes
- * de cada beep. iOS muchas veces no emite keydown por carácter con teclado
- * virtual — el formulario usa eventos input como respaldo.
+ * Móvil (Safari / Chrome Android): el contexto arranca "suspended" hasta un
+ * gesto del usuario. Tras resume(), algunos navegadores actualizan el estado en
+ * el siguiente frame: por eso encadenamos resume → requestAnimationFrame → play.
+ * iOS muchas veces no emite keydown por carácter con teclado virtual — el
+ * formulario usa input + keydown con el mismo debounce.
  */
 
 let ctx: AudioContext | null = null;
@@ -26,38 +27,53 @@ export function unlockAudio(): void {
 }
 
 /**
- * Ejecuta síntesis solo cuando el contexto está en ejecución; si no, intenta
- * resume() (necesario en móvil tras el primer toque).
+ * Si el contexto ya está en ejecución, reproduce en el mismo tick (mejor para
+ * políticas de audio tras clic/tecla). Si está suspendido, resume() y un frame
+ * de margen (Safari / WebKit móvil).
  */
 function withRunningContext(play: (c: AudioContext, t: number) => void): void {
   const c = getCtx();
   if (!c) return;
-  const go = () => {
-    if (c.state !== "running") return;
+
+  const tryPlay = (): boolean => {
     try {
+      if (c.state !== "running") return false;
       play(c, c.currentTime);
+      return true;
     } catch {
-      /* algunos WebViews fallan con rampas exponenciales */
+      return true;
     }
   };
-  if (c.state === "running") go();
-  else void c.resume().then(go);
+
+  if (tryPlay()) return;
+
+  void c.resume().then(() => {
+    requestAnimationFrame(() => {
+      if (tryPlay()) return;
+      void c.resume().then(() => {
+        requestAnimationFrame(() => {
+          void tryPlay();
+        });
+      });
+    });
+  });
 }
 
 /** Pico de ganancia al marcar campo completo (equilibrado con toques de UI / teclado). */
-const GAIN_FIELD_COMPLETE = 0.055;
+const GAIN_FIELD_COMPLETE = 0.085;
 
 /** Toque de teclado: mismo orden de magnitud que navegación y elección en listas. */
-const GAIN_KEY_TAP = 0.034;
+const GAIN_KEY_TAP = 0.055;
 
 /** Siguiente / Anterior / envío (mismo nivel en todos los pasos). */
-const GAIN_WIZARD_NAV = 0.032;
+const GAIN_WIZARD_NAV = 0.05;
 
 /** Lista desplegable, checkbox, elección en combobox sin tecla. */
-const GAIN_CHOICE = 0.028;
+const GAIN_CHOICE = 0.045;
 
 /** Tono corto al completar un campo (gancho verde). */
 export function playFieldComplete(): void {
+  unlockAudio();
   withRunningContext((c, t) => {
     const o = c.createOscillator();
     const g = c.createGain();
@@ -76,6 +92,7 @@ export function playFieldComplete(): void {
 
 /** Toque tipo teclado (muy breve). */
 export function playKeyTap(): void {
+  unlockAudio();
   withRunningContext((c, t) => {
     const o = c.createOscillator();
     const g = c.createGain();
@@ -93,6 +110,7 @@ export function playKeyTap(): void {
 
 /** Navegación del formulario: volúmenes homogéneos entre pasos. */
 export function playWizardNav(): void {
+  unlockAudio();
   withRunningContext((c, t) => {
     const o = c.createOscillator();
     const g = c.createGain();
@@ -110,6 +128,7 @@ export function playWizardNav(): void {
 
 /** Al elegir en lista, checkbox o ítem de combobox (sin evento input por tecla). */
 export function playChoiceTick(): void {
+  unlockAudio();
   withRunningContext((c, t) => {
     const o = c.createOscillator();
     const g = c.createGain();

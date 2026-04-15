@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import type { FormEvent, ReactNode } from "react";
+import type { FormEvent, KeyboardEvent, ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { KybCombobox } from "@/components/kyb-combobox";
 import { KybDateField } from "@/components/kyb-date-field";
@@ -581,11 +581,26 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
   }, [values, started, visibleSteps, docCompletenessCtx]);
 
   /**
-   * keydown se mantiene por compatibilidad con componentes; el sonido por
-   * tecla va por inputTypingFeedback (input) para no duplicar en desktop y
-   * para cubrir teclados virtuales que no disparan keydown por letra.
+   * Mismo debounce para keydown (escritorio) e input (móvil / teclado virtual)
+   * para no duplicar el clic por carácter.
    */
-  const typingKey = useCallback(() => {}, []);
+  const emitTypingSound = useCallback(() => {
+    unlockAudio();
+    const now = Date.now();
+    if (now - lastKeySoundRef.current < 42) return;
+    lastKeySoundRef.current = now;
+    playKeyTap();
+  }, []);
+
+  const typingKey = useCallback(
+    (e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      if (e.repeat) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key.length !== 1) return;
+      emitTypingSound();
+    },
+    [emitTypingSound],
+  );
 
   /** Teclado virtual / móvil: evento input por inserción (y escritura por voz, etc.). */
   const inputTypingFeedback = useCallback(
@@ -600,12 +615,9 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
           return;
         }
       }
-      const now = Date.now();
-      if (now - lastKeySoundRef.current < 42) return;
-      lastKeySoundRef.current = now;
-      playKeyTap();
+      emitTypingSound();
     },
-    [],
+    [emitTypingSound],
   );
 
   const setField = (id: string, v: string) => {
@@ -1436,16 +1448,23 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
                 {visibleSteps.length}
               </span>
             </p>
-            <p className="mt-2 text-[11px] leading-snug text-slate-400">
-              Avance guardado en este navegador.{" "}
-              <button
-                type="button"
-                className="font-medium text-[#4749B6] underline-offset-2 hover:underline"
-                onClick={clearLocalDraftOnly}
-              >
-                Borrar borrador local
-              </button>
-            </p>
+            <div className="mt-3 space-y-1.5 rounded-lg border border-slate-100/90 bg-slate-50/50 px-3 py-2.5 text-[11px] leading-snug text-slate-500">
+              <p className="text-slate-600">
+                Su avance se guarda <span className="font-medium text-slate-700">automáticamente</span>{" "}
+                en este navegador, solo en este equipo. No se sincroniza con otros dispositivos.
+              </p>
+              <p className="text-slate-500">
+                <button
+                  type="button"
+                  className="font-semibold text-[#4749B6] underline decoration-[#4749B6]/30 underline-offset-2 transition hover:decoration-[#4749B6]"
+                  aria-label="Eliminar el borrador guardado solo en este navegador"
+                  onClick={clearLocalDraftOnly}
+                >
+                  Borrar borrador guardado
+                </button>
+                <span className="text-slate-400"> — solo afecta a este navegador.</span>
+              </p>
+            </div>
           </div>
         </div>
 
