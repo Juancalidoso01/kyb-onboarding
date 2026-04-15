@@ -2,7 +2,7 @@
 
 **Documento fuente:** *FORMULARIO PERFIL DEL CLIENTE PJ – PUNTO PAGO PANAMÁ V2-2026* (4 páginas).
 
-La **introducción** (textos legales generales) se muestra en la pantalla previa al formulario (`KybLanding` + `KybWelcomeIntro`), no como paso en `KYB_STEPS`. En la UI no se muestran referencias a páginas del PDF; `pdfPage` en código sigue sirviendo para trazabilidad interna / generación futura de PDF.
+La **introducción** (textos legales generales) se muestra en la pantalla previa al formulario (`KybLanding`), no como paso en `KYB_STEPS`. En la UI no se muestran referencias a páginas del PDF; `pdfPage` en código sigue sirviendo para trazabilidad interna / generación futura de PDF.
 
 | Orden | Paso (`step.id`) | Sección PDF | Notas |
 |------:|-------------------|-------------|--------|

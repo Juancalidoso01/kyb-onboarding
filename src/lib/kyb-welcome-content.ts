@@ -1,6 +1,5 @@
 /**
- * Textos informativos bajo el bloque superior del landing.
- * Redactados de forma breve y formal; las ideas principales van en `label`.
+ * Párrafos de alcance / normativa / datos en la portada (`KybLanding`), misma tarjeta que el marco regulatorio.
  */
 
 export type KybWelcomeSection = {

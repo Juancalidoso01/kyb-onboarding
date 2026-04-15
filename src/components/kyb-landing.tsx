@@ -2,7 +2,8 @@
 
 import type { ReactNode } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { KybWelcomeIntro } from "@/components/kyb-welcome-intro";
+import { TextWithBrand } from "@/components/kyb-welcome-intro";
+import { KYB_WELCOME_SECTIONS } from "@/lib/kyb-welcome-content";
 import { formatDraftSavedAt } from "@/lib/kyb-local-draft";
 
 const SBP_RESOLUCIONES_URL =
@@ -16,8 +17,11 @@ type Props = {
   onStartFresh?: () => void;
 };
 
-const proseClass =
-  "text-[15px] leading-[1.75] text-slate-700 sm:text-base sm:leading-[1.8] text-justify hyphens-auto [text-wrap:pretty]";
+const sectionLabelClass =
+  "text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500";
+
+const bodyClass =
+  "text-[15px] leading-relaxed text-slate-700 sm:text-base sm:leading-[1.75] text-justify hyphens-auto [text-wrap:pretty]";
 
 function AnimatedBlock({
   children,
@@ -60,7 +64,7 @@ export function KybLanding({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div className="border-b border-slate-100/90 bg-gradient-to-br from-[#4749B6]/[0.12] via-white/95 to-white/80 px-6 py-10 sm:px-10 sm:py-12">
+        <div className="bg-gradient-to-br from-[#4749B6]/[0.12] via-white/95 to-slate-50/40 px-6 py-10 sm:px-10 sm:py-12">
           <motion.p
             className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#4749B6]"
             initial={reduce ? false : { opacity: 0 }}
@@ -81,21 +85,30 @@ export function KybLanding({
             </span>
           </motion.h1>
 
-          <div className="mt-8 space-y-5">
-            <AnimatedBlock delay={base} reduce={reduce}>
-              <p className={proseClass}>
-                A continuación se resume el marco aplicable. El formulario se completa por
-                pasos; donde no corresponda un dato, indique{" "}
-                <span className="font-semibold text-[#0B0B13]">N/A</span>.
-              </p>
-            </AnimatedBlock>
-
-            <AnimatedBlock delay={base + 0.08} reduce={reduce}>
-              <div className="rounded-xl border border-slate-200/90 bg-white/90 p-4 shadow-sm sm:p-5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Marco regulatorio
+          <AnimatedBlock delay={base} reduce={reduce}>
+            <div className="mt-8 rounded-2xl border border-slate-200/80 bg-white/90 p-5 shadow-[0_1px_0_0_rgba(15,23,42,0.04)] backdrop-blur-sm sm:p-7">
+              <div className={`${bodyClass} space-y-4 text-slate-800`}>
+                <p>
+                  En los pasos siguientes se solicitará la información y la documentación para
+                  identificar a la persona jurídica, a quienes la representan y a los beneficiarios
+                  finales, en el marco de la debida diligencia y del cumplimiento en materia de
+                  prevención de lavado de activos, financiamiento del terrorismo y proliferación
+                  (PBC/FT/FPADM). El proceso está organizado en secciones consecutivas; el avance
+                  puede guardarse en este navegador hasta completar el envío.
                 </p>
-                <ul className="mt-3 list-none space-y-2.5 text-sm leading-snug text-slate-700 sm:text-[15px]">
+                <p>
+                  Puede diligenciarlo cualquier persona autorizada por la empresa. Como sugerencia,
+                  suele resultar más ágil que lo complete quien concentre el conocimiento del negocio
+                  y la documentación —por ejemplo, alguien del área jurídica, de cumplimiento o
+                  prevención (AML/FT), o un contacto de referencia en otro país cuando aplique. Si no
+                  cuenta con ese perfil, no hay inconveniente: lo importante es que quien lo haga
+                  pueda reunir la información solicitada.
+                </p>
+              </div>
+
+              <div className="mt-8">
+                <p className={sectionLabelClass}>Marco regulatorio</p>
+                <ul className="mt-3 list-none space-y-2.5 text-[15px] leading-snug text-slate-700 sm:text-base">
                   <li>
                     <span className="font-semibold text-[#0B0B13]">Finalidad.</span>{" "}
                     Cumplimiento de obligaciones en PBC/FT/FPADM conforme a la legislación
@@ -116,7 +129,7 @@ export function KybLanding({
                     .
                   </li>
                 </ul>
-                <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 border-t border-slate-100 pt-3 text-sm">
+                <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 border-t border-slate-100 pt-4 text-sm">
                   <a
                     href="https://www.superbancos.gob.pa/"
                     target="_blank"
@@ -135,12 +148,25 @@ export function KybLanding({
                   </a>
                 </div>
               </div>
-            </AnimatedBlock>
-          </div>
-        </div>
 
-        <div className="px-6 py-8 sm:px-10 sm:py-10">
-          <KybWelcomeIntro />
+              <div
+                className="my-8 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"
+                aria-hidden
+              />
+
+              <div>
+                <p className={sectionLabelClass}>Alcance, normativa y tratamiento de la información</p>
+                <div className="mt-4 space-y-5">
+                  {KYB_WELCOME_SECTIONS.map((section) => (
+                    <p key={section.label} className={bodyClass}>
+                      <span className="font-semibold text-[#0B0B13]">{section.label}.</span>{" "}
+                      <TextWithBrand>{section.body}</TextWithBrand>
+                    </p>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </AnimatedBlock>
         </div>
 
         <div className="border-t border-slate-100/90 px-6 py-6 sm:px-10">
