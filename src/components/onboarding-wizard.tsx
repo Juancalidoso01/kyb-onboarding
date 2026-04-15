@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import type { FormEvent, KeyboardEvent, ReactNode } from "react";
+import type { FormEvent, KeyboardEvent as ReactKeyboardEvent, ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { KybCombobox } from "@/components/kyb-combobox";
 import { KybDateField } from "@/components/kyb-date-field";
@@ -592,15 +592,13 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
     playKeyTap();
   }, []);
 
-  const typingKey = useCallback(
-    (e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      if (e.repeat) return;
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
-      if (e.key.length !== 1) return;
-      emitTypingSound();
-    },
-    [emitTypingSound],
-  );
+  /** Firma amplia para inputs, textarea y combobox (evita conflicto con KeyboardEvent genérico). */
+  const typingKey = useCallback((e: ReactKeyboardEvent) => {
+    if (e.repeat) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key.length !== 1) return;
+    emitTypingSound();
+  }, [emitTypingSound]);
 
   /** Teclado virtual / móvil: evento input por inserción (y escritura por voz, etc.). */
   const inputTypingFeedback = useCallback(
