@@ -1,11 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import {
-  KYB_TEXT_CONFIDENCIALIDAD,
-  KYB_TEXT_CUMPLIMIENTO,
-  KYB_TEXT_DEBIDA_DILIGENCIA,
-} from "@/lib/kyb-welcome-content";
+import { KYB_WELCOME_SECTIONS } from "@/lib/kyb-welcome-content";
 
 const brandPattern = /(GRUPO PUNTO PAGO|Grupo Punto Pago)/gi;
 
@@ -31,8 +27,6 @@ const prose =
 
 export function KybWelcomeIntro() {
   const reduce = Boolean(useReducedMotion());
-
-  const paragraphs = [KYB_TEXT_DEBIDA_DILIGENCIA, KYB_TEXT_CUMPLIMIENTO, KYB_TEXT_CONFIDENCIALIDAD];
 
   return (
     <motion.div
@@ -62,7 +56,7 @@ export function KybWelcomeIntro() {
               }
         }
       >
-        {paragraphs.map((text, idx) => (
+        {KYB_WELCOME_SECTIONS.map((section, idx) => (
           <motion.p
             key={idx}
             className={prose}
@@ -79,7 +73,8 @@ export function KybWelcomeIntro() {
                   }
             }
           >
-            <TextWithBrand>{text}</TextWithBrand>
+            <span className="font-semibold text-[#0B0B13]">{section.label}.</span>{" "}
+            <TextWithBrand>{section.body}</TextWithBrand>
           </motion.p>
         ))}
       </motion.div>
