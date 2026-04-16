@@ -870,7 +870,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
               {field.staticParagraphs.map((text, pi) => (
                 <motion.p
                   key={pi}
-                  className="text-justify text-sm leading-[1.65] text-slate-700 hyphens-auto [text-align-last:left] sm:text-[0.9375rem]"
+                  className="text-left text-pretty text-sm leading-[1.65] text-slate-700 hyphens-none sm:hyphens-auto sm:text-justify sm:text-[0.9375rem] sm:[text-align-last:left]"
                   initial={reduce ? false : { opacity: 0, y: 12 }}
                   animate={reduce ? false : { opacity: 1, y: 0 }}
                   transition={{
@@ -894,7 +894,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
           key={field.id}
           className="rounded-xl border border-slate-200/90 border-l-[3px] border-l-[#4749B6] bg-white/90 p-4 text-xs leading-relaxed text-slate-700 shadow-sm"
         >
-          <p className="whitespace-pre-wrap text-justify [text-align-last:left]">
+          <p className="whitespace-pre-wrap text-left hyphens-none sm:hyphens-auto sm:text-justify sm:[text-align-last:left]">
             {paras[0]}
           </p>
         </div>
@@ -1348,7 +1348,7 @@ export function OnboardingWizard({ steps = KYB_STEPS }: { steps?: KybStep[] }) {
         <span
           className={`mb-1.5 block font-medium text-[#0B0B13] ${
             field.type === "yesno" && displayLabel.length > 160
-              ? "text-justify text-xs leading-snug sm:text-sm"
+              ? "text-left text-xs leading-snug hyphens-none sm:hyphens-auto sm:text-justify sm:text-sm"
               : "text-sm"
           }`}
         >

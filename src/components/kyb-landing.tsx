@@ -2,7 +2,11 @@
 
 import type { ReactNode } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { TextWithBrand } from "@/components/kyb-welcome-intro";
+import {
+  KybEyebrowBrandLetters,
+  KybSubtitleBrandSheen,
+  TextWithBrand,
+} from "@/components/kyb-welcome-intro";
 import { KYB_WELCOME_SECTIONS } from "@/lib/kyb-welcome-content";
 import { formatDraftSavedAt } from "@/lib/kyb-local-draft";
 
@@ -20,8 +24,9 @@ type Props = {
 const sectionLabelClass =
   "text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500";
 
+/** Móvil: alineado a la izquierda (mejor lectura); desde sm justificado + guiones. */
 const bodyClass =
-  "text-[15px] leading-relaxed text-slate-700 sm:text-base sm:leading-[1.75] text-justify hyphens-auto [text-wrap:pretty]";
+  "text-left text-pretty text-[15px] leading-relaxed text-slate-700 hyphens-none sm:hyphens-auto sm:text-justify sm:text-base sm:leading-[1.75]";
 
 /** Acento de marca (alineado al índigo del ecosistema Punto Pago / puntopago.net). */
 const accentClass = "font-semibold text-[#4749B6]";
@@ -119,61 +124,50 @@ export function KybLanding({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div className="bg-gradient-to-br from-[#4749B6]/[0.12] via-white/95 to-slate-50/40 px-6 py-10 sm:px-10 sm:py-12">
+        <div className="bg-gradient-to-br from-[#4749B6]/[0.12] via-white/95 to-slate-50/40 px-6 py-8 sm:px-10 sm:py-12">
           <motion.p
-            className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#4749B6]"
+            className="text-[11px] font-semibold uppercase tracking-[0.14em]"
             initial={reduce ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.35 }}
           >
-            Grupo Punto Pago
+            <KybEyebrowBrandLetters text="Grupo Punto Pago" />
           </motion.p>
           <motion.h1
-            className="mt-3 text-3xl font-bold tracking-tight text-[#0B0B13] sm:text-[2rem] sm:leading-tight"
+            className="mt-2.5 text-3xl font-bold tracking-tight text-[#0B0B13] sm:mt-3 sm:text-[2rem] sm:leading-tight"
             initial={reduce ? false : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, delay: 0.04 }}
           >
             Debida diligencia
-            <span className={`mt-1 block text-xl font-semibold sm:text-2xl ${accentClass}`}>
-              Persona jurídica
-            </span>
+            <KybSubtitleBrandSheen>Persona jurídica</KybSubtitleBrandSheen>
           </motion.h1>
 
           <AnimatedBlock delay={base} reduce={reduce}>
-            <div className="mt-8 rounded-2xl border border-slate-200/80 bg-white/90 p-5 shadow-[0_1px_0_0_rgba(15,23,42,0.04)] backdrop-blur-sm sm:p-7">
+            <div className="mt-5 rounded-2xl border border-slate-200/80 bg-white/90 p-5 shadow-[0_1px_0_0_rgba(15,23,42,0.04)] backdrop-blur-sm sm:mt-6 sm:p-7">
               <motion.div
-                className={`${bodyClass} space-y-4 text-slate-800`}
+                className={`${bodyClass} space-y-3 text-slate-800 sm:space-y-3.5`}
                 variants={reduce ? { hidden: {}, show: {} } : introListContainer}
                 initial="hidden"
                 animate="show"
               >
                 <motion.p variants={reduce ? {} : introListItem}>
-                  En los pasos siguientes se solicitará la información y la documentación para
-                  identificar a la <LandingAccent>persona jurídica</LandingAccent>, a quienes la
-                  representan y a los <LandingAccent>beneficiarios finales</LandingAccent>, en el
-                  marco de la <LandingAccent>debida diligencia</LandingAccent> y del cumplimiento
-                  en materia de prevención de lavado de activos, financiamiento del terrorismo y
-                  proliferación (<LandingAccent>PBC/FT/FPADM</LandingAccent>). El proceso avanza en{" "}
-                  <LandingAccent>secciones consecutivas</LandingAccent>; puede{" "}
-                  <LandingAccent>guardar el avance en este navegador</LandingAccent> hasta completar
-                  el envío.
+                  Formulario por <LandingAccent>secciones</LandingAccent> para identificar a la{" "}
+                  <LandingAccent>persona jurídica</LandingAccent>, quienes la representan y los{" "}
+                  <LandingAccent>beneficiarios finales</LandingAccent>, en el marco de la{" "}
+                  <LandingAccent>debida diligencia</LandingAccent> y la prevención{" "}
+                  <LandingAccent>PBC/FT/FPADM</LandingAccent>. Puede{" "}
+                  <LandingAccent>guardar el avance en este navegador</LandingAccent> hasta enviar.
                 </motion.p>
                 <motion.p variants={reduce ? {} : introListItem}>
-                  <LandingAccent>Cualquier persona autorizada</LandingAccent> por la empresa puede
-                  diligenciar el formulario. Como sugerencia, suele ser más ágil que lo complete
-                  quien concentre el conocimiento del negocio y la documentación: por ejemplo,
-                  alguien del área jurídica, de cumplimiento o prevención (
-                  <LandingAccent>AML/FT</LandingAccent>), o bien{" "}
-                  <LandingAccent>
-                    un representante o enlace de la empresa en el extranjero
-                  </LandingAccent>
-                  , cuando corresponda. Si no cuenta con ese perfil, no hay inconveniente; lo esencial
-                  es poder <LandingAccent>reunir la información solicitada</LandingAccent>.
+                  Puede diligenciarlo <LandingAccent>cualquier persona autorizada</LandingAccent>{" "}
+                  por la empresa; suele ser más rápido quien tenga el negocio y la documentación a
+                  mano (área jurídica, cumplimiento, <LandingAccent>AML/FT</LandingAccent> o enlace en
+                  el exterior, si aplica).
                 </motion.p>
               </motion.div>
 
-              <div className="mt-8">
+              <div className="mt-5 sm:mt-6">
                 <motion.p
                   className={sectionLabelClass}
                   initial={reduce ? false : { opacity: 0 }}
@@ -183,7 +177,7 @@ export function KybLanding({
                   Marco regulatorio
                 </motion.p>
                 <motion.ul
-                  className="mt-3 list-none space-y-2.5 text-[15px] leading-snug text-slate-700 sm:text-base"
+                  className="mt-2.5 list-none space-y-2 text-[15px] leading-snug text-slate-700 sm:mt-3 sm:space-y-2.5 sm:text-base"
                   variants={reduce ? { hidden: {}, show: {} } : marcoListContainer}
                   initial="hidden"
                   animate="show"
@@ -207,7 +201,7 @@ export function KybLanding({
                     .
                   </motion.li>
                 </motion.ul>
-                <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 border-t border-slate-100 pt-4 text-sm">
+                <div className="mt-3.5 flex flex-wrap gap-x-5 gap-y-2 border-t border-slate-100 pt-3 text-sm sm:mt-4 sm:pt-4">
                   <a
                     href="https://www.superbancos.gob.pa/"
                     target="_blank"
@@ -228,7 +222,7 @@ export function KybLanding({
               </div>
 
               <div
-                className="my-8 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"
+                className="my-5 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent sm:my-6"
                 aria-hidden
               />
 
@@ -242,7 +236,7 @@ export function KybLanding({
                   Alcance, normativa y tratamiento de la información
                 </motion.p>
                 <motion.div
-                  className="mt-4 space-y-5"
+                  className="mt-3 space-y-3 sm:mt-4 sm:space-y-3.5"
                   variants={reduce ? { hidden: {}, show: {} } : legalSectionsContainer}
                   initial="hidden"
                   animate="show"

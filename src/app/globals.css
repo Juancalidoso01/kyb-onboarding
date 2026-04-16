@@ -188,3 +188,66 @@ body {
     animation: none !important;
   }
 }
+
+/* --- KYB landing: acento marca (alineado puntopago.net) --- */
+
+@keyframes pp-kyb-brand-gradient-x {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.pp-kyb-brand-sheen {
+  background-image: linear-gradient(
+    105deg,
+    #4749b6 0%,
+    #5b5dd4 22%,
+    #6366f1 48%,
+    #4749b6 72%,
+    #3b3da6 100%
+  );
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: pp-kyb-brand-gradient-x 5.5s ease-in-out infinite;
+}
+
+@keyframes pp-kyb-letter-nudge {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  22% {
+    transform: translate3d(0.35px, -0.28px, 0);
+  }
+  48% {
+    transform: translate3d(-0.32px, 0.22px, 0);
+  }
+  72% {
+    transform: translate3d(0.18px, 0.26px, 0);
+  }
+}
+
+.pp-kyb-letter-nudge {
+  display: inline-block;
+  animation: pp-kyb-letter-nudge 3.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pp-kyb-brand-sheen {
+    animation: none;
+    background: none;
+    color: #4749b6;
+    -webkit-text-fill-color: #4749b6;
+  }
+
+  .pp-kyb-letter-nudge {
+    animation: none;
+  }
+}
